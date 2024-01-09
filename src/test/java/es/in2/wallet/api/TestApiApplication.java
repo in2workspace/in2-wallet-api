@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 public class TestApiApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.from(ApiApplication::main).with(TestApiApplication.class).run(args);
+		SpringApplication.from(Application::main).with(TestApiApplication.class).run(args);
 	}
 
 }
