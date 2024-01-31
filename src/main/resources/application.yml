@@ -10,7 +10,7 @@ logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
-    es.in2.desmos: INFO
+    es.in2.wallet: INFO
 
 # Spring Management Configuration - Actuator
 management:
@@ -49,3 +49,11 @@ springdoc:
 # Server Configuration
 server:
   port: 8080
+
+# Context Broker Configuration
+broker:
+  provider: "scorpio"
+  externalDomain: "http://localhost:9090"
+  internalDomain: "http://localhost:9090"
+  paths:
+    entities: "/ngsi-ld/v1/entities"

@@ -71,14 +71,14 @@ dependencies {
 	implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j'
 
 	// Key Vault
-	implementation 'org.springframework.cloud:spring-cloud-starter-vault-config'
+//	implementation 'org.springframework.cloud:spring-cloud-starter-vault-config'
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
 	// Docker
-	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+//	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 
 	// Documentation
 	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.2.0'
