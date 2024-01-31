@@ -1,9 +1,27 @@
+vault:
+  secret-provider:
+    name: hashicorp #hashicorp #azure
 # Spring Configuration
 spring:
   application:
     name: "wallet-server"
   main:
     web-application-type: reactive
+  cloud:
+    vault:
+      host: vault
+      port: 8201
+      authentication: token
+      token: hvs.wv19IHK4jWgIzUlgDTctA7O5
+      scheme: http
+      kv:
+        enabled: true
+    azure:
+      keyvault:
+        secret:
+          endpoint:
+      appconfiguration:
+        endpoint:
 
 # Spring Logging Configuration
 logging:
@@ -57,3 +75,5 @@ broker:
   internalDomain: "http://localhost:9090"
   paths:
     entities: "/ngsi-ld/v1/entities"
+
+

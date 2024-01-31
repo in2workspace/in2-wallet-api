@@ -3,7 +3,7 @@ package es.in2.wallet.api.broker.adapter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.broker.exception.JsonReadingException;
+import es.in2.wallet.api.exception.JsonReadingException;
 import es.in2.wallet.api.broker.properties.BrokerProperties;
 import es.in2.wallet.api.broker.service.GenericBrokerService;
 import jakarta.annotation.PostConstruct;

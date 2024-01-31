@@ -1,4 +1,4 @@
-package es.in2.wallet.api.broker.exception;
+package es.in2.wallet.api.exception;
 
 public class JsonReadingException extends RuntimeException {
 

@@ -1,5 +1,7 @@
 package es.in2.wallet;
 
+import com.azure.spring.cloud.autoconfigure.implementation.appconfiguration.AzureAppConfigurationAutoConfiguration;
+import com.azure.spring.cloud.autoconfigure.implementation.keyvault.secrets.AzureKeyVaultSecretAutoConfiguration;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -8,7 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
 
-@SpringBootApplication
+@SpringBootApplication(exclude = { AzureAppConfigurationAutoConfiguration.class, AzureKeyVaultSecretAutoConfiguration.class})
 @ConfigurationPropertiesScan
 public class WalletServerApplication {
 
