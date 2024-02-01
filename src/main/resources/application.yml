@@ -1,6 +1,3 @@
-vault:
-  secret-provider:
-    name: hashicorp #hashicorp #azure
 # Spring Configuration
 spring:
   application:
@@ -9,19 +6,19 @@ spring:
     web-application-type: reactive
   cloud:
     vault:
-      host: vault
-      port: 8201
+      host: example
+      port: 8200
       authentication: token
-      token: hvs.wv19IHK4jWgIzUlgDTctA7O5
+      token: 1234
       scheme: http
       kv:
         enabled: true
     azure:
       keyvault:
         secret:
-          endpoint:
+          endpoint: https://example
       appconfiguration:
-        endpoint:
+        endpoint: https://example
 
 # Spring Logging Configuration
 logging:
@@ -76,4 +73,7 @@ broker:
   paths:
     entities: "/ngsi-ld/v1/entities"
 
+vault:
+  secret-provider:
+    name: hashicorp #hashicorp #azure
 
