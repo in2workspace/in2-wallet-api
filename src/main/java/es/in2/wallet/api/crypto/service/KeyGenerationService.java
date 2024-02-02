@@ -5,5 +5,5 @@ import reactor.core.publisher.Mono;
 import java.security.KeyPair;
 
 public interface KeyGenerationService {
-    Mono<KeyPair> generateECKeyPair();
+    Mono<KeyPair> generateES256r1ECKeyPair();
 }

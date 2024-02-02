@@ -14,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.UUID;
 
 import static es.in2.wallet.api.util.MessageUtils.PROCESS_ID;
@@ -52,8 +51,8 @@ public class CryptoController {
         String processId = UUID.randomUUID().toString();
         MDC.put(PROCESS_ID, processId);
         log.info("ProcessID: {} - Creating did:key...", processId);
-        return keyGenerationService.generateECKeyPair()
-                .flatMap(didKeyGeneratorService::generateDidFromKeyPair)
+        return keyGenerationService.generateES256r1ECKeyPair()
+                .flatMap(didKeyGeneratorService::generateDidKeyJwkJcsPubWithFromKeyPair)
                 .doFinally(signalType -> MDC.remove(PROCESS_ID));
 
     }

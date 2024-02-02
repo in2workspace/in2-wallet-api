@@ -9,5 +9,8 @@ public class MessageUtils {
     public static final String ENTITY_PREFIX = "/urn:entities:userId:";
     public static final String ATTRIBUTES = "/attrs:";
     public static final String PROCESS_ID = "ProcessId";
+    public static final long MSB = 0x80L;
+    public static final long LSB = 0x7FL;
+    public static final long MSBALL = 0xFFFFFF80L;
 
 }
