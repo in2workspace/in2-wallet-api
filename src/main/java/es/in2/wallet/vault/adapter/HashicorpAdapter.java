@@ -9,12 +9,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import org.springframework.vault.core.VaultOperations;
+import org.springframework.vault.core.ReactiveVaultOperations;
 import reactor.core.publisher.Mono;
 
 import javax.security.auth.login.CredentialNotFoundException;
 
-import static es.in2.wallet.api.util.MessageUtils.PROCESS_ID;
+import java.util.Map;
+
+import static es.in2.wallet.api.util.MessageUtils.*;
 
 @Component
 @Slf4j
@@ -22,28 +24,35 @@ import static es.in2.wallet.api.util.MessageUtils.PROCESS_ID;
 @ConditionalOnProperty(name = "vault.secret-provider.name", havingValue = "hashicorp")
 public class HashicorpAdapter implements GenericVaultService {
     private final ObjectMapper objectMapper;
-    private final VaultOperations vaultOperations;
+    private final ReactiveVaultOperations vaultOperations;
     @Override
-    public Mono<Void> saveSecret(String key, String secret) {
+    public Mono<Void> saveSecret(Map<String, String> secrets) {
         String processId = MDC.get(PROCESS_ID);
-        return Mono.fromCallable(() -> vaultOperations.write("kv/" + key,
-                        VaultSecretData.builder().privateKey(secret).build()))
-                .then()
+        return vaultOperations.write("kv/" + secrets.get("did"),
+                        VaultSecretData.builder()
+                                .privateKey(secrets.get(PRIVATE_KEY_TYPE))
+                                .publicKey(secrets.get(PUBLIC_KEY_TYPE))
+                                .build())
                 .doOnSuccess(voidValue -> log.debug("ProcessID: {} - Secret saved successfully", processId))
-                .onErrorResume(Exception.class, Mono::error);
+                .doOnError(error -> log.error("ProcessID: {} - Error saving secret: {}", processId, error.getMessage(), error))
+                .then();
     }
-
     @Override
-    public Mono<String> getSecretByKey(String key) {
+    public Mono<String> getSecretByKey(String key, String type) {
         String processId = MDC.get(PROCESS_ID);
-        return Mono.fromCallable(() -> vaultOperations.read("kv/" + key, Object.class))
+        return vaultOperations.read("kv/" + key)
                 .flatMap(response -> {
                     try {
-                        // Read data from response to get the secret
-                        if (response != null && response.getData() != null) {
+                        if (response.getData() != null) {
                             String json = objectMapper.writeValueAsString(response.getData());
-                            String secret = objectMapper.readValue(json, VaultSecretData.class).privateKey();
-                            return Mono.just(secret);
+                            VaultSecretData secret = objectMapper.readValue(json, VaultSecretData.class);
+                            if (PRIVATE_KEY_TYPE.equals(type)) {
+                                return Mono.just(secret.privateKey());
+                            } else if (PUBLIC_KEY_TYPE.equals(type)) {
+                                return Mono.just(secret.publicKey());
+                            } else {
+                                return Mono.error(new IllegalStateException("Invalid type"));
+                            }
                         } else {
                             return Mono.error(new CredentialNotFoundException("Secret not found"));
                         }
@@ -58,9 +67,11 @@ public class HashicorpAdapter implements GenericVaultService {
     @Override
     public Mono<Void> deleteSecretByKey(String key) {
         String processId = MDC.get(PROCESS_ID);
-        return Mono.fromRunnable(() -> vaultOperations.delete("kv/" + key))
-                .then()
+        return vaultOperations.delete("kv/" + key)
                 .doOnSuccess(voidValue -> log.debug("ProcessID: {} - Secret deleted successfully", processId))
-                .onErrorResume(Exception.class, Mono::error);
+                .onErrorResume(Exception.class, e -> {
+                    log.error("ProcessID: {} - Error deleting secret: {}", processId, e.getMessage(), e);
+                    return Mono.error(e);
+                });
     }
 }

@@ -14,7 +14,13 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.security.KeyPair;
+import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
+import java.util.HashMap;
+import java.util.Map;
+
+import static es.in2.wallet.api.util.MessageUtils.PRIVATE_KEY_TYPE;
+import static es.in2.wallet.api.util.MessageUtils.PUBLIC_KEY_TYPE;
 
 
 @Service
@@ -22,19 +28,27 @@ import java.security.interfaces.ECPublicKey;
 public class DidKeyGeneratorServiceImpl implements DidKeyGeneratorService {
 
     @Override
-    public Mono<String> generateDidKeyJwkJcsPubWithFromKeyPair(KeyPair keyPair) {
-        return Mono.just(generateDidKeyJwkJcsPub(keyPair));
+    public Mono<Map<String, String>> generateDidKeyJwkJcsPubWithFromKeyPair(KeyPair keyPair) {
+        Map<String, String> result = new HashMap<>();
+        result.put("did", generateDidKeyJwkJcsPub(keyPair));
+        result.put(PUBLIC_KEY_TYPE , getPublicKeyJwkString((ECPublicKey) keyPair.getPublic()));
+        result.put(PRIVATE_KEY_TYPE , getPrivateKeyJwkString(keyPair));
+        return Mono.just(result);
     }
 
     @Override
-    public Mono<String> generateDidKeyFromKeyPair(KeyPair keyPair) {
-        return Mono.just(generateDidKey(keyPair));
+    public Mono<Map<String, String>> generateDidKeyFromKeyPair(KeyPair keyPair) {
+        Map<String, String> result = new HashMap<>();
+        result.put("did", generateDidKey(keyPair));
+        result.put(PUBLIC_KEY_TYPE , getPublicKeyJwkString((ECPublicKey) keyPair.getPublic()));
+        result.put(PRIVATE_KEY_TYPE , getPrivateKeyJwkString(keyPair));
+        return Mono.just(result);
     }
 
     // Generates a DID Key using JWK with JCS Public format
     private String generateDidKeyJwkJcsPub(KeyPair keyPair){
 
-        byte[] jwkPubKeyBytes = getJwkPubKeyRequiredMembersBytes((ECPublicKey) keyPair.getPublic());
+        byte[] jwkPubKeyBytes = getJwkPubKeyRequiredMembersBytes(getPublicKeyJwkString((ECPublicKey) keyPair.getPublic()));
         int jwkJcsPubMultiCodecKeyCode = 0xeb51;
         String multiBase58Btc = convertRawKeyToMultiBase58Btc(jwkPubKeyBytes,jwkJcsPubMultiCodecKeyCode);
         return "did:key:z" + multiBase58Btc;
@@ -48,12 +62,26 @@ public class DidKeyGeneratorServiceImpl implements DidKeyGeneratorService {
         return "did:key:z" + multiBase58Btc;
     }
 
+    private String getPublicKeyJwkString(ECPublicKey publicKey) {
+        ECKey jwk = new ECKey.Builder(Curve.P_256, publicKey).build();
+        return jwk.toJSONString();
+    }
+
+    private String getPrivateKeyJwkString(KeyPair keyPair) {
+        ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
+        ECPrivateKey privateKey = (ECPrivateKey) keyPair.getPrivate();
+
+        ECKey jwk = new ECKey.Builder(Curve.P_256, publicKey)
+                .privateKey(privateKey)
+                .build();
+
+        return jwk.toJSONString();
+    }
+
+
 
     // Obtains required bytes of the public key for JWK
-    private byte[] getJwkPubKeyRequiredMembersBytes(ECPublicKey publicKey){
-        ECKey jwk = new ECKey.Builder(Curve.P_256, publicKey).build();
-
-        String jwkJsonString = jwk.toJSONString();
+    private byte[] getJwkPubKeyRequiredMembersBytes(String jwkJsonString){
         try {
             JsonCanonicalizer jsonCanonicalizer = new JsonCanonicalizer(jwkJsonString);
             return jsonCanonicalizer.getEncodedUTF8();
@@ -71,7 +99,7 @@ public class DidKeyGeneratorServiceImpl implements DidKeyGeneratorService {
     // Converts raw public key bytes into a multibase58 string
    private String convertRawKeyToMultiBase58Btc(byte[] publicKey, int code) {
         UVarInt codeVarInt = new UVarInt(code);
-        
+
        // Calculate the total length of the resulting byte array
        int totalLength = publicKey.length + codeVarInt.getLength();
 

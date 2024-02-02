@@ -73,6 +73,7 @@ dependencies {
 
 	// Key Vault
 	implementation 'org.springframework.cloud:spring-cloud-starter-vault-config'
+	testImplementation 'org.springframework.data:spring-data-keyvalue:3.1.5'
 
 	// Bounty Castle
 	implementation("org.bouncycastle:bcprov-jdk18on:1.76")

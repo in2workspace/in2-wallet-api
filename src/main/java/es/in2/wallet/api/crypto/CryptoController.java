@@ -2,6 +2,7 @@ package es.in2.wallet.api.crypto;
 
 import es.in2.wallet.api.crypto.service.DidKeyGeneratorService;
 import es.in2.wallet.api.crypto.service.KeyGenerationService;
+import es.in2.wallet.vault.service.VaultService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -11,7 +12,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -27,6 +31,7 @@ public class CryptoController {
 
     private final DidKeyGeneratorService didKeyGeneratorService;
     private final KeyGenerationService keyGenerationService;
+    private final VaultService vaultService;
 
     @PostMapping(path = "/key")
     @ResponseStatus(HttpStatus.OK)
@@ -46,13 +51,14 @@ public class CryptoController {
                     content = @Content(mediaType = "application/json")
             )
     })
-    public Mono<String> createDidKey(){
+    public Mono<Void> createDidKey(){
         // Create a unique ID for the process
         String processId = UUID.randomUUID().toString();
         MDC.put(PROCESS_ID, processId);
         log.info("ProcessID: {} - Creating did:key...", processId);
         return keyGenerationService.generateES256r1ECKeyPair()
                 .flatMap(didKeyGeneratorService::generateDidKeyJwkJcsPubWithFromKeyPair)
+                .flatMap(vaultService::saveSecret)
                 .doFinally(signalType -> MDC.remove(PROCESS_ID));
 
     }

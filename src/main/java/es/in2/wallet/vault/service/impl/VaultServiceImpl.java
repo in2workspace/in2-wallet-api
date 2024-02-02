@@ -6,6 +6,8 @@ import es.in2.wallet.vault.util.VaultFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.Map;
+
 @Service
 public class VaultServiceImpl implements VaultService {
 
@@ -15,13 +17,13 @@ public class VaultServiceImpl implements VaultService {
         this.vaultService = vaultFactory.getVaultAdapter();
     }
 
-    public Mono<Void> saveSecret(String key, String secret) {
-        return vaultService.saveSecret(key,secret);
+    public Mono<Void> saveSecret(Map<String, String> secrets) {
+        return vaultService.saveSecret(secrets);
     }
 
 
-    public Mono<String> getSecretByKey(String key) {
-        return vaultService.getSecretByKey(key);
+    public Mono<String> getSecretByKey(String key, String type) {
+        return vaultService.getSecretByKey(key,type);
     }
 
 

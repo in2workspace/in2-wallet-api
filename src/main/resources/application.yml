@@ -6,10 +6,10 @@ spring:
     web-application-type: reactive
   cloud:
     vault:
-      host: example
-      port: 8200
+      host: localhost
+      port: 8201
       authentication: token
-      token: 1234
+      token: hvs.wv19IHK4jWgIzUlgDTctA7O5
       scheme: http
       kv:
         enabled: true
@@ -63,7 +63,7 @@ springdoc:
 
 # Server Configuration
 server:
-  port: 8080
+  port: 8081
 
 # Context Broker Configuration
 broker:
