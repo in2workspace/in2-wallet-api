@@ -6,10 +6,10 @@ spring:
     web-application-type: reactive
   cloud:
     vault:
-      host: localhost
-      port: 8201
+      host: example
+      port: 8200
       authentication: token
-      token: hvs.wv19IHK4jWgIzUlgDTctA7O5
+      token: 1234
       scheme: http
       kv:
         enabled: true
@@ -63,7 +63,7 @@ springdoc:
 
 # Server Configuration
 server:
-  port: 8081
+  port: 8080
 
 # Context Broker Configuration
 broker:
@@ -76,48 +76,3 @@ broker:
 vault:
   secret-provider:
     name: hashicorp #hashicorp #azure
-
-# Spring Logging Configuration
-logging:
-  pattern:
-    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
-  level:
-    es.in2.desmos: INFO
-
-# Spring Management Configuration - Actuator
-management:
-  endpoints:
-    enabled-by-default: false
-    web:
-      exposure:
-        include: health, info, loggers, metrics, prometheus
-      base-path: /
-      path-mapping:
-        health: health
-        info: info
-        loggers: loggers
-        metrics: metrics
-        prometheus: prometheus
-  endpoint:
-    health:
-      enabled: true
-      show-details: always
-    loggers:
-      enabled: true
-    metrics:
-      enabled: true
-    prometheus:
-      enabled: true
-
-# SpringDoc Configuration - OpenAPI 3.0 Documentation & Swagger UI
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    tags-sorter: alpha
-    operations-sorter: method
-
-# Server Configuration
-server:
-  port: 8080

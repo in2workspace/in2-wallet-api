@@ -10,7 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
 
-@SpringBootApplication(exclude = { AzureAppConfigurationAutoConfiguration.class, AzureKeyVaultSecretAutoConfiguration.class})
+@SpringBootApplication
 @ConfigurationPropertiesScan
 public class WalletServerApplication {
 
