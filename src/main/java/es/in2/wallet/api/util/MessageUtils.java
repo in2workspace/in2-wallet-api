@@ -22,5 +22,6 @@ public class MessageUtils {
     public static final Pattern PROOF_DOCUMENT_PATTERN = Pattern.compile("proof");
     public static final Pattern VP_DOCUMENT_PATTERN = Pattern.compile("vp");
     public static final Pattern VC_DOCUMENT_PATTERN = Pattern.compile("vc");
+    public static final String JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1 = "https://www.w3.org/2018/credentials/v1";
 
 }
