@@ -14,6 +14,7 @@ public class MessageUtils {
     public static final String PROCESS_ID = "ProcessId";
     public static final String PRIVATE_KEY_TYPE = "privateKey";
     public static final String PUBLIC_KEY_TYPE = "publicKey";
+    public static final String DID = "did";
     public static final long MSB = 0x80L;
     public static final long LSB = 0x7FL;
     public static final long MSBALL = 0xFFFFFF80L;

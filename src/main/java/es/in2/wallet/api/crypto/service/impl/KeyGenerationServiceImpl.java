@@ -14,6 +14,7 @@ import java.security.spec.ECGenParameterSpec;
 @Service
 @Slf4j
 public class KeyGenerationServiceImpl implements KeyGenerationService {
+    @Override
     public Mono<KeyPair> generateES256r1ECKeyPair() {
         return Mono.fromCallable(() -> {
             try {

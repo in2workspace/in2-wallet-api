@@ -35,6 +35,7 @@ public class HashicorpAdapter implements GenericVaultService {
                                 .build())
                 .doOnSuccess(voidValue -> log.debug("ProcessID: {} - Secret saved successfully", processId))
                 .doOnError(error -> log.error("ProcessID: {} - Error saving secret: {}", processId, error.getMessage(), error))
+                .onErrorResume(Exception.class, Mono::error)
                 .then();
     }
     @Override
@@ -61,7 +62,8 @@ public class HashicorpAdapter implements GenericVaultService {
                     }
                 })
                 .doOnSuccess(voidValue -> log.debug("ProcessID: {} - Secret retrieved successfully", processId))
-                .doOnError(error -> log.error("Error retrieving secret: {}", error.getMessage(), error));
+                .doOnError(error -> log.error("Error retrieving secret: {}", error.getMessage(), error))
+                .onErrorResume(Exception.class, Mono::error);
     }
 
     @Override

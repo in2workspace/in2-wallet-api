@@ -14,9 +14,6 @@ public class BrokerServiceImpl implements BrokerService {
     public BrokerServiceImpl(BrokerFactory brokerFactory) {
         this.brokerAdapter = brokerFactory.getBrokerAdapter();
     }
-    public Mono<Boolean> checkIfEntityAlreadyExist(String processId, String userId) {
-        return brokerAdapter.checkIfEntityAlreadyExist(processId, userId);
-    }
 
     public Mono<Void> postEntity(String processId, String authToken, String requestBody) {
         return brokerAdapter.postEntity(processId, authToken, requestBody);

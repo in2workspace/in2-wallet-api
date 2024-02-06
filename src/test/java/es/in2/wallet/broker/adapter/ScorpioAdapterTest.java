@@ -1,5 +1,7 @@
 package es.in2.wallet.broker.adapter;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.broker.properties.BrokerPathProperties;
 import es.in2.wallet.broker.properties.BrokerProperties;
 import okhttp3.mockwebserver.MockResponse;
@@ -27,18 +29,20 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class OrionLdAdapterTest {
+class ScorpioAdapterTest {
 
     @Mock
     private BrokerProperties brokerProperties;
     @Mock
     private BrokerPathProperties brokerPathProperties;
+    @Mock
+    private ObjectMapper objectMapper;
 
     @Mock
     private MockWebServer mockWebServer;
 
     @InjectMocks
-    private OrionLdAdapter orionLdAdapter;
+    private ScorpioAdapter scorpioAdapter;
 
     @BeforeEach
     void setUp() throws IOException, NoSuchFieldException, IllegalAccessException {
@@ -51,7 +55,7 @@ class OrionLdAdapterTest {
         mockWebServer.start();
 
         // Initialize OrionLdAdapter with mocked properties
-        orionLdAdapter = new OrionLdAdapter(brokerProperties);
+        scorpioAdapter = new ScorpioAdapter(objectMapper,brokerProperties);
 
         // Create a WebClient that points to the MockWebServer
         WebClient webClient = WebClient.builder()
@@ -59,9 +63,9 @@ class OrionLdAdapterTest {
                 .build();
 
         // Use reflection to inject the WebClient into OrionLdAdapter
-        Field webClientField = OrionLdAdapter.class.getDeclaredField("webClient");
+        Field webClientField = ScorpioAdapter.class.getDeclaredField("webClient");
         webClientField.setAccessible(true);
-        webClientField.set(orionLdAdapter, webClient);
+        webClientField.set(scorpioAdapter, webClient);
     }
 
     @AfterEach
@@ -69,19 +73,22 @@ class OrionLdAdapterTest {
         // Shut down the server after each test
         mockWebServer.shutdown();
     }
-
     @Test
-    void postEntityTest() throws Exception {
+    void postEntityTestWithApplicationJson() throws Exception {
         // Prepare test data
         String processId = "processId123";
         String authToken = "authToken123";
         String requestBody = "{\"key\":\"value\"}";
 
+        ObjectMapper objectMapper1 = new ObjectMapper();
+        JsonNode jsonNode = objectMapper1.readTree(requestBody);
+
+        when(objectMapper.readTree(requestBody)).thenReturn(jsonNode);
         // Enqueue a mock response for the POST request
         mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
         // Test the postEntity method
-        StepVerifier.create(orionLdAdapter.postEntity(processId, authToken, requestBody))
+        StepVerifier.create(scorpioAdapter.postEntity(processId, authToken, requestBody))
                 .verifyComplete(); // Verify the request completes successfully
 
         // Verify the POST request was made correctly
@@ -89,6 +96,32 @@ class OrionLdAdapterTest {
         assertEquals("/entities", recordedRequest.getPath());
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
+        assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
+    }
+
+    @Test
+    void postEntityTestWithApplicationJsonLd() throws Exception {
+        // Prepare test data
+        String processId = "processId123";
+        String authToken = "authToken123";
+        String requestBody = "{\"key\":\"value\", \"@context\": \"value\"}";
+
+        ObjectMapper objectMapper1 = new ObjectMapper();
+        JsonNode jsonNode = objectMapper1.readTree(requestBody);
+
+        when(objectMapper.readTree(requestBody)).thenReturn(jsonNode);
+        // Enqueue a mock response for the POST request
+        mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+
+        // Test the postEntity method
+        StepVerifier.create(scorpioAdapter.postEntity(processId, authToken, requestBody))
+                .verifyComplete(); // Verify the request completes successfully
+
+        // Verify the POST request was made correctly
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/entities", recordedRequest.getPath());
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals(MediaType.valueOf("application/ld+json").toString(), recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
     }
 
@@ -105,7 +138,7 @@ class OrionLdAdapterTest {
                 .setBody(expectedResponse));
 
         // Test the getEntityById method
-        StepVerifier.create(orionLdAdapter.getEntityById(processId, userId))
+        StepVerifier.create(scorpioAdapter.getEntityById(processId, userId))
                 .expectNextMatches(response -> response.contains("\"id\":\"entityId\"")) // Verify the response content
                 .verifyComplete();
 
@@ -116,17 +149,21 @@ class OrionLdAdapterTest {
     }
 
     @Test
-    void updateEntityTest() throws Exception {
+    void updateEntityTestWithApplicationJson() throws Exception {
         // Prepare test data and mock response
         String userId = "userId123";
         String processId = "processId123";
         String requestBody = "{\"newKey\":\"newValue\"}";
 
+        ObjectMapper objectMapper1 = new ObjectMapper();
+        JsonNode jsonNode = objectMapper1.readTree(requestBody);
+
+        when(objectMapper.readTree(requestBody)).thenReturn(jsonNode);
         // Enqueue a mock response for the PATCH request
         mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
         // Test the updateEntity method
-        StepVerifier.create(orionLdAdapter.updateEntity(processId, userId, requestBody))
+        StepVerifier.create(scorpioAdapter.updateEntity(processId, userId, requestBody))
                 .verifyComplete(); // Verify the request completes successfully
 
         // Verify the PATCH request was made correctly
@@ -136,6 +173,31 @@ class OrionLdAdapterTest {
         assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
     }
+
+    @Test
+    void updateEntityTestWithApplicationJsonLd() throws Exception {
+        // Prepare test data and mock response
+        String userId = "userId123";
+        String processId = "processId123";
+
+        String requestBody = "{\"key\":\"value\", \"@context\": \"value\"}";
+
+        ObjectMapper objectMapper1 = new ObjectMapper();
+        JsonNode jsonNode = objectMapper1.readTree(requestBody);
+
+        when(objectMapper.readTree(requestBody)).thenReturn(jsonNode);
+        // Enqueue a mock response for the PATCH request
+        mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+
+        // Test the updateEntity method
+        StepVerifier.create(scorpioAdapter.updateEntity(processId, userId, requestBody))
+                .verifyComplete(); // Verify the request completes successfully
+
+        // Verify the PATCH request was made correctly
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/entities" + ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
+        assertEquals("PATCH", recordedRequest.getMethod());
+        assertEquals(MediaType.valueOf("application/ld+json").toString(), recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
+        assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
+    }
 }
-
-

@@ -19,8 +19,7 @@ import java.security.interfaces.ECPublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.MessageUtils.PRIVATE_KEY_TYPE;
-import static es.in2.wallet.api.util.MessageUtils.PUBLIC_KEY_TYPE;
+import static es.in2.wallet.api.util.MessageUtils.*;
 
 
 @Service
@@ -30,7 +29,7 @@ public class DidKeyGeneratorServiceImpl implements DidKeyGeneratorService {
     @Override
     public Mono<Map<String, String>> generateDidKeyJwkJcsPubWithFromKeyPair(KeyPair keyPair) {
         Map<String, String> result = new HashMap<>();
-        result.put("did", generateDidKeyJwkJcsPub(keyPair));
+        result.put(DID, generateDidKeyJwkJcsPub(keyPair));
         result.put(PUBLIC_KEY_TYPE , getPublicKeyJwkString((ECPublicKey) keyPair.getPublic()));
         result.put(PRIVATE_KEY_TYPE , getPrivateKeyJwkString(keyPair));
         return Mono.just(result);
@@ -39,7 +38,7 @@ public class DidKeyGeneratorServiceImpl implements DidKeyGeneratorService {
     @Override
     public Mono<Map<String, String>> generateDidKeyFromKeyPair(KeyPair keyPair) {
         Map<String, String> result = new HashMap<>();
-        result.put("did", generateDidKey(keyPair));
+        result.put(DID, generateDidKey(keyPair));
         result.put(PUBLIC_KEY_TYPE , getPublicKeyJwkString((ECPublicKey) keyPair.getPublic()));
         result.put(PRIVATE_KEY_TYPE , getPrivateKeyJwkString(keyPair));
         return Mono.just(result);

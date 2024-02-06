@@ -5,6 +5,7 @@ import es.in2.wallet.broker.service.GenericBrokerService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -27,13 +28,6 @@ public class OrionLdAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<Boolean> checkIfEntityAlreadyExist(String processId, String userId) {
-        return getEntityById(processId, userId)
-                .map(entity -> true)
-                .onErrorReturn(false);
-    }
-
-    @Override
     public Mono<Void> postEntity(String processId, String authToken, String requestBody) {
         return webClient.post()
                 .uri(brokerProperties.paths().entities())
@@ -51,7 +45,15 @@ public class OrionLdAdapter implements GenericBrokerService {
                 .uri(brokerProperties.paths().entities() + ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .bodyToMono(String.class);
+                .onStatus(status -> status != null && status.is4xxClientError(), response -> {
+                    if (response.statusCode().equals(HttpStatus.NOT_FOUND)) {
+                        return Mono.empty();
+                    }
+                    return response.createException()
+                            .flatMap(Mono::error);
+                })
+                .bodyToMono(String.class)
+                .onErrorResume(Exception.class, Mono::error);
     }
 
     @Override
