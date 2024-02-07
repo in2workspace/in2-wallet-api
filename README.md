@@ -12,7 +12,7 @@
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=in2workspace_credential-issuer&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=in2workspace_credential-issuer)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=in2workspace_credential-issuer&metric=ncloc)](https://sonarcloud.io/dashboard?id=in2workspace_credential-issuer)
 
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=in2workspace_credential-issuer&metric=coverage)](https://sonarcloud.io/summary/new_code?id=in2workspace_credential-issuer)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=in2workspace_wallet-server&metric=coverage)](https://sonarcloud.io/summary/new_code?id=in2workspace_wallet-server)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=in2workspace_credential-issuer&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=in2workspace_credential-issuer)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=in2workspace_credential-issuer&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=in2workspace_credential-issuer)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=in2workspace_credential-issuer&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=in2workspace_credential-issuer)
