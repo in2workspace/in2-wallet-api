@@ -21,7 +21,7 @@ import static es.in2.wallet.api.util.MessageUtils.*;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "vault.secret-provider.name", havingValue = "hashicorp")
+@ConditionalOnProperty(name = "vault.provider.name", havingValue = "hashicorp")
 public class HashicorpAdapter implements GenericVaultService {
 
     private final ObjectMapper objectMapper;

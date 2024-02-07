@@ -6,17 +6,17 @@ spring:
     web-application-type: reactive
   cloud:
     vault:
-      host:
-      port:
-      authentication:
-      token:
-      scheme:
+      host: example
+      port: 8200
+      authentication: token
+      token: 1234
+      scheme: http
       kv:
         enabled: true
     azure:
       keyvault:
         secret:
-          endpoint:
+          endpoint: https://example
 
 # Spring Logging Configuration
 logging:

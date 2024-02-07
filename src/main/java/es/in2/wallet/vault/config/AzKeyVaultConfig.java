@@ -16,7 +16,7 @@ public class AzKeyVaultConfig {
     private final AzKeyVaultProperties azureKeyVaultProperties;
 
     @Bean
-    @ConditionalOnProperty(name = "vault.secret-provider.name", havingValue = "azure")
+    @ConditionalOnProperty(name = "vault.provider.name", havingValue = "azure")
     public SecretClient secretClient() {
         return new SecretClientBuilder()
                 .vaultUrl(azureKeyVaultProperties.secret().endpoint())

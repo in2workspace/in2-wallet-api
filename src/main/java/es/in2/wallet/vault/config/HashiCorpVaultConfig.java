@@ -14,7 +14,7 @@ public class HashiCorpVaultConfig {
     private final HashiCorpVaultProperties hashiCorpVaultProperties;
 
     @Bean
-    @ConditionalOnProperty(name = "vault.secret-provider.name", havingValue = "hashicorp")
+    @ConditionalOnProperty(name = "vault.provider.name", havingValue = "hashicorp")
     public VaultProperties vaultProperties() {
         VaultProperties vaultProperties = new VaultProperties();
         vaultProperties.setAuthentication(VaultProperties.AuthenticationMethod .TOKEN);
