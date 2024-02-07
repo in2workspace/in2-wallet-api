@@ -6,10 +6,10 @@ spring:
     web-application-type: reactive
   cloud:
     vault:
-      host: example
-      port: 8200
+      host: localhost
+      port: 8201
       authentication: token
-      token: 1234
+      token: hvs.V2MAmEtjgbOYfpbIYLA5QXCf
       scheme: http
       kv:
         enabled: true
@@ -74,3 +74,7 @@ broker:
 vault:
   provider:
     name: hashicorp #hashicorp #azure
+
+auth-server:
+  domain: https://issuerkeycloak.demo.in2.es/realms/EAAProvider
+  token-endpoint: https://issuerkeycloak.demo.in2.es/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token

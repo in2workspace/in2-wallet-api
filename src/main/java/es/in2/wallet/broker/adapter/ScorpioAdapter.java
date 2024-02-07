@@ -40,7 +40,9 @@ public class ScorpioAdapter implements GenericBrokerService {
                 .contentType(mediaType)
                 .bodyValue(requestBody)
                 .retrieve()
-                .bodyToMono(Void.class);
+                .bodyToMono(Void.class)
+                .doOnSuccess(v -> log.debug("SAVED"))
+                .onErrorResume(Exception.class, Mono::error);
     }
 
     @Override
@@ -57,7 +59,8 @@ public class ScorpioAdapter implements GenericBrokerService {
                             .flatMap(Mono::error);
                 })
                 .bodyToMono(String.class)
-                .onErrorResume(Exception.class, Mono::error);
+                .doOnNext(body -> log.info("Response body: {}", body))
+                .doOnError(error -> log.error("Error occurred: ", error));
     }
 
 

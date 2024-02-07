@@ -1,9 +1,10 @@
-package es.in2.wallet.api.crypto.service.impl;
+package es.in2.wallet.api.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.wallet.api.crypto.domain.VerifiablePresentation;
+import es.in2.wallet.api.model.VerifiablePresentation;
+import es.in2.wallet.api.service.PresentationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,13 +17,15 @@ import java.util.Map;
 import java.util.UUID;
 
 import static es.in2.wallet.api.util.MessageUtils.JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1;
+import static es.in2.wallet.api.util.MessageUtils.VERIFIABLE_PRESENTATION;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PresentationServiceImpl {
+public class PresentationServiceImpl implements PresentationService {
     private final ObjectMapper objectMapper;
 
+    @Override
     public Mono<String> createUnsignedVerifiablePresentation(String processId, List<String> verifiableCredentialsList) {
         // Get the subject DID from the first credential in the list
         return getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsList)
@@ -70,7 +73,7 @@ public class PresentationServiceImpl {
                     .id(id)
                     .holder(holderDid)
                     .context(List.of(JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1))
-                    .type(List.of("VerifiablePresentation"))
+                    .type(List.of(VERIFIABLE_PRESENTATION))
                     .verifiableCredential(vcs)
                     .build();
 
@@ -86,7 +89,9 @@ public class PresentationServiceImpl {
                     .jwtID(UUID.randomUUID().toString())
                     .claim("vp", vpParsed)
                     .build();
+            log.debug(payload.toString());
             return payload.toString();
+
         });
     }
 }
