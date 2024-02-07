@@ -2,7 +2,7 @@ package es.in2.wallet.vault.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.api.exception.ParseErrorException;
-import es.in2.wallet.vault.domain.VaultSecretData;
+import es.in2.wallet.vault.model.VaultSecretData;
 import es.in2.wallet.vault.service.GenericVaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,10 +21,12 @@ import static es.in2.wallet.api.util.MessageUtils.*;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "vault.secret-provider.name", havingValue = "hashicorp")
+@ConditionalOnProperty(name = "vault.provider.name", havingValue = "hashicorp")
 public class HashicorpAdapter implements GenericVaultService {
+
     private final ObjectMapper objectMapper;
     private final ReactiveVaultOperations vaultOperations;
+
     @Override
     public Mono<Void> saveSecret(Map<String, String> secrets) {
         String processId = MDC.get(PROCESS_ID);

@@ -17,8 +17,6 @@ spring:
       keyvault:
         secret:
           endpoint: https://example
-      appconfiguration:
-        endpoint: https://example
 
 # Spring Logging Configuration
 logging:
@@ -74,5 +72,5 @@ broker:
     entities: "/ngsi-ld/v1/entities"
 
 vault:
-  secret-provider:
+  provider:
     name: hashicorp #hashicorp #azure
