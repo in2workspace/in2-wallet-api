@@ -22,7 +22,8 @@ import static es.in2.wallet.api.util.MessageUtils.*;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "vault.secret-provider.name", havingValue = "azure")
+
+@ConditionalOnProperty(name = "vault.provider.name", havingValue = "azure")
 public class AzKeyVaultAdapter implements GenericVaultService {
 
     private final SecretClient secretClient;
