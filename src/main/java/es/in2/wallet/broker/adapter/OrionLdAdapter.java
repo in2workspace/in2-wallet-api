@@ -1,6 +1,6 @@
 package es.in2.wallet.broker.adapter;
 
-import es.in2.wallet.broker.properties.BrokerProperties;
+import es.in2.wallet.broker.config.properties.BrokerProperties;
 import es.in2.wallet.broker.service.GenericBrokerService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

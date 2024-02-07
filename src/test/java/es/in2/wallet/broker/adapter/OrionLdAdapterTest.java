@@ -1,7 +1,7 @@
 package es.in2.wallet.broker.adapter;
 
-import es.in2.wallet.broker.properties.BrokerPathProperties;
-import es.in2.wallet.broker.properties.BrokerProperties;
+import es.in2.wallet.broker.config.properties.BrokerPathProperties;
+import es.in2.wallet.broker.config.properties.BrokerProperties;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
