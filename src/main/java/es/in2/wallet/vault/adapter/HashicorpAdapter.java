@@ -2,7 +2,7 @@ package es.in2.wallet.vault.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.api.exception.ParseErrorException;
-import es.in2.wallet.vault.domain.VaultSecretData;
+import es.in2.wallet.vault.model.VaultSecretData;
 import es.in2.wallet.vault.service.GenericVaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +23,10 @@ import static es.in2.wallet.api.util.MessageUtils.*;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "vault.secret-provider.name", havingValue = "hashicorp")
 public class HashicorpAdapter implements GenericVaultService {
+
     private final ObjectMapper objectMapper;
     private final ReactiveVaultOperations vaultOperations;
+
     @Override
     public Mono<Void> saveSecret(Map<String, String> secrets) {
         String processId = MDC.get(PROCESS_ID);
@@ -38,6 +40,7 @@ public class HashicorpAdapter implements GenericVaultService {
                 .onErrorResume(Exception.class, Mono::error)
                 .then();
     }
+
     @Override
     public Mono<String> getSecretByKey(String key, String type) {
         String processId = MDC.get(PROCESS_ID);
@@ -76,4 +79,5 @@ public class HashicorpAdapter implements GenericVaultService {
                     return Mono.error(e);
                 });
     }
+
 }

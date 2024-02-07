@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.api.exception.JsonReadingException;
-import es.in2.wallet.broker.properties.BrokerProperties;
+import es.in2.wallet.broker.config.properties.BrokerProperties;
 import es.in2.wallet.broker.service.GenericBrokerService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
