@@ -4,13 +4,28 @@ spring:
     name: "wallet-server"
   main:
     web-application-type: reactive
+  cloud:
+    vault:
+      host: example
+      port: 8200
+      authentication: token
+      token: 1234
+      scheme: http
+      kv:
+        enabled: true
+    azure:
+      keyvault:
+        secret:
+          endpoint: https://example
+      appconfiguration:
+        endpoint: https://example
 
 # Spring Logging Configuration
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
-    es.in2.desmos: INFO
+    es.in2.wallet: INFO
 
 # Spring Management Configuration - Actuator
 management:
@@ -49,3 +64,15 @@ springdoc:
 # Server Configuration
 server:
   port: 8080
+
+# Context Broker Configuration
+broker:
+  provider: "scorpio"
+  externalDomain: "http://localhost:9090"
+  internalDomain: "http://localhost:9090"
+  paths:
+    entities: "/ngsi-ld/v1/entities"
+
+vault:
+  secret-provider:
+    name: hashicorp #hashicorp #azure
