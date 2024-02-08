@@ -1,7 +1,7 @@
 package es.in2.wallet.api.crypto.service;
 
-import es.in2.wallet.api.crypto.service.impl.KeyGenerationServiceImpl;
 import es.in2.wallet.api.exception.KeyPairGenerationError;
+import es.in2.wallet.api.service.impl.KeyGenerationServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.springframework.boot.test.context.SpringBootTest;

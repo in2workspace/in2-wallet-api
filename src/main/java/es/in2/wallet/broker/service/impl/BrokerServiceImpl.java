@@ -6,6 +6,8 @@ import es.in2.wallet.broker.util.BrokerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
+
 @Service
 public class BrokerServiceImpl implements BrokerService {
 
@@ -19,7 +21,7 @@ public class BrokerServiceImpl implements BrokerService {
         return brokerAdapter.postEntity(processId, authToken, requestBody);
     }
 
-    public Mono<String> getEntityById(String processId, String userId) {
+    public Mono<Optional<String>>  getEntityById(String processId, String userId) {
         return brokerAdapter.getEntityById(processId, userId);
     }
 

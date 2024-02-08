@@ -5,8 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import es.in2.wallet.api.crypto.service.impl.SignerServiceImpl;
 import es.in2.wallet.api.exception.ParseErrorException;
+import es.in2.wallet.api.service.impl.SignerServiceImpl;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -44,7 +44,7 @@ class SignerServiceImplTest {
 
         when(mockedObjectMapper.convertValue(any(JsonNode.class), any(TypeReference.class))).thenReturn(claimsMap);
 
-        StepVerifier.create(signerService.signDocumentWithPrivateKey(jsonNode, did, documentType, privateKey))
+        StepVerifier.create(signerService.buildJWTSFromJsonNode(jsonNode, did, documentType, privateKey))
                 .assertNext(signedDocument -> {
                     assert signedDocument != null;
                 })
@@ -64,7 +64,7 @@ class SignerServiceImplTest {
 
         when(mockedObjectMapper.convertValue(any(JsonNode.class), any(TypeReference.class))).thenReturn(claimsMap);
 
-        StepVerifier.create(signerService.signDocumentWithPrivateKey(jsonNode, did, documentType, privateKey))
+        StepVerifier.create(signerService.buildJWTSFromJsonNode(jsonNode, did, documentType, privateKey))
                 .assertNext(signedDocument -> {
                     assert signedDocument != null;
                 })
@@ -79,7 +79,7 @@ class SignerServiceImplTest {
         String privateKey = "invalid private key";
         String did = "did:example";
 
-        StepVerifier.create(signerService.signDocumentWithPrivateKey(jsonNode, did, documentType, privateKey))
+        StepVerifier.create(signerService.buildJWTSFromJsonNode(jsonNode, did, documentType, privateKey))
                 .expectError(ParseErrorException.class)
                 .verify();
     }

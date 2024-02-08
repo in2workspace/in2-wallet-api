@@ -1,6 +1,7 @@
 package es.in2.wallet.api.crypto.service;
 
-import es.in2.wallet.api.crypto.service.impl.DidKeyGeneratorServiceImpl;
+
+import es.in2.wallet.api.service.impl.DidKeyGeneratorServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.springframework.boot.test.context.SpringBootTest;

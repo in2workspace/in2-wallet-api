@@ -9,7 +9,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
+
+import java.util.Optional;
 
 import static es.in2.wallet.api.util.MessageUtils.*;
 
@@ -39,21 +42,18 @@ public class OrionLdAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<String> getEntityById(String processId, String userId) {
-
+    public Mono<Optional<String>> getEntityById(String processId, String userId) {
         return webClient.get()
                 .uri(brokerProperties.paths().entities() + ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .onStatus(status -> status != null && status.is4xxClientError(), response -> {
-                    if (response.statusCode().equals(HttpStatus.NOT_FOUND)) {
-                        return Mono.empty();
-                    }
-                    return response.createException()
-                            .flatMap(Mono::error);
-                })
+                .onStatus(status -> status != null && status.is4xxClientError(), response -> response.createException().flatMap(Mono::error))
                 .bodyToMono(String.class)
-                .onErrorResume(Exception.class, Mono::error);
+                .map(Optional::of) // Envuelve el cuerpo de la respuesta en un Optional
+                .doOnNext(body -> log.info("Response body: {}", body))
+                .doOnError(error -> log.error("Error occurred: ", error))
+                .onErrorResume(WebClientResponseException.NotFound.class, e -> Mono.just(Optional.empty())) // Maneja específicamente el caso 404 aquí
+                .defaultIfEmpty(Optional.empty()); // Maneja el caso en que la respuesta es exitosa pero no hay cuerpo
     }
 
     @Override
