@@ -134,7 +134,7 @@ public class UserDataServiceImpl implements UserDataService {
     }
 
     @Override
-    public Mono<List<VcBasicData>> getUserVCsInJson(String userEntity) {
+    public Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String userEntity) {
         return serializeUserEntity(userEntity)
                 .flatMapMany(user -> Flux.fromIterable(user.vcs().value()))
                 .filter(vcAttribute -> VC_JSON.equals(vcAttribute.type()))
@@ -143,7 +143,7 @@ public class UserDataServiceImpl implements UserDataService {
                     JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
 
                     return getVcTypeListFromVcJson(jsonNode)
-                            .map(vcTypeList -> new VcBasicData(
+                            .map(vcTypeList -> new CredentialsBasicInfo(
                                     item.id(),
                                     vcTypeList,
                                     jsonNode.get(CREDENTIAL_SUBJECT)
@@ -154,7 +154,7 @@ public class UserDataServiceImpl implements UserDataService {
     }
 
     @Override
-    public Mono<List<VcBasicData>> getSelectableVCsByVcTypeList(List<String> vcTypeList, String userEntity) {
+    public Mono<List<CredentialsBasicInfo>> getSelectableVCsByVcTypeList(List<String> vcTypeList, String userEntity) {
         return getVerifiableCredentialsByFormat(userEntity, VC_JSON)
                 .flatMapMany(Flux::fromIterable)
                 .flatMap(item -> {
@@ -167,7 +167,7 @@ public class UserDataServiceImpl implements UserDataService {
                             .flatMap(vcDataTypeList -> {
                                 // If vc_types matches with vc_types requested, build VcBasicDataDTO and return it wrapped in a Mono
                                 if (new HashSet<>(vcDataTypeList).containsAll(vcTypeList)) {
-                                    VcBasicData dto = new VcBasicData(
+                                    CredentialsBasicInfo dto = new CredentialsBasicInfo(
                                             jsonNode.get("id").asText(),
                                             vcDataTypeList,
                                             jsonNode.get(CREDENTIAL_SUBJECT)

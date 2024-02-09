@@ -17,7 +17,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.MessageUtils.ATTRIBUTES;
+import static es.in2.wallet.api.util.MessageUtils.ENTITY_PREFIX;
 
 @Slf4j
 @Component
@@ -34,7 +35,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<Void> postEntity(String processId, String authToken, String requestBody) {
+    public Mono<Void> postEntity(String processId, String requestBody) {
         MediaType mediaType = getContentTypeAndAcceptMediaType(requestBody);
         return webClient.post()
                 .uri(brokerProperties.paths().entities())

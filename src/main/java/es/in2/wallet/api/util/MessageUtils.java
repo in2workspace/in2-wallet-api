@@ -50,11 +50,23 @@ public class MessageUtils {
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String CONTENT_TYPE_APPLICATION_JSON = "application/json";
     public static final String CONTENT_TYPE_URL_ENCODED_FORM = "application/x-www-form-urlencoded";
-
+    public static final String ISSUER_TOKEN_PROPERTY_NAME = "iss";
+    public static final String ISSUER_SUB = "sub";
     public static final String VC_JWT = "vc_jwt";
     public static final String VC_JSON = "vc_json";
     public static final String PROPERTY_TYPE = "Property";
     public static final String CREDENTIAL_SUBJECT = "credentialSubject";
+    public static final String GLOBAL_STATE = "MTo3NzcwMjoyNDU1NTkwMjMzOjE3MDU5MTE3NDA=";
+    public static final String AUTH_CODE_GRANT_TYPE = "authorization_code";
+    public static final String CODEVERIFIERALLOWEDCHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+
+    public static final String ALLOWED_METHODS = "*";
+    public static final String GLOBAL_ENDPOINTS_API = "/api/v2/*";
+    public static final Pattern LOGIN_REQUEST_PATTERN = Pattern.compile("(https|http)\\S*(authentication-request|authentication-requests)\\S*");
+    public static final Pattern CREDENTIAL_OFFER_PATTERN = Pattern.compile("(https|http)\\S*(credential-offer)\\S*");
+    public static final Pattern OPENID_CREDENTIAL_OFFER_PATTERN = Pattern.compile("openid-credential-offer://\\S*");
+    public static final Pattern EBSI_CREDENTIAL_OFFER_PATTERN = Pattern.compile("test-openid-credential-offer://\\S*");
+    public static final Pattern OPENID_AUTHENTICATION_REQUEST_PATTERN = Pattern.compile("openid://\\S*");
 
     public static Mono<String> postRequest(String url, List<Map.Entry<String, String>> headers, String body) {
         return WEB_CLIENT.post()
@@ -96,5 +108,20 @@ public class MessageUtils {
         } catch (ParseException | JsonProcessingException e) {
             return Mono.error(e);
         }
+    }
+    public static Mono<String> getCleanBearerAndUserIdFromToken(String authorizationHeader) {
+        return Mono.just(authorizationHeader)
+                .filter(header -> header.startsWith(BEARER))
+                .map(header -> header.substring(7))
+                .flatMap(token -> {
+                    try {
+                        SignedJWT parsedVcJwt = SignedJWT.parse(token);
+                        JsonNode jsonObject = new ObjectMapper().readTree(parsedVcJwt.getPayload().toString());
+                        return Mono.just(jsonObject.get("sub").asText());
+                    } catch (ParseException | JsonProcessingException e) {
+                        return Mono.error(e);
+                    }
+                })
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Invalid")));
     }
 }

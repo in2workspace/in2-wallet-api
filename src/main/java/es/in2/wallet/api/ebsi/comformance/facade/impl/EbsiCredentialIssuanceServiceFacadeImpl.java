@@ -1,36 +1,37 @@
-package es.in2.wallet.api.facade.impl;
+package es.in2.wallet.api.ebsi.comformance.facade.impl;
 
-import es.in2.wallet.api.facade.CredentialIssuanceServiceFacade;
-import es.in2.wallet.api.model.*;
+import es.in2.wallet.api.ebsi.comformance.configuration.EbsiConfig;
+import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialIssuanceServiceFacade;
+import es.in2.wallet.api.ebsi.comformance.service.CredentialEbsiService;
+import es.in2.wallet.api.ebsi.comformance.service.EbsiAuthorizationCodeService;
+import es.in2.wallet.api.model.AuthorisationServerMetadata;
+import es.in2.wallet.api.model.CredentialIssuerMetadata;
+import es.in2.wallet.api.model.CredentialOffer;
+import es.in2.wallet.api.model.CredentialResponse;
 import es.in2.wallet.api.service.*;
 import es.in2.wallet.broker.service.BrokerService;
-import es.in2.wallet.vault.service.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
-
+import static es.in2.wallet.api.util.MessageUtils.getCleanBearerToken;
 import static es.in2.wallet.api.util.MessageUtils.getUserIdFromToken;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceServiceFacade {
+public class EbsiCredentialIssuanceServiceFacadeImpl implements EbsiCredentialIssuanceServiceFacade {
 
     private final CredentialOfferService credentialOfferService;
+    private final EbsiConfig ebsiConfig;
     private final CredentialIssuerMetadataService credentialIssuerMetadataService;
     private final AuthorisationServerMetadataService authorisationServerMetadataService;
-    private final PreAuthorizedService preAuthorizedService;
-    private final CredentialService credentialService;
-    private final KeyGenerationService keyGenerationService;
-    private final DidKeyGeneratorService didKeyGeneratorService;
-    private final VaultService vaultService;
-    private final ProofJWTService proofJWTService;
-    private final SignerService signerService;
-    private final BrokerService brokerService;
+    private final CredentialEbsiService credentialEbsiService;
     private final UserDataService userDataService;
+    private final BrokerService brokerService;
+    private final PreAuthorizedService preAuthorizedService;
+    private final EbsiAuthorizationCodeService ebsiAuthorizationCodeService;
 
     @Override
     public Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent) {
@@ -42,69 +43,33 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
                         .flatMap(credentialIssuerMetadata -> authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)
                                 .flatMap(authorisationServerMetadata -> {
                                     if (credentialOffer.grant().preAuthorizedCodeGrant() != null){
-                                        return getCredentialWithPreAuthorizedCode(processId,authorizationToken,credentialOffer,authorisationServerMetadata, credentialIssuerMetadata);
+                                        return getCredentialWithPreAuthorizedCodeEbsi(processId,authorizationToken,credentialOffer,authorisationServerMetadata,credentialIssuerMetadata);
                                     }
                                     else {
-                                        return getCredentialWithAuthorizedCode(processId,authorizationToken,credentialOffer,authorisationServerMetadata,credentialIssuerMetadata);
+                                        return getCredentialWithAuthorizedCodeEbsi(processId,authorizationToken,credentialOffer,authorisationServerMetadata,credentialIssuerMetadata);
                                     }
                                 })));
 
     }
 
-    /**
-     * Orchestrates the flow to obtain a credential with a pre-authorized code.
-     * 1. Obtains a pre-authorized token.
-     * 2. Generates and saves a key pair.
-     * 3. Builds and signs a credential request.
-     * 4. Retrieves the credential.
-     * 5. Processes the user entity based on the obtained credential and DID.
-     */
-    private Mono<Void> getCredentialWithPreAuthorizedCode(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
-        return getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
-                .flatMap(tokenResponse -> generateAndSaveKeyPair()
-                        .flatMap(map -> buildAndSignCredentialRequest(tokenResponse, map, credentialIssuerMetadata)
-                                .flatMap(signedJWT -> getCredential(processId, signedJWT, tokenResponse, credentialIssuerMetadata)
-                                        .flatMap(credentialResponse -> processUserEntity(processId, authorizationToken, credentialResponse,map.get("did")))
-                                )
-                        )
-                );
+    private Mono<Void> getCredentialWithPreAuthorizedCodeEbsi(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
+        // get Credential Offer
+        return preAuthorizedService.getPreAuthorizedToken(processId,credentialOffer,authorisationServerMetadata,authorizationToken)
+                // get Credential
+                .flatMap(tokenResponse -> credentialEbsiService.getCredential(processId, tokenResponse, credentialIssuerMetadata,authorizationToken,credentialOffer.credentials().get(0).format(),credentialOffer.credentials().get(0).types()))
+                // save Credential
+                .flatMap(credentialResponse -> ebsiConfig.getDid()
+                        .flatMap(did -> processUserEntity(processId,authorizationToken,credentialResponse,did)));
     }
 
-
-    /**
-     * Retrieves a pre-authorized token from the authorization server.
-     * This token is used in subsequent requests to authenticate and authorize operations.
-     */
-    private Mono<TokenResponse> getPreAuthorizedToken(String processId, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, String authorizationToken) {
-        return preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken);
-    }
-
-    /**
-     * Generates a new ES256r1 EC key pair for signing requests.
-     * The generated key pair is then saved in a vault for secure storage and later retrieval.
-     * The method returns a map containing key pair details, including the DID.
-     */
-    private Mono<Map<String, String>> generateAndSaveKeyPair() {
-        return keyGenerationService.generateES256r1ECKeyPair()
-                .flatMap(didKeyGeneratorService::generateDidKeyFromKeyPair)
-                .flatMap(map -> vaultService.saveSecret(map).thenReturn(map));
-    }
-
-    /**
-     * Constructs a credential request using the nonce from the token response and the issuer's information.
-     * The request is then signed using the generated DID and private key to ensure its authenticity.
-     */
-    private Mono<String> buildAndSignCredentialRequest(TokenResponse tokenResponse, Map<String, String> map, CredentialIssuerMetadata credentialIssuerMetadata) {
-        return proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer())
-                .flatMap(json -> signerService.buildJWTSFromJsonNode(json, map.get("did"), "proof", map.get("privateKey")));
-    }
-
-    /**
-     * Retrieves the credential based on the signed JWT, token response, and issuer metadata.
-     * This step involves communicating with the credential service to obtain the actual credential.
-     */
-    private Mono<CredentialResponse> getCredential(String processId, String signedJWT, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata) {
-        return credentialService.getCredential(processId, signedJWT, tokenResponse, credentialIssuerMetadata);
+    private Mono<Void> getCredentialWithAuthorizedCodeEbsi(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
+        // get Credential Offer
+        return ebsiAuthorizationCodeService.getTokenResponse(processId,authorizationToken, credentialOffer ,authorisationServerMetadata,credentialIssuerMetadata)
+                // get Credential
+                .flatMap(tokenResponse -> credentialEbsiService.getCredential(processId, tokenResponse, credentialIssuerMetadata,authorizationToken,credentialOffer.credentials().get(0).format(),credentialOffer.credentials().get(0).types()))
+                // save Credential
+                .flatMap(credentialResponse -> ebsiConfig.getDid()
+                        .flatMap(did -> processUserEntity(processId,authorizationToken,credentialResponse,did)));
     }
 
     /**
@@ -136,10 +101,10 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
                         brokerService.getEntityById(processId, userId)
                                 .flatMap(optionalEntity ->
                                         optionalEntity.map(updatedEntity ->
-                                                        userDataService.saveVC(updatedEntity, credentialResponse.credential())
-                                                                .flatMap(vcUpdatedEntity ->
-                                                                        brokerService.updateEntity(processId, userId, vcUpdatedEntity)
-                                                                )
+                                                userDataService.saveVC(updatedEntity, credentialResponse.credential())
+                                                        .flatMap(vcUpdatedEntity ->
+                                                                brokerService.updateEntity(processId, userId, vcUpdatedEntity)
+                                                        )
                                         ).orElseGet(() -> Mono.error(new RuntimeException("Failed to retrieve entity after initial update.")))
                                 )
                 );
@@ -171,17 +136,5 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
                                 .orElseGet(() -> Mono.error(new RuntimeException("Entity not found after creation.")))
                 );
     }
-
-
-    private Mono<Void> getCredentialWithAuthorizedCode(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
-        // get Credential Offer
-        log.debug(processId);
-        log.debug(authorizationToken);
-        log.debug(credentialOffer.toString());
-        log.debug(authorisationServerMetadata.toString());
-        log.debug(credentialIssuerMetadata.toString());
-        return Mono.error(new RuntimeException("Not implemented yet."));
-    }
-
 
 }

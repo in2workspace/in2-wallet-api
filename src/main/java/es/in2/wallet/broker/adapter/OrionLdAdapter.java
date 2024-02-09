@@ -5,7 +5,6 @@ import es.in2.wallet.broker.service.GenericBrokerService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -31,7 +30,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<Void> postEntity(String processId, String authToken, String requestBody) {
+    public Mono<Void> postEntity(String processId, String requestBody) {
         return webClient.post()
                 .uri(brokerProperties.paths().entities())
                 .accept(MediaType.APPLICATION_JSON)

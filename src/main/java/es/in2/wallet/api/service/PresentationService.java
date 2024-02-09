@@ -1,9 +1,8 @@
 package es.in2.wallet.api.service;
 
+import es.in2.wallet.api.model.VcSelectorResponse;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 public interface PresentationService {
-    Mono<String> createUnsignedVerifiablePresentation(String processId, List<String> verifiableCredentialsList);
+    Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse);
 }

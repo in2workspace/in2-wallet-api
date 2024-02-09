@@ -40,4 +40,18 @@ public class UVarInt {
     public String toString() {
         return "0x" + Long.toHexString(value);
     }
+    // Creates a UVarInt instance from a byte array
+    public static UVarInt fromBytes(byte[] bytes) {
+        if (bytes.length == 0) {
+            throw new IllegalArgumentException("Empty byte array");
+        }
+
+        int idx = 0;
+        long value = (bytes[idx] & LSB);
+        while (idx + 1 < bytes.length && (bytes[idx] & MSB) != 0) {
+            idx++;
+            value |= ((bytes[idx] & LSB) << (idx * 7));
+        }
+        return new UVarInt(value);
+    }
 }
