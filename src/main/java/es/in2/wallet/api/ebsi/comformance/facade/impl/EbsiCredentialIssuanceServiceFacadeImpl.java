@@ -4,6 +4,7 @@ import es.in2.wallet.api.ebsi.comformance.configuration.EbsiConfig;
 import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialIssuanceServiceFacade;
 import es.in2.wallet.api.ebsi.comformance.service.CredentialEbsiService;
 import es.in2.wallet.api.ebsi.comformance.service.EbsiAuthorizationCodeService;
+import es.in2.wallet.api.ebsi.comformance.service.impl.EbsiAuthorizationVpTokenServiceImpl;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
 import es.in2.wallet.api.model.CredentialIssuerMetadata;
 import es.in2.wallet.api.model.CredentialOffer;
@@ -32,6 +33,7 @@ public class EbsiCredentialIssuanceServiceFacadeImpl implements EbsiCredentialIs
     private final BrokerService brokerService;
     private final PreAuthorizedService preAuthorizedService;
     private final EbsiAuthorizationCodeService ebsiAuthorizationCodeService;
+    private final EbsiAuthorizationVpTokenServiceImpl ebsiAuthorizationVpTokenService;
 
     @Override
     public Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent) {
@@ -42,7 +44,10 @@ public class EbsiCredentialIssuanceServiceFacadeImpl implements EbsiCredentialIs
                         //get Authorisation Server Metadata
                         .flatMap(credentialIssuerMetadata -> authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)
                                 .flatMap(authorisationServerMetadata -> {
-                                    if (credentialOffer.grant().preAuthorizedCodeGrant() != null){
+                                    if (credentialOffer.credentials().get(0).types().contains("CTWalletQualificationCredential")){
+                                        return ebsiAuthorizationVpTokenService.getVpRequest(processId,authorizationToken,credentialOffer,authorisationServerMetadata,credentialIssuerMetadata);
+                                    }
+                                    else if (credentialOffer.grant().preAuthorizedCodeGrant() != null){
                                         return getCredentialWithPreAuthorizedCodeEbsi(processId,authorizationToken,credentialOffer,authorisationServerMetadata,credentialIssuerMetadata);
                                     }
                                     else {

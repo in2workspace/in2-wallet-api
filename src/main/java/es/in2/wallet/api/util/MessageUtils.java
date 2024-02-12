@@ -60,6 +60,8 @@ public class MessageUtils {
     public static final String AUTH_CODE_GRANT_TYPE = "authorization_code";
     public static final String CODEVERIFIERALLOWEDCHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
 
+    public static final String JWT_VC = "jwt_vc";
+    public static final String JWT_VP = "jwt_vp";
     public static final String ALLOWED_METHODS = "*";
     public static final String GLOBAL_ENDPOINTS_API = "/api/v2/*";
     public static final Pattern LOGIN_REQUEST_PATTERN = Pattern.compile("(https|http)\\S*(authentication-request|authentication-requests)\\S*");

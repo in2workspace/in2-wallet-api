@@ -165,8 +165,9 @@ public class UserDataServiceImpl implements UserDataService {
                     // Create a Mono<List<String>> of the VC types
                     return getVcTypeListFromVcJson(jsonNode)
                             .flatMap(vcDataTypeList -> {
-                                // If vc_types matches with vc_types requested, build VcBasicDataDTO and return it wrapped in a Mono
-                                if (new HashSet<>(vcDataTypeList).containsAll(vcTypeList)) {
+                                // Check if there is any match between the requested vc_types and the vc_types of the current item
+                                boolean anyMatch = vcDataTypeList.stream().anyMatch(vcTypeList::contains);
+                                if (anyMatch) {
                                     CredentialsBasicInfo dto = new CredentialsBasicInfo(
                                             jsonNode.get("id").asText(),
                                             vcDataTypeList,
@@ -180,6 +181,7 @@ public class UserDataServiceImpl implements UserDataService {
                 })
                 .collectList()
                 .flatMap(result -> {
+                    log.debug(result.toString());
                     if (result.isEmpty()) {
                         return Mono.error(new NoSuchVerifiableCredentialException("No matching VC found"));
                     } else {
@@ -301,7 +303,7 @@ public class UserDataServiceImpl implements UserDataService {
 
                     Object value = vcAttribute.value();
                     if (value instanceof String) {
-                        return Mono.just(userEntity);
+                        return Mono.just(value.toString());
                     } else {
                         try {
                             String jsonValue = objectMapper.writeValueAsString(value);

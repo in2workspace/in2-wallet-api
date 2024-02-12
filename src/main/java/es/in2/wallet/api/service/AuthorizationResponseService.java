@@ -5,4 +5,5 @@ import reactor.core.publisher.Mono;
 
 public interface AuthorizationResponseService {
     Mono<String> buildAndPostAuthorizationResponseWithVerifiablePresentation(String processId, VcSelectorResponse vcSelectorResponse, String verifiablePresentation);
+    Mono<String> getDescriptorMapping(String processId, String verifiablePresentation);
 }
