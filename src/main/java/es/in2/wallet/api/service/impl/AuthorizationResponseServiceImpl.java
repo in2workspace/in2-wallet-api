@@ -53,7 +53,7 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                     VerifiableCredential credential = indexed.getT2();
                     Long index = indexed.getT1();
                     // Assuming null is acceptable for the pathNested initially
-                    return new DescriptorMapping(JWT_VC, "$.verifiableCredential[" + index + "]", credential.getId(), null);
+                    return new DescriptorMapping(JWT_VP, "$.verifiableCredential[" + index + "]", credential.getId(), null);
                 })
                 .collectList()  // Collect DescriptorMappings into a List
                 .flatMap(list -> buildDescriptorMapping(list, verifiablePresentation.getId())); // Build the final DescriptorMapping

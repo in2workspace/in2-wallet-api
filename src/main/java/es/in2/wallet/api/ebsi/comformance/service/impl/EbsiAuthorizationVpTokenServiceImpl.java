@@ -38,7 +38,7 @@ public class EbsiAuthorizationVpTokenServiceImpl implements EbsiAuthorizationVpT
 
     @Override
     public Mono<Void> getVpRequest(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
-        String did = "did:key:z2dmzD81cgPx8Vki7JbuuMmFYrWPgYoytykUZ3eyqht1j9KbrcUZUc9Ac9zXC2SdNXkWxoykfAzx9phqhET2AAxwrtAbvY8TTENoRzFpRx4SZ9GE35C2P7PZZigz2t6q5nBMSx4pKnpebSAXijibGCjLorVmRqb7gWTuqWXK5PvPfSaZVn";
+        String did = "did:key:z2dmzD81cgPx8Vki7JbuuMmFYrWPgYoytykUZ3eyqht1j9KborxAgp84TFgvVsX9wrpLuZfcyS8itQH9xFXfrjJaUmNy7v6N6z1VGnWMXbv7tPvWLJSVATfAbFgWH23FCrjGqf1FUSaBZWpGMcTFm8vVxZcmqDLU3npYZz2VSQBsj9DwHe";
         return performAuthorizationFlow(credentialOffer, credentialIssuerMetadata, authorisationServerMetadata, did,authorizationToken)
                 .doOnSuccess(tokenResponse -> log.info("ProcessID: {} - Token Response: {}", processId, tokenResponse));
     }

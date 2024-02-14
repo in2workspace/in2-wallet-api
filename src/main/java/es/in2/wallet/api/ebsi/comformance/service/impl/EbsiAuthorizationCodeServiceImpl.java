@@ -77,7 +77,7 @@ public class EbsiAuthorizationCodeServiceImpl implements EbsiAuthorizationCodeSe
         Map<String, String> params = paramsAndCodeVerifier.getT1();
         String codeVerifier = paramsAndCodeVerifier.getT2();
 
-        return getRequestFromRequestUri(params)
+        return getJwtRequest(params)
                 .flatMap(response -> buildIdTokenResponse(response, authorisationServerMetadata, did, params))
                 .flatMap(this::extractAllQueryParams)
                 .flatMap(codeAndState -> sendTokenRequest(codeVerifier, did, authorisationServerMetadata, codeAndState));
@@ -150,13 +150,16 @@ public class EbsiAuthorizationCodeServiceImpl implements EbsiAuthorizationCodeSe
                 .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while sending Authorization Request")));
     }
 
-    private Mono<String> getRequestFromRequestUri(Map<String, String> params) {
-        List<Map.Entry<String, String>> headers = new ArrayList<>();
-        String requestUri = params.get("request_uri");
-        if (requestUri == null || requestUri.isEmpty()) {
-            return Mono.error(new IllegalArgumentException("request_uri not found in parameters"));
+    private Mono<String> getJwtRequest(Map<String, String> params) {
+        if (params.get("request_uri") != null){
+            List<Map.Entry<String, String>> headers = new ArrayList<>();
+            String requestUri = params.get("request_uri");
+            return getRequest(requestUri, headers);
         }
-        return getRequest(requestUri, headers);
+        else if (params.get("request") != null){
+            return Mono.just(params.get("request"));
+        }
+        else {return Mono.error(new IllegalArgumentException("theres any request found in parameters"));}
     }
     private Mono<String> buildIdTokenResponse(String jwt, AuthorisationServerMetadata authorisationServerMetadata,String did,Map<String, String> params){
         return extractNonceAndStateFromJwt(jwt)

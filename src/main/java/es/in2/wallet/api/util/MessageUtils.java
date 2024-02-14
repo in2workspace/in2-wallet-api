@@ -67,7 +67,7 @@ public class MessageUtils {
     public static final Pattern LOGIN_REQUEST_PATTERN = Pattern.compile("(https|http)\\S*(authentication-request|authentication-requests)\\S*");
     public static final Pattern CREDENTIAL_OFFER_PATTERN = Pattern.compile("(https|http)\\S*(credential-offer)\\S*");
     public static final Pattern OPENID_CREDENTIAL_OFFER_PATTERN = Pattern.compile("openid-credential-offer://\\S*");
-    public static final Pattern EBSI_CREDENTIAL_OFFER_PATTERN = Pattern.compile("test-openid-credential-offer://\\S*");
+    public static final Pattern EBSI_CREDENTIAL_OFFER_PATTERN = Pattern.compile("\\S*(conformance.ebsi)\\S*");
     public static final Pattern OPENID_AUTHENTICATION_REQUEST_PATTERN = Pattern.compile("openid://\\S*");
 
     public static Mono<String> postRequest(String url, List<Map.Entry<String, String>> headers, String body) {

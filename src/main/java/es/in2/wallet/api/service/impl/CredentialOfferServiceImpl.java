@@ -43,13 +43,17 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
 
     private Mono<String> parseCredentialOfferUri(String credentialOfferUri) {
         return Mono.fromCallable(() -> {
-                    String[] splitCredentialOfferUri = credentialOfferUri.split("=");
-                    String credentialOfferUriValue = splitCredentialOfferUri[1];
-                    return URLDecoder.decode(credentialOfferUriValue, StandardCharsets.UTF_8);
-                })
-                .onErrorResume(e -> Mono.error(new ParseErrorException("Error while parsing credentialOfferUri")));
-    }
+            try {
+                String[] splitCredentialOfferUri = credentialOfferUri.split("=");
+                String credentialOfferUriValue = splitCredentialOfferUri[1];
+                return URLDecoder.decode(credentialOfferUriValue, StandardCharsets.UTF_8);
+            }catch (Exception e){
+                log.debug("Credential offer uri it's already parsed");
+                return credentialOfferUri;
+            }
 
+        });
+    }
     private Mono<String> getCredentialOffer(String credentialOfferUri) {
         List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
         return getRequest(credentialOfferUri, headers)
