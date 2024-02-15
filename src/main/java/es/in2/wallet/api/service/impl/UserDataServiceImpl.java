@@ -155,37 +155,45 @@ public class UserDataServiceImpl implements UserDataService {
 
     @Override
     public Mono<List<CredentialsBasicInfo>> getSelectableVCsByVcTypeList(List<String> vcTypeList, String userEntity) {
+        // Primero, obtén todas las credenciales disponibles como una lista.
         return getVerifiableCredentialsByFormat(userEntity, VC_JSON)
-                .flatMapMany(Flux::fromIterable)
-                .concatMap(item -> {
-                    LinkedHashMap<?, ?> vcDataValue = (LinkedHashMap<?, ?>) item.value();
-                    JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
+                .flatMapMany(Flux::fromIterable) // Convierte la lista en un Flux para procesar cada VC.
+                .collectList() // Recolecta todas las VC en una lista para procesarlas.
+                .flatMap(vcs -> {
+                    // Prepara una lista para recoger las credenciales que coincidan.
+                    List<CredentialsBasicInfo> matchingVCs = new ArrayList<>();
 
-                    return getVcTypeListFromVcJson(jsonNode)
-                            .flatMap(vcDataTypeList -> {
-                                boolean anyMatch = vcDataTypeList.stream().anyMatch(vcTypeList::contains);
-                                if (anyMatch) {
-                                    CredentialsBasicInfo dto = new CredentialsBasicInfo(
-                                            jsonNode.get("id").asText(),
-                                            vcDataTypeList,
-                                            jsonNode.get(CREDENTIAL_SUBJECT)
-                                    );
-                                    return Mono.just(dto);
-                                } else {
-                                    return Mono.empty();
-                                }
-                            });
-                })
-                .collectList()
-                .flatMap(result -> {
-                    if (result.isEmpty()) {
-                        return Mono.error(new NoSuchVerifiableCredentialException("No matching VC found"));
-                    } else {
-                        return Mono.just(result);
+                    // Itera sobre la lista de tipos de VC dada.
+                    for (String vcType : vcTypeList) {
+                        // Para cada tipo, busca en las credenciales del usuario.
+                        for (VCAttribute vcAttribute : vcs) {
+                            // Convierte el valor de la VC a JsonNode.
+                            JsonNode jsonNode = objectMapper.convertValue(vcAttribute.value(), JsonNode.class);
+
+                            // Obtiene la lista de tipos de la VC.
+                            List<String> vcDataTypeList = new ArrayList<>();
+                            jsonNode.get("type").forEach(node -> vcDataTypeList.add(node.asText()));
+
+                            // Verifica si alguno de los tipos coincide con el tipo actual en vcTypeList.
+                            if (vcDataTypeList.contains(vcType)) {
+                                // Si hay una coincidencia, crea un objeto CredentialsBasicInfo y lo añade a la lista.
+                                CredentialsBasicInfo dto = new CredentialsBasicInfo(
+                                        jsonNode.get("id").asText(),
+                                        vcDataTypeList,
+                                        jsonNode.get("credentialSubject")
+                                );
+                                matchingVCs.add(dto);
+                                // Rompe el bucle interno después de encontrar la primera coincidencia para este tipo.
+                                break;
+                            }
+                        }
                     }
-                })
-                .onErrorResume(FailedCommunicationException.class, Mono::error);
+                    // Devuelve la lista de credenciales coincidentes envuelta en un Mono.
+                    log.debug(matchingVCs.toString());
+                    return Mono.just(matchingVCs);
+                });
     }
+
 
 
     @Override

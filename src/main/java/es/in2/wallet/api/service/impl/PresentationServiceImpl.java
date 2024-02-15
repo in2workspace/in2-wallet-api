@@ -37,7 +37,7 @@ public class PresentationServiceImpl implements PresentationService {
     private final SignerService signerService;
 
     @Override
-    public Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse,String nonce) {
+    public Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse,String nonce, String audience) {
         // Get the subject DID from the first credential in the list
         return  getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId,userId))
@@ -48,7 +48,7 @@ public class PresentationServiceImpl implements PresentationService {
                 .flatMap(verifiableCredentialsList -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsList)
                         .flatMap(did ->
                                 // Create the unsigned verifiable presentation
-                                createUnsignedPresentation(verifiableCredentialsList, did,nonce)
+                                createUnsignedPresentation(verifiableCredentialsList, did,nonce,audience)
                                         .flatMap(document -> vaultService.getSecretByKey(did,PRIVATE_KEY_TYPE)
                                             .flatMap(privateKey -> signerService.buildJWTSFromJsonNode(document,did,"vp",privateKey)))
                         )
@@ -91,7 +91,8 @@ public class PresentationServiceImpl implements PresentationService {
     private Mono<JsonNode> createUnsignedPresentation(
             List<String> vcs,
             String holderDid,
-            String nonce) {
+            String nonce,
+            String audience) {
         return Mono.fromCallable(() -> {
             String id = "urn:uuid:" + UUID.randomUUID();
 
@@ -110,10 +111,11 @@ public class PresentationServiceImpl implements PresentationService {
             JWTClaimsSet payload = new JWTClaimsSet.Builder()
                     .issuer(holderDid)
                     .subject(holderDid)
+                    .audience(audience)
                     .notBeforeTime(java.util.Date.from(issueTime))
                     .expirationTime(java.util.Date.from(expirationTime))
                     .issueTime(java.util.Date.from(issueTime))
-                    .jwtID(UUID.randomUUID().toString())
+                    .jwtID(id)
                     .claim("vp", vpParsed)
                     .claim("nonce", nonce)
                     .build();

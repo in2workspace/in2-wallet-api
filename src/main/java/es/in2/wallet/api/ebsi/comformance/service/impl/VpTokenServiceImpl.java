@@ -48,13 +48,13 @@ public class VpTokenServiceImpl implements VpTokenService {
     private Mono<TokenResponse> completeTokenExchange(String processId, String authorizationToken,AuthorisationServerMetadata authorisationServerMetadata, String did, Tuple2<String, String> paramsAndCodeVerifier) {
         String jwt = paramsAndCodeVerifier.getT1();
         String codeVerifier = paramsAndCodeVerifier.getT2();
-        return buildVpTokenResponse(processId,authorizationToken,jwt)
+        return buildVpTokenResponse(processId,authorizationToken,jwt,authorisationServerMetadata)
                 .flatMap(MessageUtils::extractAllQueryParams)
                 .flatMap(codeAndState -> sendTokenRequest(codeVerifier, did, authorisationServerMetadata, codeAndState));
     }
 
 
-    private Mono<String> buildVpTokenResponse(String processId, String authorizationToken, String jwt) {
+    private Mono<String> buildVpTokenResponse(String processId, String authorizationToken, String jwt, AuthorisationServerMetadata authorisationServerMetadata) {
         return extractRequiredParamFromJwt(jwt)
                 .flatMap(params -> processPresentationDefinition(params.get(3))
                         .flatMap(map -> {
@@ -64,7 +64,7 @@ public class VpTokenServiceImpl implements VpTokenService {
                             List<String> inputDescriptorIdsList = (List<String>) map.get("inputDescriptorIds");
                             String presentationDefinitionId = (String) map.get("presentationDefinitionId");
 
-                            return buildSignedJwtVerifiablePresentationByVcTypeList(processId, authorizationToken, vcTypeList,params.get(0))
+                            return buildSignedJwtVerifiablePresentationByVcTypeList(processId, authorizationToken, vcTypeList,params.get(0),authorisationServerMetadata)
                                     .flatMap(vp -> buildPresentationSubmission(inputDescriptorIdsList,presentationDefinitionId)
                                             .flatMap(presentationSubmission -> sendVpTokenResponse(vp,params,presentationSubmission))
                                     );
@@ -115,14 +115,14 @@ public class VpTokenServiceImpl implements VpTokenService {
             return Mono.error(new FailedSerializingException("Error while serializing Presentation Submission"));
         }
     }
-    private Mono<String> buildSignedJwtVerifiablePresentationByVcTypeList(String processId,String authorizationToken,List<String> vcTypeList, String nonce){
+    private Mono<String> buildSignedJwtVerifiablePresentationByVcTypeList(String processId,String authorizationToken,List<String> vcTypeList, String nonce,AuthorisationServerMetadata authorisationServerMetadata){
         return getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId,userId))
                 .flatMap(entity -> userDataService.getSelectableVCsByVcTypeList(vcTypeList,entity.get()))
                 .flatMap(list -> {
                     log.debug(list.toString());
                     VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().selectedVcList(list).build();
-                    return presentationService.createSignedVerifiablePresentation("id",authorizationToken,vcSelectorResponse,nonce);
+                    return presentationService.createSignedVerifiablePresentation(processId,authorizationToken,vcSelectorResponse,nonce,authorisationServerMetadata.issuer());
                 });
     }
 
@@ -202,13 +202,13 @@ public class VpTokenServiceImpl implements VpTokenService {
             PresentationSubmission.DescriptorMap nestedDescriptorMap = PresentationSubmission.DescriptorMap.builder()
                     .id(id)
                     .format("jwt_vc")
-                    .path("$.vp.verifiableCredential[" + i + "]")
+                    .path("$.verifiableCredential[" + i + "]")
                     .pathNested(null).build();
 
             PresentationSubmission.DescriptorMap descriptorMap = PresentationSubmission.DescriptorMap.builder()
                     .id(id)
                     .format("jwt_vp")
-                    .path("$")
+                    .path("$.vp")
                     .pathNested(nestedDescriptorMap).build();
 
             descriptorMaps.add(descriptorMap);
