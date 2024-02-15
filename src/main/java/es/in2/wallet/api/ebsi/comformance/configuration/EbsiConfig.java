@@ -59,7 +59,7 @@ public class EbsiConfig
                 "&client_id=" + URLEncoder.encode(identityProviderProperties.clientId(), StandardCharsets.UTF_8) +
                 "&client_secret=" + URLEncoder.encode(identityProviderProperties.clientSecret(), StandardCharsets.UTF_8);
 
-        return Mono.delay(Duration.ofSeconds(30))
+        return Mono.delay(Duration.ofSeconds(5))
                 .then(postRequest(identityProviderProperties.url(),headers,body))
                 .flatMap(response -> {
                     log.debug(response);

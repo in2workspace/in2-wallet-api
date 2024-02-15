@@ -157,15 +157,12 @@ public class UserDataServiceImpl implements UserDataService {
     public Mono<List<CredentialsBasicInfo>> getSelectableVCsByVcTypeList(List<String> vcTypeList, String userEntity) {
         return getVerifiableCredentialsByFormat(userEntity, VC_JSON)
                 .flatMapMany(Flux::fromIterable)
-                .flatMap(item -> {
-                    // Parse the VC stored into a JsonNode object
+                .concatMap(item -> {
                     LinkedHashMap<?, ?> vcDataValue = (LinkedHashMap<?, ?>) item.value();
                     JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
 
-                    // Create a Mono<List<String>> of the VC types
                     return getVcTypeListFromVcJson(jsonNode)
                             .flatMap(vcDataTypeList -> {
-                                // Check if there is any match between the requested vc_types and the vc_types of the current item
                                 boolean anyMatch = vcDataTypeList.stream().anyMatch(vcTypeList::contains);
                                 if (anyMatch) {
                                     CredentialsBasicInfo dto = new CredentialsBasicInfo(
@@ -181,7 +178,6 @@ public class UserDataServiceImpl implements UserDataService {
                 })
                 .collectList()
                 .flatMap(result -> {
-                    log.debug(result.toString());
                     if (result.isEmpty()) {
                         return Mono.error(new NoSuchVerifiableCredentialException("No matching VC found"));
                     } else {
@@ -190,6 +186,7 @@ public class UserDataServiceImpl implements UserDataService {
                 })
                 .onErrorResume(FailedCommunicationException.class, Mono::error);
     }
+
 
     @Override
     public Mono<String> extractDidFromVerifiableCredential(String userEntity, String vcId) {

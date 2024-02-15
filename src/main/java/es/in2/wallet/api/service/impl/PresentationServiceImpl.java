@@ -37,7 +37,7 @@ public class PresentationServiceImpl implements PresentationService {
     private final SignerService signerService;
 
     @Override
-    public Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse) {
+    public Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse,String nonce) {
         // Get the subject DID from the first credential in the list
         return  getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId,userId))
@@ -48,7 +48,7 @@ public class PresentationServiceImpl implements PresentationService {
                 .flatMap(verifiableCredentialsList -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsList)
                         .flatMap(did ->
                                 // Create the unsigned verifiable presentation
-                                createUnsignedPresentation(verifiableCredentialsList, did)
+                                createUnsignedPresentation(verifiableCredentialsList, did,nonce)
                                         .flatMap(document -> vaultService.getSecretByKey(did,PRIVATE_KEY_TYPE)
                                             .flatMap(privateKey -> signerService.buildJWTSFromJsonNode(document,did,"vp",privateKey)))
                         )
@@ -90,7 +90,8 @@ public class PresentationServiceImpl implements PresentationService {
 
     private Mono<JsonNode> createUnsignedPresentation(
             List<String> vcs,
-            String holderDid) {
+            String holderDid,
+            String nonce) {
         return Mono.fromCallable(() -> {
             String id = "urn:uuid:" + UUID.randomUUID();
 
@@ -114,6 +115,7 @@ public class PresentationServiceImpl implements PresentationService {
                     .issueTime(java.util.Date.from(issueTime))
                     .jwtID(UUID.randomUUID().toString())
                     .claim("vp", vpParsed)
+                    .claim("nonce", nonce)
                     .build();
             log.debug(payload.toString());
             return objectMapper.readTree(payload.toString());

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -11,12 +12,16 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+@Slf4j
 public class MessageUtils {
 
     private MessageUtils() {
@@ -125,5 +130,28 @@ public class MessageUtils {
                     }
                 })
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Invalid")));
+    }
+
+    public static Mono<Map<String, String>> extractAllQueryParams(String url) {
+        log.debug(url);
+        return Mono.fromCallable(() -> {
+            Map<String, String> params = new HashMap<>();
+            try {
+                URI uri = new URI(url);
+                String query = uri.getQuery();
+                if (query != null) {
+                    String[] pairs = query.split("&");
+                    for (String pair : pairs) {
+                        int idx = pair.indexOf("=");
+                        String key = URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8);
+                        String value = URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8);
+                        params.put(key, value);
+                    }
+                }
+            } catch (Exception e) {
+                log.debug(e.getMessage());
+            }
+            return params;
+        });
     }
 }
