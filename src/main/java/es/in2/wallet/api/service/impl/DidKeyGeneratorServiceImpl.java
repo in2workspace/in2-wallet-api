@@ -1,5 +1,6 @@
 package es.in2.wallet.api.service.impl;
 
+import com.nimbusds.jose.Algorithm;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import es.in2.wallet.api.service.DidKeyGeneratorService;
@@ -72,6 +73,7 @@ public class DidKeyGeneratorServiceImpl implements DidKeyGeneratorService {
 
         ECKey jwk = new ECKey.Builder(Curve.P_256, publicKey)
                 .privateKey(privateKey)
+                .algorithm(Algorithm.parse("ES256"))
                 .build();
 
         return jwk.toJSONString();

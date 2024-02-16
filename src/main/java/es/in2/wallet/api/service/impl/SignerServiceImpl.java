@@ -23,6 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static es.in2.wallet.api.model.JWTSType.*;
+import static es.in2.wallet.api.model.JWTSType.VC_JWT;
 import static es.in2.wallet.api.util.MessageUtils.*;
 
 @Slf4j

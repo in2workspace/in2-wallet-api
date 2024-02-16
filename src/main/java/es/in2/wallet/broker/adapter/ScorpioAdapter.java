@@ -9,13 +9,16 @@ import es.in2.wallet.broker.service.GenericBrokerService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import java.util.Optional;
+
+import static es.in2.wallet.api.util.MessageUtils.ATTRIBUTES;
+import static es.in2.wallet.api.util.MessageUtils.ENTITY_PREFIX;
 
 @Slf4j
 @Component
@@ -32,7 +35,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<Void> postEntity(String processId, String authToken, String requestBody) {
+    public Mono<Void> postEntity(String processId, String requestBody) {
         MediaType mediaType = getContentTypeAndAcceptMediaType(requestBody);
         return webClient.post()
                 .uri(brokerProperties.paths().entities())
@@ -40,39 +43,42 @@ public class ScorpioAdapter implements GenericBrokerService {
                 .contentType(mediaType)
                 .bodyValue(requestBody)
                 .retrieve()
-                .bodyToMono(Void.class);
+                .bodyToMono(Void.class)
+                .doOnSuccess(v -> log.debug("Entity saved"))
+                .doOnError(e -> log.debug("Error saving entity"))
+                .onErrorResume(Exception.class, Mono::error);
     }
 
     @Override
-    public Mono<String> getEntityById(String processId, String userId) {
+    public Mono<Optional<String>> getEntityById(String processId, String userId) {
         return webClient.get()
                 .uri(brokerProperties.paths().entities() + ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .onStatus(status -> status != null && status.is4xxClientError(), response -> {
-                    if (response.statusCode().equals(HttpStatus.NOT_FOUND)) {
-                        return Mono.empty();
-                    }
-                    return response.createException()
-                            .flatMap(Mono::error);
-                })
+                .onStatus(status -> status != null && status.is4xxClientError(), response -> response.createException().flatMap(Mono::error))
                 .bodyToMono(String.class)
-                .onErrorResume(Exception.class, Mono::error);
+                .map(Optional::of)
+                .doOnNext(body -> log.info("Response body: {}", body))
+                .onErrorResume(WebClientResponseException.NotFound.class, e -> Mono.just(Optional.empty())) // Maneja específicamente el caso 404 aquí
+                .defaultIfEmpty(Optional.empty()); // Maneja el caso en que la respuesta es exitosa pero no hay cuerpo
     }
+
+
 
 
     @Override
     public Mono<Void> updateEntity(String processId, String userId, String requestBody) {
         MediaType mediaType = getContentTypeAndAcceptMediaType(requestBody);
         return webClient.patch()
-                            .uri(brokerProperties.paths().entities() + ENTITY_PREFIX + userId + ATTRIBUTES)
-                            .accept(mediaType)
-                            .contentType(mediaType)
-                            .bodyValue(requestBody)
-                            .retrieve()
-                            .bodyToMono(Void.class)
-                .doOnSuccess(result -> log.info(RESOURCE_UPDATED_MESSAGE, processId))
-                .doOnError(e -> log.error(ERROR_UPDATING_RESOURCE_MESSAGE, e.getMessage()));
+                .uri(brokerProperties.paths().entities() + ENTITY_PREFIX + userId + ATTRIBUTES)
+                .accept(mediaType)
+                .contentType(mediaType)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .doOnSuccess(v -> log.debug("Entity updated"))
+                .doOnError(e -> log.debug("Error updating entity"))
+                .onErrorResume(Exception.class, Mono::error);
     }
     private MediaType getContentTypeAndAcceptMediaType(String requestBody) {
         try {

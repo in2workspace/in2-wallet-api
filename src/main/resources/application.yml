@@ -6,10 +6,10 @@ spring:
     web-application-type: reactive
   cloud:
     vault:
-      host: example
-      port: 8200
+      host: localhost
+      port: 8201
       authentication: token
-      token: 1234
+      token: hvs.lTEYOWxexuWNDMlOEyOkrvNV
       scheme: http
       kv:
         enabled: true
@@ -61,7 +61,7 @@ springdoc:
 
 # Server Configuration
 server:
-  port: 8080
+  port: 8081
 
 # Context Broker Configuration
 broker:
@@ -74,3 +74,17 @@ broker:
 vault:
   provider:
     name: hashicorp #hashicorp #azure
+
+auth-server:
+  domain: https://issuerkeycloak.demo.in2.es/realms/EAAProvider
+  token-endpoint: https://issuerkeycloak.demo.in2.es/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token
+
+identity-provider:
+  url: http://localhost:9099/realms/wallet/protocol/openid-connect/token
+  client-secret: fV51P8jFBo8VnFKMMuP3imw3H3i5mNck
+  client-id: user-registry-client
+  username: adminWallet
+  password: adminPass
+
+wallet-wda:
+  url: http://localhost:4200
