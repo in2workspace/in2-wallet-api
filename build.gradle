@@ -38,7 +38,11 @@ sonar {
 		property 'sonar.organization', 'in2workspace'
 		property 'sonar.host.url', 'https://sonarcloud.io'
 		property 'sonar.coverage.exclusions',
-				'src/main/java/es/in2/wallet/WalletServerApplication.java, '
+				"src/main/java/es/in2/wallet/WalletServerApplication.java, " +
+						"src/main/java/es/in2/wallet/api/configuration/**, " +
+						"src/main/java/es/in2/wallet/api/model/**, " +
+						"src/main/java/es/in2/wallet/api/util/**, " +
+						"src/main/java/es/in2/wallet/api/ebsi/comformance/configuration/**"
 	}
 }
 
@@ -147,7 +151,11 @@ tasks.jacocoTestReport {
 	afterEvaluate {
 		classDirectories.setFrom(files(classDirectories.files.collect {
 			fileTree(dir: it, exclude: [
-					'src/main/java/es/in2/wallet/WalletServerApplication.java'
+					"src/main/java/es/in2/wallet/WalletServerApplication.java",
+					"src/main/java/es/in2/wallet/api/configuration/**",
+					"src/main/java/es/in2/wallet/api/model/**",
+					"src/main/java/es/in2/wallet/api/util/**",
+					"src/main/java/es/in2/wallet/api/ebsi/comformance/configuration/**"
 			])
 		}))
 	}
