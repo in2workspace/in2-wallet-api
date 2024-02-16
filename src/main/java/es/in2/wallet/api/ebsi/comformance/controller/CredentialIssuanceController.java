@@ -2,7 +2,6 @@ package es.in2.wallet.api.ebsi.comformance.controller;
 
 import es.in2.wallet.api.ebsi.comformance.facade.impl.EbsiCredentialIssuanceServiceFacadeImpl;
 import es.in2.wallet.api.ebsi.comformance.model.CredentialOfferContent;
-import es.in2.wallet.api.model.CredentialResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;

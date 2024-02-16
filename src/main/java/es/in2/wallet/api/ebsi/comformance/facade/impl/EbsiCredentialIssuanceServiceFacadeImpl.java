@@ -3,10 +3,7 @@ package es.in2.wallet.api.ebsi.comformance.facade.impl;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.api.ebsi.comformance.configuration.EbsiConfig;
 import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialIssuanceServiceFacade;
-import es.in2.wallet.api.ebsi.comformance.service.AuthorisationRequestService;
-import es.in2.wallet.api.ebsi.comformance.service.CredentialEbsiService;
-import es.in2.wallet.api.ebsi.comformance.service.IdTokenService;
-import es.in2.wallet.api.ebsi.comformance.service.VpTokenService;
+import es.in2.wallet.api.ebsi.comformance.service.*;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
 import es.in2.wallet.api.model.CredentialIssuerMetadata;
 import es.in2.wallet.api.model.CredentialOffer;
@@ -36,6 +33,7 @@ public class EbsiCredentialIssuanceServiceFacadeImpl implements EbsiCredentialIs
     private final IdTokenService idTokenService;
     private final VpTokenService vpTokenService;
     private final AuthorisationRequestService authorisationRequestService;
+    private final AuthorisationResponseService authorisationResponseService;
 
     @Override
     public Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent) {
@@ -63,7 +61,7 @@ public class EbsiCredentialIssuanceServiceFacadeImpl implements EbsiCredentialIs
                 .flatMap(tokenResponse -> credentialEbsiService.getCredential(processId, tokenResponse, credentialIssuerMetadata,authorizationToken,credentialOffer.credentials().get(0).format(),credentialOffer.credentials().get(0).types()))
                 // save Credential
                 .flatMap(credentialResponse -> ebsiConfig.getDid()
-                        .flatMap(did -> processUserEntity(processId,authorizationToken,credentialResponse,did)));
+                        .flatMap(did -> processUserEntity(processId,authorizationToken,credentialResponse)));
     }
 
     private Mono<Void> getCredentialWithAuthorizedCodeEbsi(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
@@ -73,22 +71,23 @@ public class EbsiCredentialIssuanceServiceFacadeImpl implements EbsiCredentialIs
                         .flatMap(tuple -> extractResponseType(tuple.getT1())
                                 .flatMap(responseType -> {
                                     if (responseType.equals("id_token")){
-                                        return idTokenService.getTokenResponse(processId,authorisationServerMetadata,did,tuple);
+                                        return idTokenService.getIdTokenRequest(processId,did,authorisationServerMetadata,tuple.getT1());
                                     }
                                     else if (responseType.equals("vp_token")){
-                                       return vpTokenService.getVpRequest(processId,authorizationToken,authorisationServerMetadata,did,tuple);
+                                       return vpTokenService.getVpRequest(processId,authorizationToken,authorisationServerMetadata,tuple.getT1());
                                     }
                                     else {
                                         return Mono.error(new RuntimeException("Not known response_type."));
                                     }
                                 })
+                                .flatMap(params -> authorisationResponseService.sendTokenRequest(tuple.getT2(), did, authorisationServerMetadata,params))
                         )
                 )
                 // get Credential
                 .flatMap(tokenResponse -> credentialEbsiService.getCredential(processId, tokenResponse, credentialIssuerMetadata,authorizationToken,credentialOffer.credentials().get(0).format(),credentialOffer.credentials().get(0).types()))
                 // save Credential
                 .flatMap(credentialResponse -> ebsiConfig.getDid()
-                        .flatMap(did -> processUserEntity(processId,authorizationToken,credentialResponse,did)));
+                        .flatMap(did -> processUserEntity(processId,authorizationToken,credentialResponse)));
     }
     private Mono<String> extractResponseType(String jwt){
         return Mono.fromCallable(() -> {
@@ -102,7 +101,7 @@ public class EbsiCredentialIssuanceServiceFacadeImpl implements EbsiCredentialIs
      * If the user entity exists, it is updated with the new credential.
      * If not, a new user entity is created and then updated with the credential.
      */
-    private Mono<Void> processUserEntity(String processId, String authorizationToken, CredentialResponse credentialResponse, String did) {
+    private Mono<Void> processUserEntity(String processId, String authorizationToken, CredentialResponse credentialResponse) {
         return getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
