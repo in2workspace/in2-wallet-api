@@ -40,6 +40,7 @@ public class HashicorpAdapter implements GenericVaultService {
                 .onErrorResume(Exception.class, Mono::error)
                 .then();
     }
+
     @Override
     public Mono<String> getSecretByKey(String key, String type) {
         String processId = MDC.get(PROCESS_ID);
@@ -78,4 +79,5 @@ public class HashicorpAdapter implements GenericVaultService {
                     return Mono.error(e);
                 });
     }
+
 }
