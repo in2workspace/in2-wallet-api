@@ -60,7 +60,7 @@ public class AuthorisationRequestServiceImpl implements AuthorisationRequestServ
     /**
      * Completes the token exchange process using the provided parameters and code verifier.
      */
-    private Mono<Tuple2<String, String>> extractRequest( Tuple2<Map<String, String>, String> paramsAndCodeVerifier) {
+    private Mono<Tuple2<String, String>> extractRequest(Tuple2<Map<String, String>, String> paramsAndCodeVerifier) {
         Map<String, String> params = paramsAndCodeVerifier.getT1();
         String codeVerifier = paramsAndCodeVerifier.getT2();
 
