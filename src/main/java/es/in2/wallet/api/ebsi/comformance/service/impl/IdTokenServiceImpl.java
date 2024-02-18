@@ -7,10 +7,8 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.api.ebsi.comformance.service.IdTokenService;
 import es.in2.wallet.api.exception.FailedCommunicationException;
-import es.in2.wallet.api.exception.FailedDeserializingException;
 import es.in2.wallet.api.exception.ParseErrorException;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
-import es.in2.wallet.api.model.TokenResponse;
 import es.in2.wallet.api.service.SignerService;
 import es.in2.wallet.api.util.MessageUtils;
 import es.in2.wallet.vault.service.VaultService;
@@ -18,14 +16,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import static es.in2.wallet.api.util.MessageUtils.*;
 
