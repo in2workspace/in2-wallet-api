@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
-import es.in2.wallet.api.ebsi.comformance.configuration.EbsiConfig;
 import es.in2.wallet.api.ebsi.comformance.model.CredentialRequestEbsi;
 import es.in2.wallet.api.ebsi.comformance.service.CredentialEbsiService;
 import es.in2.wallet.api.exception.FailedCommunicationException;
@@ -27,6 +26,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
+import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
 import static es.in2.wallet.api.util.MessageUtils.*;
 
 @Slf4j
@@ -35,15 +35,13 @@ import static es.in2.wallet.api.util.MessageUtils.*;
 public class CredentialEbsiServiceImpl implements CredentialEbsiService {
 
     private final ObjectMapper objectMapper;
-    private final EbsiConfig ebsiConfig;
     private final VaultService vaultService;
     private final SignerService signerService;
 
     @Override
-    public Mono<CredentialResponse> getCredential(String processId, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String authorizationToken, String format, List<String> types) {
+    public Mono<CredentialResponse> getCredential(String processId, String did, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types) {
         // build CredentialRequest
-        return ebsiConfig.getDid()
-                .flatMap(did -> buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(),did,format,types))
+        return buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(),did,format,types)
                 .doOnSuccess(credentialRequest -> log.info("ProcessID: {} - CredentialRequest: {}", processId, credentialRequest))
                 // post CredentialRequest
                 .flatMap(credentialRequest -> postCredential(tokenResponse, credentialIssuerMetadata, credentialRequest))
@@ -134,8 +132,6 @@ public class CredentialEbsiServiceImpl implements CredentialEbsiService {
         try {
             JsonNode documentNode = objectMapper.readTree(payload.toString());
 
-
-
             return vaultService.getSecretByKey(did,PRIVATE_KEY_TYPE)
                     .flatMap(privateKey -> signerService.buildJWTSFromJsonNode(documentNode,did,"proof",privateKey))
                     .flatMap(jwt -> Mono.just(CredentialRequestEbsi.builder()
@@ -150,7 +146,7 @@ public class CredentialEbsiServiceImpl implements CredentialEbsiService {
                     });
         }catch (JsonProcessingException e){
             log.error("Error while parsing the JWT payload", e);
-            throw new ParseErrorException("Error while parsing the JWT payload: " + e.getMessage());
+            return Mono.error(new ParseErrorException("Error while parsing the JWT payload: " + e.getMessage()));
         }
 
     }

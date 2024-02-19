@@ -105,7 +105,7 @@ public class SignerServiceImpl implements SignerService {
         if (matcher.find()) {
             return str+"#"+matcher.group(1);
         } else {
-            return "";
+            return str;
         }
     }
 

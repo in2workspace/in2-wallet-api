@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import static es.in2.wallet.api.util.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
 import static es.in2.wallet.api.util.MessageUtils.*;
 
 @Slf4j

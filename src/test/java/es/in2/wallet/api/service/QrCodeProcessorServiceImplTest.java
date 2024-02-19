@@ -1,6 +1,6 @@
 package es.in2.wallet.api.service;
 
-import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialIssuanceServiceFacade;
+import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialServiceFacade;
 import es.in2.wallet.api.exception.NoSuchQrContentException;
 import es.in2.wallet.api.facade.CredentialIssuanceServiceFacade;
 import es.in2.wallet.api.service.impl.QrCodeProcessorServiceImpl;
@@ -20,7 +20,7 @@ class QrCodeProcessorServiceImplTest {
     @Mock
     private CredentialIssuanceServiceFacade credentialIssuanceServiceFacade;
     @Mock
-    private EbsiCredentialIssuanceServiceFacade ebsiCredentialIssuanceServiceFacade;
+    private EbsiCredentialServiceFacade ebsiCredentialServiceFacade;
 
     @InjectMocks
     private QrCodeProcessorServiceImpl qrCodeProcessorService;
@@ -76,7 +76,7 @@ class QrCodeProcessorServiceImplTest {
         String processId = "processId";
         String authorizationToken = "authToken";
 
-        when(ebsiCredentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).thenReturn(Mono.empty());
+        when(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).thenReturn(Mono.empty());
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
                 .verifyComplete();
@@ -87,7 +87,7 @@ class QrCodeProcessorServiceImplTest {
         String processId = "processId";
         String authorizationToken = "authToken";
 
-        when(ebsiCredentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).thenThrow(new RuntimeException());
+        when(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).thenThrow(new RuntimeException());
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
                 .expectError(RuntimeException.class)

@@ -1,5 +1,6 @@
 package es.in2.wallet.api.facade.impl;
 
+import es.in2.wallet.api.ebsi.comformance.service.*;
 import es.in2.wallet.api.facade.CredentialIssuanceServiceFacade;
 import es.in2.wallet.api.model.*;
 import es.in2.wallet.api.service.*;
@@ -12,7 +13,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
-import static es.in2.wallet.api.util.MessageUtils.getUserIdFromToken;
+import static es.in2.wallet.api.util.ApplicationUtils.extractResponseType;
+import static es.in2.wallet.api.util.ApplicationUtils.getUserIdFromToken;
 
 @Slf4j
 @Service
@@ -31,6 +33,11 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
     private final SignerService signerService;
     private final BrokerService brokerService;
     private final UserDataService userDataService;
+    private final IdTokenService idTokenService;
+    private final VpTokenService vpTokenService;
+    private final AuthorisationRequestService authorisationRequestService;
+    private final AuthorisationResponseService authorisationResponseService;
+    private final CredentialEbsiService credentialEbsiService;
 
     @Override
     public Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent) {
@@ -70,6 +77,32 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
                 );
     }
 
+    /**
+     * Handles the credential acquisition flow using an authorization code grant.
+     * This method is selected when the credential offer does not include a pre-authorized code grant,
+     * requiring the user to go through an authorization code flow to obtain the credential.
+     */
+    private Mono<Void> getCredentialWithAuthorizedCode(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
+        return generateAndSaveKeyPair()
+                .flatMap(map -> {
+                    String did = map.get("did");
+
+                    return authorisationRequestService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did)
+                            .flatMap(tuple -> extractResponseType(tuple.getT1())
+                                    .flatMap(responseType -> {
+                                        if ("id_token".equals(responseType)) {
+                                            return idTokenService.getIdTokenResponse(processId, did, authorisationServerMetadata, tuple.getT1());
+                                        } else if ("vp_token".equals(responseType)) {
+                                            return vpTokenService.getVpRequest(processId, authorizationToken, authorisationServerMetadata, tuple.getT1());
+                                        } else {
+                                            return Mono.error(new RuntimeException("Not known response_type."));
+                                        }
+                                    })
+                                    .flatMap(params -> authorisationResponseService.sendTokenRequest(tuple.getT2(), did, authorisationServerMetadata, params)))
+                            .flatMap(tokenResponse -> credentialEbsiService.getCredential(processId, did, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
+                            .flatMap(credentialResponse -> processUserEntity(processId, authorizationToken, credentialResponse, did));
+                });
+    }
 
     /**
      * Retrieves a pre-authorized token from the authorization server.
@@ -171,17 +204,5 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
                                 .orElseGet(() -> Mono.error(new RuntimeException("Entity not found after creation.")))
                 );
     }
-
-
-    private Mono<Void> getCredentialWithAuthorizedCode(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
-        // get Credential Offer
-        log.debug(processId);
-        log.debug(authorizationToken);
-        log.debug(credentialOffer.toString());
-        log.debug(authorisationServerMetadata.toString());
-        log.debug(credentialIssuerMetadata.toString());
-        return Mono.error(new RuntimeException("Not implemented yet."));
-    }
-
 
 }

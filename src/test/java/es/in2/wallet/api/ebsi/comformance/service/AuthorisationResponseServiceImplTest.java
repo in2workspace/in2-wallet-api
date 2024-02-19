@@ -4,9 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.api.ebsi.comformance.service.impl.AuthorisationResponseServiceImpl;
 import es.in2.wallet.api.exception.FailedCommunicationException;
-import es.in2.wallet.api.exception.FailedDeserializingException;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
 import es.in2.wallet.api.model.TokenResponse;
+import es.in2.wallet.api.util.ApplicationUtils;
 import es.in2.wallet.api.util.MessageUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,8 +20,8 @@ import reactor.test.StepVerifier;
 
 import java.util.Map;
 
+import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
 import static es.in2.wallet.api.util.MessageUtils.GLOBAL_STATE;
-import static es.in2.wallet.api.util.MessageUtils.postRequest;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
@@ -36,7 +36,7 @@ class AuthorisationResponseServiceImplTest {
 
     @Test
     void sendTokenRequest_SuccessfulFlow() throws JsonProcessingException {
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)){
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             // Setup
             String codeVerifier = "codeVerifier";
             String did = "did:key:example";
@@ -57,7 +57,7 @@ class AuthorisationResponseServiceImplTest {
     }
     @Test
     void sendTokenRequest_FailedCommunicationException() {
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)){
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             // Setup
             String codeVerifier = "codeVerifier";
             String did = "did:key:example";

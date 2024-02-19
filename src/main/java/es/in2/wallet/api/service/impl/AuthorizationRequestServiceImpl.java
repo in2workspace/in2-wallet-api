@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.MessageUtils.getRequest;
+import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
 
 @Slf4j
 @Service

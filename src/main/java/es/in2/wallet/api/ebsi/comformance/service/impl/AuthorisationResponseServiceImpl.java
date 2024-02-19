@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
 import static es.in2.wallet.api.util.MessageUtils.*;
 
 @Slf4j
@@ -23,6 +24,24 @@ import static es.in2.wallet.api.util.MessageUtils.*;
 @RequiredArgsConstructor
 public class AuthorisationResponseServiceImpl implements AuthorisationResponseService {
     private final ObjectMapper objectMapper;
+
+    /**
+     * Sends a token request to the Authorisation Server's token endpoint using the provided parameters.
+     * This method is part of the code flow in OAuth 2.0, specifically designed to secure the exchange
+     * of the authorization code for a token. It uses PKCE to enhance security by verifying the code
+     * verifier against the initially provided code challenge.
+     *
+     * It also checks for a state match to ensure the request response cycle is not intercepted.
+     * Upon success, it deserializes the response into a {@link TokenResponse} object.
+     *
+     * @param codeVerifier The code verifier for the PKCE, which the Authorisation Server will use
+     *                     to hash and compare against the previously received code challenge.
+     * @param did The decentralized identifier representing the client's identity.
+     * @param authorisationServerMetadata Metadata containing the token endpoint URL of the
+     *                                    Authorisation Server.
+     * @param params A map of parameters received from the Authorisation Server, including the
+     *               authorization code and the state to be verified.
+     */
     @Override
     public Mono<TokenResponse> sendTokenRequest(String codeVerifier, String did, AuthorisationServerMetadata authorisationServerMetadata, Map<String, String> params){
         if(Objects.equals(params.get("state"), GLOBAL_STATE)){

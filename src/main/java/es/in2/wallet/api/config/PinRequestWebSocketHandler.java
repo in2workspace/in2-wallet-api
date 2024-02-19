@@ -16,7 +16,7 @@ import reactor.core.publisher.Sinks;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static es.in2.wallet.api.util.MessageUtils.getUserIdFromToken;
+import static es.in2.wallet.api.util.ApplicationUtils.getUserIdFromToken;
 
 @Getter
 @Component

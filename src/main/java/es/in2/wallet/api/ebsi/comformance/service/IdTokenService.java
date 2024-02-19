@@ -6,5 +6,5 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 public interface IdTokenService {
-    Mono<Map<String, String>> getIdTokenRequest(String processId, String did, AuthorisationServerMetadata authorisationServerMetadata, String jwt);
+    Mono<Map<String, String>> getIdTokenResponse(String processId, String did, AuthorisationServerMetadata authorisationServerMetadata, String jwt);
 }

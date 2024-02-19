@@ -1,24 +1,7 @@
 package es.in2.wallet.api.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.jwt.SignedJWT;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
 
-import java.net.URI;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -27,9 +10,6 @@ public class MessageUtils {
     private MessageUtils() {
         throw new IllegalStateException("Utility class");
     }
-
-    private static final WebClient WEB_CLIENT = WebClient.builder().clientConnector(new ReactorClientHttpConnector(HttpClient.create().followRedirect(false)))
-            .build();
     public static final String RESOURCE_UPDATED_MESSAGE = "ProcessId: {}, Resource updated successfully.";
     public static final String ERROR_UPDATING_RESOURCE_MESSAGE = "Error while updating resource: {}";
     public static final String ENTITY_PREFIX = "/urn:entities:userId:";
@@ -74,84 +54,4 @@ public class MessageUtils {
     public static final Pattern OPENID_CREDENTIAL_OFFER_PATTERN = Pattern.compile("openid-credential-offer://\\S*");
     public static final Pattern EBSI_CREDENTIAL_OFFER_PATTERN = Pattern.compile("\\S*(conformance.ebsi)\\S*");
     public static final Pattern OPENID_AUTHENTICATION_REQUEST_PATTERN = Pattern.compile("openid://\\S*");
-
-    public static Mono<String> postRequest(String url, List<Map.Entry<String, String>> headers, String body) {
-        return WEB_CLIENT.post()
-                .uri(url)
-                .headers(httpHeaders -> headers.forEach(entry -> httpHeaders.add(entry.getKey(), entry.getValue())))
-                .bodyValue(body)
-                .exchangeToMono(response -> {
-                    if (response.statusCode().is3xxRedirection()) {
-                        return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
-                    } else {
-                        return response.bodyToMono(String.class);
-                    }
-                });
-    }
-
-    public static Mono<String> getRequest(String url, List<Map.Entry<String, String>> headers) {
-        return WEB_CLIENT.get()
-                .uri(URI.create(url))
-                .headers(httpHeaders -> headers.forEach(entry -> httpHeaders.add(entry.getKey(), entry.getValue())))
-                .exchangeToMono(response -> {
-                    if (response.statusCode().is3xxRedirection()) {
-                        return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
-                    } else {
-                        return response.bodyToMono(String.class);
-                    }
-                });
-    }
-    public static Mono<String> getCleanBearerToken(String authorizationHeader) {
-        return Mono.just(authorizationHeader)
-                .filter(header -> header.startsWith(BEARER))
-                .map(header -> header.replace(BEARER, "").trim())
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Invalid")));
-    }
-    public static Mono<String> getUserIdFromToken(String authorizationToken) {
-        try {
-            SignedJWT parsedVcJwt = SignedJWT.parse(authorizationToken);
-            JsonNode jsonObject = new ObjectMapper().readTree(parsedVcJwt.getPayload().toString());
-            return Mono.just(jsonObject.get("sub").asText());
-        } catch (ParseException | JsonProcessingException e) {
-            return Mono.error(e);
-        }
-    }
-    public static Mono<String> getCleanBearerAndUserIdFromToken(String authorizationHeader) {
-        return Mono.just(authorizationHeader)
-                .filter(header -> header.startsWith(BEARER))
-                .map(header -> header.substring(7))
-                .flatMap(token -> {
-                    try {
-                        SignedJWT parsedVcJwt = SignedJWT.parse(token);
-                        JsonNode jsonObject = new ObjectMapper().readTree(parsedVcJwt.getPayload().toString());
-                        return Mono.just(jsonObject.get("sub").asText());
-                    } catch (ParseException | JsonProcessingException e) {
-                        return Mono.error(e);
-                    }
-                })
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Invalid")));
-    }
-
-    public static Mono<Map<String, String>> extractAllQueryParams(String url) {
-        log.debug(url);
-        return Mono.fromCallable(() -> {
-            Map<String, String> params = new HashMap<>();
-            try {
-                URI uri = new URI(url);
-                String query = uri.getQuery();
-                if (query != null) {
-                    String[] pairs = query.split("&");
-                    for (String pair : pairs) {
-                        int idx = pair.indexOf("=");
-                        String key = URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8);
-                        String value = URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8);
-                        params.put(key, value);
-                    }
-                }
-            } catch (Exception e) {
-                log.debug(e.getMessage());
-            }
-            return params;
-        });
-    }
 }

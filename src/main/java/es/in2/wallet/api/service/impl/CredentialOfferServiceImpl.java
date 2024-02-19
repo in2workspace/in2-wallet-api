@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import es.in2.wallet.api.exception.FailedCommunicationException;
 import es.in2.wallet.api.exception.FailedDeserializingException;
-import es.in2.wallet.api.exception.ParseErrorException;
 import es.in2.wallet.api.model.CredentialOffer;
 import es.in2.wallet.api.service.CredentialOfferService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
 import static es.in2.wallet.api.util.MessageUtils.*;
 
 @Slf4j

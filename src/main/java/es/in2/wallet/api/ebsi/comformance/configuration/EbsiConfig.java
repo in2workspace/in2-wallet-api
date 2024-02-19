@@ -7,7 +7,7 @@ import es.in2.wallet.api.ebsi.comformance.configuration.properties.IdentityProvi
 import es.in2.wallet.api.service.DidKeyGeneratorService;
 import es.in2.wallet.api.service.KeyGenerationService;
 import es.in2.wallet.api.service.UserDataService;
-import es.in2.wallet.api.util.MessageUtils;
+import es.in2.wallet.api.util.ApplicationUtils;
 import es.in2.wallet.broker.service.BrokerService;
 import es.in2.wallet.vault.service.VaultService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,7 +23,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM;
 
 @Component
 @RequiredArgsConstructor
@@ -74,7 +76,7 @@ public class EbsiConfig
 
                     return Mono.just(token);
                 })
-                .flatMap(MessageUtils::getUserIdFromToken)
+                .flatMap(ApplicationUtils::getUserIdFromToken)
                 .flatMap(userId -> brokerService.getEntityById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
                                 .map(entity -> getDidForUserAlreadyCreated(processId, userId))

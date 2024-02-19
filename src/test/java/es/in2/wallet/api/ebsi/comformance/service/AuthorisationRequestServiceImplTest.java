@@ -8,7 +8,7 @@ import es.in2.wallet.api.exception.FailedCommunicationException;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
 import es.in2.wallet.api.model.CredentialIssuerMetadata;
 import es.in2.wallet.api.model.CredentialOffer;
-import es.in2.wallet.api.util.MessageUtils;
+import es.in2.wallet.api.util.ApplicationUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.MessageUtils.extractAllQueryParams;
-import static es.in2.wallet.api.util.MessageUtils.getRequest;
+import static es.in2.wallet.api.util.ApplicationUtils.extractAllQueryParams;
+import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
@@ -40,7 +40,7 @@ class AuthorisationRequestServiceImplTest {
 
     @Test
     void getRequestWithOurGeneratedCodeVerifierTest() throws JsonProcessingException {
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)){
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             String processId = "processId";
             CredentialOffer.Credential credential = CredentialOffer.Credential.builder().format("jwt_vc").types(List.of("VC")).build();
             CredentialOffer.Grant grant = CredentialOffer.Grant.builder().authorizationCodeGrant(CredentialOffer.Grant.AuthorizationCodeGrant.builder().issuerState("state").build()).build();
@@ -74,7 +74,7 @@ class AuthorisationRequestServiceImplTest {
     }
     @Test
     void getRequestWithOurGeneratedCodeVerifierFailedCommunicationExceptionTest() throws JsonProcessingException {
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)){
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             String processId = "processId";
             CredentialOffer.Credential credential = CredentialOffer.Credential.builder().format("jwt_vc").types(List.of("VC")).build();
             CredentialOffer.Grant grant = CredentialOffer.Grant.builder().authorizationCodeGrant(CredentialOffer.Grant.AuthorizationCodeGrant.builder().issuerState("state").build()).build();
@@ -100,7 +100,7 @@ class AuthorisationRequestServiceImplTest {
 
     @Test
     void getRequestWithOurGeneratedCodeVerifierIllegalArgumentExceptionTest() throws JsonProcessingException {
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)){
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             String processId = "processId";
             CredentialOffer.Credential credential = CredentialOffer.Credential.builder().format("jwt_vc").types(List.of("VC")).build();
             CredentialOffer.Grant grant = CredentialOffer.Grant.builder().authorizationCodeGrant(CredentialOffer.Grant.AuthorizationCodeGrant.builder().issuerState("state").build()).build();

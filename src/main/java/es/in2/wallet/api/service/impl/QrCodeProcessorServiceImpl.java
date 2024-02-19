@@ -1,6 +1,6 @@
 package es.in2.wallet.api.service.impl;
 
-import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialIssuanceServiceFacade;
+import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialServiceFacade;
 import es.in2.wallet.api.exception.NoSuchQrContentException;
 import es.in2.wallet.api.facade.CredentialIssuanceServiceFacade;
 import es.in2.wallet.api.model.QrType;
@@ -19,7 +19,7 @@ import static es.in2.wallet.api.util.MessageUtils.*;
 public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
 
     private final CredentialIssuanceServiceFacade credentialIssuanceServiceFacade;
-    private final EbsiCredentialIssuanceServiceFacade ebsiCredentialIssuanceServiceFacade;
+    private final EbsiCredentialServiceFacade ebsiCredentialServiceFacade;
 
     @Override
     public Mono<Object> processQrContent(String processId, String authorizationToken, String qrContent) {
@@ -35,7 +35,7 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
                         }
                         case EBSI_CREDENTIAL_OFFER: {
                             log.info("ProcessID: {} - Processing a Verifiable Credential Offer URI in EBSI Format", processId);
-                            return ebsiCredentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)
+                            return ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)
                                     .doOnSuccess(credential -> log.info("ProcessID: {} - Credential Issued: {}", processId, credential))
                                     .doOnError(e -> log.error("ProcessID: {} - Error while issuing credential: {}", processId, e.getMessage()));
                         }

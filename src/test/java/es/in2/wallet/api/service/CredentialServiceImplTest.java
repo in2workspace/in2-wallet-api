@@ -12,6 +12,7 @@ import es.in2.wallet.api.model.CredentialIssuerMetadata;
 import es.in2.wallet.api.model.CredentialResponse;
 import es.in2.wallet.api.model.TokenResponse;
 import es.in2.wallet.api.service.impl.CredentialServiceImpl;
+import es.in2.wallet.api.util.ApplicationUtils;
 import es.in2.wallet.api.util.MessageUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
 import static es.in2.wallet.api.util.MessageUtils.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
@@ -43,7 +45,7 @@ class CredentialServiceImplTest {
 
     @Test
     void getCredentialTest() throws JsonProcessingException {
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)){
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             String processId = "processId";
 
             String jwt = "ey34324";
@@ -73,7 +75,7 @@ class CredentialServiceImplTest {
     }
     @Test
     void getCredentialFailedCommunicationErrorTest() throws JsonProcessingException{
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)){
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             String processId = "processId";
 
             String jwt = "ey34324";
@@ -98,7 +100,7 @@ class CredentialServiceImplTest {
     }
     @Test
     void getCredentialFailedDeserializingErrorTest() throws JsonProcessingException{
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)){
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
 
             String processId = "processId";
 
@@ -127,7 +129,7 @@ class CredentialServiceImplTest {
 
     @Test
     void getCredentialFailedSerializingExceptionTest() throws JsonProcessingException {
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)){
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             String processId = "processId";
 
             String jwt = "ey34324";
