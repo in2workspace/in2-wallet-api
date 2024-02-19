@@ -67,9 +67,9 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
      *
      * @param response The response String to be parsed.
      * @return A Mono<CredentialOffer> instance.
-     * @deprecated (since = "2.0.0", forRemoval = true) Temporary implementation to handle backward compatibility.
+     * @deprecated (since = "1.0.0", forRemoval = true) Temporary implementation to handle backward compatibility.
      */
-    @Deprecated(since = "2.0.0", forRemoval = true)
+    @Deprecated(since = "1.0.0", forRemoval = true)
     private Mono<CredentialOffer> parseCredentialOfferResponse(String response) {
         try {
             JsonNode rootNode = objectMapper.readTree(response);

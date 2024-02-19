@@ -2,6 +2,7 @@ package es.in2.wallet.api.ebsi.comformance.controller;
 
 import es.in2.wallet.api.ebsi.comformance.facade.impl.EbsiCredentialServiceFacadeImpl;
 import es.in2.wallet.api.ebsi.comformance.model.CredentialOfferContent;
+import es.in2.wallet.api.facade.CredentialIssuanceServiceFacade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -13,6 +14,7 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 import static es.in2.wallet.api.util.ApplicationUtils.getCleanBearerToken;
+import static es.in2.wallet.api.util.MessageUtils.EBSI_CREDENTIAL_OFFER_PATTERN;
 
 
 @Slf4j
@@ -22,6 +24,7 @@ import static es.in2.wallet.api.util.ApplicationUtils.getCleanBearerToken;
 public class CredentialIssuanceController {
 
     private final EbsiCredentialServiceFacadeImpl ebsiCredentialIssuanceServiceFacade;
+    private final CredentialIssuanceServiceFacade credentialIssuanceServiceFacade;
 
     /**
      * Processes a request for a verifiable credential when the credential offer is received via a redirect.
@@ -35,8 +38,14 @@ public class CredentialIssuanceController {
         String processId = UUID.randomUUID().toString();
         MDC.put("processId", processId);
         return getCleanBearerToken(authorizationHeader)
-                .flatMap(authorizationToken ->
-                        ebsiCredentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, credentialOfferContent.credentialOfferUri()));
+                .flatMap(authorizationToken -> {
+                            if (EBSI_CREDENTIAL_OFFER_PATTERN.matcher(credentialOfferContent.credentialOfferUri()).matches()){
+                                return ebsiCredentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, credentialOfferContent.credentialOfferUri());
+                            }
+                            else {
+                                return credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, credentialOfferContent.credentialOfferUri());
+                            }
+                        });
     }
 
 }

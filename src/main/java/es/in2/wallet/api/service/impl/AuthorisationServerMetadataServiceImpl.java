@@ -54,9 +54,9 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
      *
      * @param response The response String to be parsed.
      * @return An instance of Mono<AuthorisationServerMetadata>.
-     * @deprecated (since = "2.0.0", forRemoval = true) This implementation is temporary and should be replaced in future versions.
+     * @deprecated (since = "1.0.0", forRemoval = true) This implementation is temporary and should be replaced in future versions.
      */
-    @Deprecated(since = "2.0.0", forRemoval = true)
+    @Deprecated(since = ".0.0", forRemoval = true)
     private Mono<AuthorisationServerMetadata> parseCredentialIssuerMetadataResponse(String response) {
         try {
             AuthorisationServerMetadata authorisationServerMetadata = objectMapper.readValue(response, AuthorisationServerMetadata.class);
