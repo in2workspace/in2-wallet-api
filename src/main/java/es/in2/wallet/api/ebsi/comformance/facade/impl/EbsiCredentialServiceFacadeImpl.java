@@ -1,6 +1,6 @@
 package es.in2.wallet.api.ebsi.comformance.facade.impl;
 
-import es.in2.wallet.api.ebsi.comformance.configuration.EbsiConfig;
+import es.in2.wallet.api.ebsi.comformance.config.EbsiConfig;
 import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialServiceFacade;
 import es.in2.wallet.api.ebsi.comformance.service.*;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;

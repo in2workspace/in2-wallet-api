@@ -1,6 +1,6 @@
 package es.in2.wallet.api.ebsi.comformance.controller;
 
-import es.in2.wallet.api.ebsi.comformance.configuration.EbsiConfig;
+import es.in2.wallet.api.ebsi.comformance.config.EbsiConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

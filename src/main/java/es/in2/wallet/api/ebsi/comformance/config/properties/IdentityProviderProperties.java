@@ -1,4 +1,4 @@
-package es.in2.wallet.api.ebsi.comformance.configuration.properties;
+package es.in2.wallet.api.ebsi.comformance.config.properties;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;

@@ -1,9 +1,9 @@
-package es.in2.wallet.api.ebsi.comformance.configuration;
+package es.in2.wallet.api.ebsi.comformance.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.ebsi.comformance.configuration.properties.IdentityProviderProperties;
+import es.in2.wallet.api.ebsi.comformance.config.properties.IdentityProviderProperties;
 import es.in2.wallet.api.service.DidKeyGeneratorService;
 import es.in2.wallet.api.service.KeyGenerationService;
 import es.in2.wallet.api.service.UserDataService;

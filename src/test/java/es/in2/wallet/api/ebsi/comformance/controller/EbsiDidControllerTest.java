@@ -1,6 +1,6 @@
 package es.in2.wallet.api.ebsi.comformance.controller;
 
-import es.in2.wallet.api.ebsi.comformance.configuration.EbsiConfig;
+import es.in2.wallet.api.ebsi.comformance.config.EbsiConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,9 +17,7 @@ class EbsiDidControllerTest {
     private EbsiConfig ebsiConfig;
     @InjectMocks
     private EbsiDidController ebsiDidController;
-
-
-
+    
     @Test
     void testGetEbsiDid() {
         when(ebsiConfig.getDid()).thenReturn(Mono.just("did:key:1234"));

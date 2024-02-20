@@ -1,6 +1,6 @@
 package es.in2.wallet.api.ebsi.comformance.controller;
 
-import es.in2.wallet.api.ebsi.comformance.facade.impl.EbsiCredentialServiceFacadeImpl;
+import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialServiceFacade;
 import es.in2.wallet.api.ebsi.comformance.model.CredentialOfferContent;
 import es.in2.wallet.api.facade.CredentialIssuanceServiceFacade;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import static es.in2.wallet.api.util.MessageUtils.EBSI_CREDENTIAL_OFFER_PATTERN;
 @RequiredArgsConstructor
 public class CredentialIssuanceController {
 
-    private final EbsiCredentialServiceFacadeImpl ebsiCredentialIssuanceServiceFacade;
+    private final EbsiCredentialServiceFacade ebsiCredentialIssuanceServiceFacade;
     private final CredentialIssuanceServiceFacade credentialIssuanceServiceFacade;
 
     /**
