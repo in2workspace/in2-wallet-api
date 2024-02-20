@@ -57,8 +57,6 @@ public class UserDataServiceImpl implements UserDataService {
      */
     private Mono<String> deserializeUserEntityToString(UserEntity userEntity){
         try {
-            String user = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(userEntity);
-            log.debug(user);
             return Mono.just(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(userEntity));
 
         }
