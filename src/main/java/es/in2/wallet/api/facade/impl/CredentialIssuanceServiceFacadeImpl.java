@@ -5,13 +5,10 @@ import es.in2.wallet.api.facade.CredentialIssuanceServiceFacade;
 import es.in2.wallet.api.model.*;
 import es.in2.wallet.api.service.*;
 import es.in2.wallet.broker.service.BrokerService;
-import es.in2.wallet.vault.service.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
-import java.util.Map;
 
 import static es.in2.wallet.api.util.ApplicationUtils.extractResponseType;
 import static es.in2.wallet.api.util.ApplicationUtils.getUserIdFromToken;
@@ -26,9 +23,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
     private final AuthorisationServerMetadataService authorisationServerMetadataService;
     private final PreAuthorizedService preAuthorizedService;
     private final CredentialService credentialService;
-    private final KeyGenerationService keyGenerationService;
     private final DidKeyGeneratorService didKeyGeneratorService;
-    private final VaultService vaultService;
     private final ProofJWTService proofJWTService;
     private final SignerService signerService;
     private final BrokerService brokerService;
@@ -68,10 +63,10 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      */
     private Mono<Void> getCredentialWithPreAuthorizedCode(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
         return getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
-                .flatMap(tokenResponse -> generateAndSaveKeyPair()
-                        .flatMap(map -> buildAndSignCredentialRequest(tokenResponse, map, credentialIssuerMetadata)
+                .flatMap(tokenResponse -> generateDid()
+                        .flatMap(did -> buildAndSignCredentialRequest(tokenResponse, did, credentialIssuerMetadata)
                                 .flatMap(signedJWT -> getCredential(processId, signedJWT, tokenResponse, credentialIssuerMetadata)
-                                        .flatMap(credentialResponse -> processUserEntity(processId, authorizationToken, credentialResponse,map.get("did")))
+                                        .flatMap(credentialResponse -> processUserEntity(processId, authorizationToken, credentialResponse,did))
                                 )
                         )
                 );
@@ -83,25 +78,21 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * requiring the user to go through an authorization code flow to obtain the credential.
      */
     private Mono<Void> getCredentialWithAuthorizedCode(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
-        return generateAndSaveKeyPair()
-                .flatMap(map -> {
-                    String did = map.get("did");
-
-                    return authorisationRequestService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did)
-                            .flatMap(tuple -> extractResponseType(tuple.getT1())
-                                    .flatMap(responseType -> {
-                                        if ("id_token".equals(responseType)) {
-                                            return idTokenService.getIdTokenResponse(processId, did, authorisationServerMetadata, tuple.getT1());
-                                        } else if ("vp_token".equals(responseType)) {
-                                            return vpTokenService.getVpRequest(processId, authorizationToken, authorisationServerMetadata, tuple.getT1());
-                                        } else {
-                                            return Mono.error(new RuntimeException("Not known response_type."));
-                                        }
-                                    })
-                                    .flatMap(params -> authorisationResponseService.sendTokenRequest(tuple.getT2(), did, authorisationServerMetadata, params)))
-                            .flatMap(tokenResponse -> credentialEbsiService.getCredential(processId, did, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
-                            .flatMap(credentialResponse -> processUserEntity(processId, authorizationToken, credentialResponse, did));
-                });
+        return generateDid()
+                .flatMap(did -> authorisationRequestService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did)
+                        .flatMap(tuple -> extractResponseType(tuple.getT1())
+                                .flatMap(responseType -> {
+                                    if ("id_token".equals(responseType)) {
+                                        return idTokenService.getIdTokenResponse(processId, did, authorisationServerMetadata, tuple.getT1());
+                                    } else if ("vp_token".equals(responseType)) {
+                                        return vpTokenService.getVpRequest(processId, authorizationToken, authorisationServerMetadata, tuple.getT1());
+                                    } else {
+                                        return Mono.error(new RuntimeException("Not known response_type."));
+                                    }
+                                })
+                                .flatMap(params -> authorisationResponseService.sendTokenRequest(tuple.getT2(), did, authorisationServerMetadata, params)))
+                        .flatMap(tokenResponse -> credentialEbsiService.getCredential(processId, did, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
+                        .flatMap(credentialResponse -> processUserEntity(processId, authorizationToken, credentialResponse, did)));
     }
 
     /**
@@ -117,19 +108,17 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * The generated key pair is then saved in a vault for secure storage and later retrieval.
      * The method returns a map containing key pair details, including the DID.
      */
-    private Mono<Map<String, String>> generateAndSaveKeyPair() {
-        return keyGenerationService.generateES256r1ECKeyPair()
-                .flatMap(didKeyGeneratorService::generateDidKeyFromKeyPair)
-                .flatMap(map -> vaultService.saveSecret(map).thenReturn(map));
+    private Mono<String> generateDid() {
+        return didKeyGeneratorService.generateDidKeyJwkJcsPub();
     }
 
     /**
      * Constructs a credential request using the nonce from the token response and the issuer's information.
      * The request is then signed using the generated DID and private key to ensure its authenticity.
      */
-    private Mono<String> buildAndSignCredentialRequest(TokenResponse tokenResponse, Map<String, String> map, CredentialIssuerMetadata credentialIssuerMetadata) {
+    private Mono<String> buildAndSignCredentialRequest(TokenResponse tokenResponse, String did, CredentialIssuerMetadata credentialIssuerMetadata) {
         return proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer())
-                .flatMap(json -> signerService.buildJWTSFromJsonNode(json, map.get("did"), "proof"));
+                .flatMap(json -> signerService.buildJWTSFromJsonNode(json, did, "proof"));
     }
 
     /**
@@ -149,8 +138,8 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
         return getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
-                                .map(entity -> updateEntity(processId, userId, credentialResponse, entity,did)) // Si está presente, actualiza
-                                .orElseGet(() -> createAndUpdateUser(processId, userId, credentialResponse,did)) // Si no, crea y actualiza
+                                .map(entity -> updateEntity(processId, userId, credentialResponse, entity,did))
+                                .orElseGet(() -> createAndUpdateUser(processId, userId, credentialResponse,did))
                         )
                 );
     }

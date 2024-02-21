@@ -7,7 +7,6 @@ import lombok.Builder;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record VaultSecretData(
-        @JsonProperty("privateKey") String privateKey,
-        @JsonProperty("publicKey") String publicKey
+        @JsonProperty("privateKey") String privateKey
 ) {
 }

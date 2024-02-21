@@ -39,7 +39,7 @@ public class SignerServiceImpl implements SignerService {
     public Mono<String> buildJWTSFromJsonNode(JsonNode document, String did, String documentType) {
         String processId = MDC.get(PROCESS_ID);
 
-        return  vaultService.getSecretByKey(did, PRIVATE_KEY_TYPE)
+        return  vaultService.getSecretByKey(did)
                 .flatMap(privateKey -> identifyDocumentType(documentType)
                     .flatMap(docType -> Mono.fromCallable(() -> {
                         try {

@@ -10,7 +10,6 @@ import es.in2.wallet.api.service.PresentationService;
 import es.in2.wallet.api.service.SignerService;
 import es.in2.wallet.api.service.UserDataService;
 import es.in2.wallet.broker.service.BrokerService;
-import es.in2.wallet.vault.service.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,7 +24,8 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import static es.in2.wallet.api.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.MessageUtils.JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1;
+import static es.in2.wallet.api.util.MessageUtils.VERIFIABLE_PRESENTATION;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +34,6 @@ public class PresentationServiceImpl implements PresentationService {
     private final ObjectMapper objectMapper;
     private final UserDataService userDataService;
     private final BrokerService brokerService;
-    private final VaultService vaultService;
     private final SignerService signerService;
 
     /**
@@ -59,8 +58,7 @@ public class PresentationServiceImpl implements PresentationService {
                         .flatMap(did ->
                                 // Create the unsigned verifiable presentation
                                 createUnsignedPresentation(verifiableCredentialsList, did,nonce,audience)
-                                        .flatMap(document -> vaultService.getSecretByKey(did,PRIVATE_KEY_TYPE)
-                                            .flatMap(privateKey -> signerService.buildJWTSFromJsonNode(document,did,"vp")))
+                                        .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp"))
                         )
                 )
                         // Log success

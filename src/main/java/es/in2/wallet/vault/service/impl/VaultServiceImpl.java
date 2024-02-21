@@ -22,8 +22,8 @@ public class VaultServiceImpl implements VaultService {
     }
 
 
-    public Mono<String> getSecretByKey(String key, String type) {
-        return vaultService.getSecretByKey(key,type);
+    public Mono<String> getSecretByKey(String key) {
+        return vaultService.getSecretByKey(key);
     }
 
 

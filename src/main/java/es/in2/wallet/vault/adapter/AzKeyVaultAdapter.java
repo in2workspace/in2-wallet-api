@@ -17,7 +17,8 @@ import reactor.core.publisher.Mono;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.MessageUtils.PRIVATE_KEY_TYPE;
+import static es.in2.wallet.api.util.MessageUtils.PROCESS_ID;
 
 @Component
 @Slf4j
@@ -54,20 +55,14 @@ public class AzKeyVaultAdapter implements GenericVaultService {
     }
 
     @Override
-    public Mono<String> getSecretByKey(String key, String type) {
+    public Mono<String> getSecretByKey(String key) {
         String processId = MDC.get(PROCESS_ID);
         return Mono.fromCallable(() -> {
                     try {
                         KeyVaultSecret secret = secretClient.getSecret(parseDidUriToAzureKeyVaultSecretName(key));
                         Map<String, String> secretsMap = objectMapper.readValue(secret.getValue(), new TypeReference<>() {
                         });
-                        if (type.equals(PRIVATE_KEY_TYPE)) {
-                            return secretsMap.get(PRIVATE_KEY_TYPE);
-                        } else if (type.equals(PUBLIC_KEY_TYPE)) {
-                            return secretsMap.get(PUBLIC_KEY_TYPE);
-                        } else {
-                            throw new IllegalStateException("Invalid type");
-                        }
+                        return secretsMap.get(PRIVATE_KEY_TYPE);
                     } catch (Exception e) {
                         log.error("Communication with Key Vault failed: {}", e.getMessage(), e);
                         throw e;

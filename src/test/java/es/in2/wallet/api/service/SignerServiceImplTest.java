@@ -4,9 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import es.in2.wallet.api.service.impl.SignerServiceImpl;
 import es.in2.wallet.api.exception.ParseErrorException;
+import es.in2.wallet.api.service.impl.SignerServiceImpl;
 import es.in2.wallet.vault.service.VaultService;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -20,7 +19,6 @@ import reactor.test.StepVerifier;
 import java.util.HashMap;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.MessageUtils.PRIVATE_KEY_TYPE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -48,7 +46,7 @@ class SignerServiceImplTest {
         Map<String, Object> claimsMap = new HashMap<>();
         claimsMap.put("someKey", "someValue");
 
-        when(vaultService.getSecretByKey(did,PRIVATE_KEY_TYPE)).thenReturn(Mono.just(privateKey));
+        when(vaultService.getSecretByKey(did)).thenReturn(Mono.just(privateKey));
         when(mockedObjectMapper.convertValue(any(JsonNode.class), any(TypeReference.class))).thenReturn(claimsMap);
 
         StepVerifier.create(signerService.buildJWTSFromJsonNode(jsonNode, did, documentType))
@@ -71,7 +69,7 @@ class SignerServiceImplTest {
         Map<String, Object> claimsMap = new HashMap<>();
         claimsMap.put("someKey", "someValue");
 
-        when(vaultService.getSecretByKey(did,PRIVATE_KEY_TYPE)).thenReturn(Mono.just(privateKey));
+        when(vaultService.getSecretByKey(did)).thenReturn(Mono.just(privateKey));
         when(mockedObjectMapper.convertValue(any(JsonNode.class), any(TypeReference.class))).thenReturn(claimsMap);
 
         StepVerifier.create(signerService.buildJWTSFromJsonNode(jsonNode, did, documentType))
@@ -89,7 +87,7 @@ class SignerServiceImplTest {
         String privateKey = "invalid private key";
         String did = "did:example";
 
-        when(vaultService.getSecretByKey(did,PRIVATE_KEY_TYPE)).thenReturn(Mono.just(privateKey));
+        when(vaultService.getSecretByKey(did)).thenReturn(Mono.just(privateKey));
 
         StepVerifier.create(signerService.buildJWTSFromJsonNode(jsonNode, did, documentType))
                 .expectError(ParseErrorException.class)

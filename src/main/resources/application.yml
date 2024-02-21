@@ -9,7 +9,7 @@ spring:
       host: localhost
       port: 8201
       authentication: token
-      token: hvs.8Gjh5a5rlXrY4v9WMgdolHgD
+      token: hvs.wClyFQZMycchksoBJFXUPjQY
       scheme: http
       kv:
         enabled: true

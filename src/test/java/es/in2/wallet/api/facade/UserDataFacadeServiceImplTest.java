@@ -90,7 +90,7 @@ class UserDataFacadeServiceImplTest {
         when(userDataService.extractDidFromVerifiableCredential(anyString(), eq(credentialId))).thenReturn(Mono.just(did));
         when(vaultService.deleteSecretByKey(did)).thenReturn(Mono.empty());
         when(userDataService.deleteVerifiableCredential(anyString(), eq(credentialId), eq(did))).thenReturn(Mono.just(updatedEntity));
-        when(brokerService.updateEntity(eq(processId), eq(userId), eq(updatedEntity))).thenReturn(Mono.empty());
+        when(brokerService.updateEntity(processId, userId, updatedEntity)).thenReturn(Mono.empty());
 
         StepVerifier.create(userDataFacadeService.deleteVerifiableCredentialById(processId, credentialId, userId))
                 .verifyComplete();
