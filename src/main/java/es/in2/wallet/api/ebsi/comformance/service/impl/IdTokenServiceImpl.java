@@ -11,7 +11,6 @@ import es.in2.wallet.api.exception.ParseErrorException;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
 import es.in2.wallet.api.service.SignerService;
 import es.in2.wallet.api.util.ApplicationUtils;
-import es.in2.wallet.vault.service.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,14 +26,14 @@ import java.util.List;
 import java.util.Map;
 
 import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class IdTokenServiceImpl implements IdTokenService {
     private final ObjectMapper objectMapper;
-    private final VaultService vaultService;
     private final SignerService signerService;
 
     /**
@@ -120,8 +119,7 @@ public class IdTokenServiceImpl implements IdTokenService {
                 .build();
         try {
             JsonNode documentNode = objectMapper.readTree(payload.toString());
-            return vaultService.getSecretByKey(did,PRIVATE_KEY_TYPE)
-                    .flatMap(privateKey -> signerService.buildJWTSFromJsonNode(documentNode,did,"JWT",privateKey));
+            return signerService.buildJWTSFromJsonNode(documentNode,did,"JWT");
         }catch (JsonProcessingException e){
             log.error("Error while parsing the JWT payload", e);
             throw new ParseErrorException("Error while parsing the JWT payload: " + e.getMessage());

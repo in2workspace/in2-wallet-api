@@ -12,7 +12,6 @@ import es.in2.wallet.api.model.CredentialResponse;
 import es.in2.wallet.api.model.TokenResponse;
 import es.in2.wallet.api.service.SignerService;
 import es.in2.wallet.api.util.ApplicationUtils;
-import es.in2.wallet.vault.service.VaultService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -38,8 +37,6 @@ import static org.mockito.Mockito.when;
 class CredentialEbsiServiceImplTest {
     @Mock
     private ObjectMapper objectMapper;
-    @Mock
-    private VaultService vaultService;
 
     @Mock
     private SignerService signerService;
@@ -70,9 +67,8 @@ class CredentialEbsiServiceImplTest {
 
             JsonNode jsonNode = objectMapper2.readTree(json);
 
-            when(vaultService.getSecretByKey(ebsiDid,PRIVATE_KEY_TYPE)).thenReturn(Mono.just("key"));
             when(objectMapper.readTree(anyString())).thenReturn(jsonNode);
-            when(signerService.buildJWTSFromJsonNode(jsonNode,ebsiDid,"proof","key")).thenReturn(Mono.just("signedJwt"));
+            when(signerService.buildJWTSFromJsonNode(jsonNode,ebsiDid,"proof")).thenReturn(Mono.just("signedJwt"));
             when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
             when(objectMapper.readValue(anyString(), eq(CredentialResponse.class))).thenReturn(mockCredentialResponse);
 
@@ -108,9 +104,8 @@ class CredentialEbsiServiceImplTest {
 
             JsonNode jsonNode = objectMapper2.readTree(json);
 
-            when(vaultService.getSecretByKey(ebsiDid,PRIVATE_KEY_TYPE)).thenReturn(Mono.just("key"));
             when(objectMapper.readTree(anyString())).thenReturn(jsonNode);
-            when(signerService.buildJWTSFromJsonNode(jsonNode,ebsiDid,"proof","key")).thenReturn(Mono.just("signedJwt"));
+            when(signerService.buildJWTSFromJsonNode(jsonNode,ebsiDid,"proof")).thenReturn(Mono.just("signedJwt"));
             when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
 
             when(objectMapper.readValue(anyString(), eq(CredentialResponse.class)))
@@ -198,9 +193,8 @@ class CredentialEbsiServiceImplTest {
 
             JsonNode jsonNode = objectMapper2.readTree(json);
 
-            when(vaultService.getSecretByKey(ebsiDid,PRIVATE_KEY_TYPE)).thenReturn(Mono.just("key"));
             when(objectMapper.readTree(anyString())).thenReturn(jsonNode);
-            when(signerService.buildJWTSFromJsonNode(jsonNode,ebsiDid,"proof","key")).thenReturn(Mono.just("signedJwt"));
+            when(signerService.buildJWTSFromJsonNode(jsonNode,ebsiDid,"proof")).thenReturn(Mono.just("signedJwt"));
             when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
 
             when(postRequest(credentialIssuerMetadata.credentialEndpoint(), headersForCredentialRequest, "credentialRequest"))
@@ -212,9 +206,8 @@ class CredentialEbsiServiceImplTest {
             when(postRequest(credentialIssuerMetadata.deferredCredentialEndpoint(), headersForDeferredCredentialRequestRecursive, ""))
                     .thenReturn(Mono.just("finalCredentialResponse"));
 
-            when(vaultService.getSecretByKey(ebsiDid,PRIVATE_KEY_TYPE)).thenReturn(Mono.just("key"));
             when(objectMapper.readTree(anyString())).thenReturn(jsonNode);
-            when(signerService.buildJWTSFromJsonNode(jsonNode,ebsiDid,"proof","key")).thenReturn(Mono.just("signedJwt"));
+            when(signerService.buildJWTSFromJsonNode(jsonNode,ebsiDid,"proof")).thenReturn(Mono.just("signedJwt"));
             when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
             when(objectMapper.readValue("deferredResponse", CredentialResponse.class)).thenReturn(mockDeferredResponse1);
 

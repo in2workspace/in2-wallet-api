@@ -129,7 +129,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      */
     private Mono<String> buildAndSignCredentialRequest(TokenResponse tokenResponse, Map<String, String> map, CredentialIssuerMetadata credentialIssuerMetadata) {
         return proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer())
-                .flatMap(json -> signerService.buildJWTSFromJsonNode(json, map.get("did"), "proof", map.get("privateKey")));
+                .flatMap(json -> signerService.buildJWTSFromJsonNode(json, map.get("did"), "proof"));
     }
 
     /**

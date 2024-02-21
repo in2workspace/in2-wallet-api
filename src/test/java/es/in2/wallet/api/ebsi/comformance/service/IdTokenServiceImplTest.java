@@ -9,7 +9,6 @@ import es.in2.wallet.api.exception.ParseErrorException;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
 import es.in2.wallet.api.service.SignerService;
 import es.in2.wallet.api.util.ApplicationUtils;
-import es.in2.wallet.vault.service.VaultService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,7 +25,6 @@ import java.util.Map;
 import static es.in2.wallet.api.util.ApplicationUtils.extractAllQueryParams;
 import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
 import static es.in2.wallet.api.util.MessageUtils.GLOBAL_STATE;
-import static es.in2.wallet.api.util.MessageUtils.PRIVATE_KEY_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -37,8 +35,6 @@ class IdTokenServiceImplTest {
 
     @Mock
     private ObjectMapper objectMapper;
-    @Mock
-    private VaultService vaultService;
     @Mock
     private SignerService signerService;
 
@@ -60,8 +56,7 @@ class IdTokenServiceImplTest {
             JsonNode jsonNode = objectMapper2.readTree(json);
 
             when(objectMapper.readTree(anyString())).thenReturn(jsonNode);
-            when(vaultService.getSecretByKey(did, PRIVATE_KEY_TYPE)).thenReturn(Mono.just("privateKey"));
-            when(signerService.buildJWTSFromJsonNode(jsonNode, did, "JWT", "privateKey")).thenReturn(Mono.just(expectedIdToken));
+            when(signerService.buildJWTSFromJsonNode(jsonNode, did, "JWT")).thenReturn(Mono.just(expectedIdToken));
 
             when(postRequest(anyString(), anyList(), anyString())).thenReturn(Mono.just("redirect response"));
             Map<String, String> map = new HashMap<>();
@@ -105,8 +100,7 @@ class IdTokenServiceImplTest {
             JsonNode jsonNode = new ObjectMapper().readTree(json);
 
             when(objectMapper.readTree(anyString())).thenReturn(jsonNode);
-            when(vaultService.getSecretByKey(did, PRIVATE_KEY_TYPE)).thenReturn(Mono.just("privateKey"));
-            when(signerService.buildJWTSFromJsonNode(jsonNode, did, "JWT", "privateKey")).thenReturn(Mono.just("signedJwt"));
+            when(signerService.buildJWTSFromJsonNode(jsonNode, did, "JWT")).thenReturn(Mono.just("signedJwt"));
 
             when(postRequest(anyString(), anyList(), anyString())).thenReturn(Mono.error(new RuntimeException("Communication failure")));
 

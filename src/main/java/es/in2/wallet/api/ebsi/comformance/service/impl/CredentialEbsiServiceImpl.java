@@ -35,7 +35,6 @@ import static es.in2.wallet.api.util.MessageUtils.*;
 public class CredentialEbsiServiceImpl implements CredentialEbsiService {
 
     private final ObjectMapper objectMapper;
-    private final VaultService vaultService;
     private final SignerService signerService;
 
     @Override
@@ -132,8 +131,7 @@ public class CredentialEbsiServiceImpl implements CredentialEbsiService {
         try {
             JsonNode documentNode = objectMapper.readTree(payload.toString());
 
-            return vaultService.getSecretByKey(did,PRIVATE_KEY_TYPE)
-                    .flatMap(privateKey -> signerService.buildJWTSFromJsonNode(documentNode,did,"proof",privateKey))
+            return signerService.buildJWTSFromJsonNode(documentNode,did,"proof")
                     .flatMap(jwt -> Mono.just(CredentialRequestEbsi.builder()
                             .format(format)
                             .types(types)

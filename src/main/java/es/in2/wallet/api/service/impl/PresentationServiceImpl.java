@@ -60,7 +60,7 @@ public class PresentationServiceImpl implements PresentationService {
                                 // Create the unsigned verifiable presentation
                                 createUnsignedPresentation(verifiableCredentialsList, did,nonce,audience)
                                         .flatMap(document -> vaultService.getSecretByKey(did,PRIVATE_KEY_TYPE)
-                                            .flatMap(privateKey -> signerService.buildJWTSFromJsonNode(document,did,"vp",privateKey)))
+                                            .flatMap(privateKey -> signerService.buildJWTSFromJsonNode(document,did,"vp")))
                         )
                 )
                         // Log success
