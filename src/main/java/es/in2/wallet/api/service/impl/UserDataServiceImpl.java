@@ -5,7 +5,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jwt.SignedJWT;
+import com.upokecenter.cbor.CBORObject;
 import es.in2.wallet.api.exception.NoSuchDidException;
 import es.in2.wallet.api.exception.NoSuchVerifiableCredentialException;
 import es.in2.wallet.api.exception.ParseErrorException;
@@ -13,12 +15,18 @@ import es.in2.wallet.api.model.*;
 import es.in2.wallet.api.service.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import nl.minvws.encoding.Base45;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.commons.compress.utils.IOUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.*;
 
@@ -119,6 +127,59 @@ public class UserDataServiceImpl implements UserDataService {
                 .doOnSuccess(updatedUserEntity -> log.info("Verifiable Credential saved successfully: {}", updatedUserEntity)));
     }
 
+    private Mono<String> fromVpCborToVcJsonReactive(String qrData) {
+        return Mono.fromCallable(() -> {
+            String vp = decodeToJSONstring(qrData);
+
+            try {
+                JsonNode vpJsonObject = objectMapper.readTree(vp);
+                JsonNode vpContent = objectMapper.readTree(vpJsonObject.get("vp").toString());
+                String cvId = vpJsonObject.get("nonce").asText();
+
+                String vcCbor = vpContent.get("verifiableCredential").asText();
+                String vc = decodeToJSONstring(vcCbor);
+
+                JsonNode vcJsonObject = objectMapper.readTree(vc);
+                JsonNode vcContent = objectMapper.readTree(vcJsonObject.get("vc").toString());
+                ((ObjectNode) vcContent).put("id", cvId);
+                ((ObjectNode) vcJsonObject).set("vc", vcContent);
+
+                return vcJsonObject.toString();
+            } catch (JsonProcessingException e) {
+                log.error("Error processing JSON", e);
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private String decodeToJSONstring(String qrData) {
+        String rawStringData = removeQuotes(qrData);
+        byte[] zip = Base45.getDecoder().decode(rawStringData);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(zip);
+            CompressorStreamFactory factory = new CompressorStreamFactory();
+            IOUtils.copy(factory.createCompressorInputStream(CompressorStreamFactory.DEFLATE, bais), baos);
+            byte[] cose = baos.toByteArray();
+
+            CBORObject cborObject = CBORObject.DecodeFromBytes(cose);
+            ByteArrayOutputStream jsonOut = new ByteArrayOutputStream();
+            cborObject.WriteJSONTo(jsonOut);
+
+            return jsonOut.toString(StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing data", e);
+        }
+    }
+
+    private String removeQuotes(String input) {
+        if (input.startsWith("\"") && input.endsWith("\"")) {
+            return input.substring(1, input.length() - 1);
+        } else {
+            return input;
+        }
+    }
     /**
      * Extracts the JSON content from a Verifiable Credential JWT.
      *
@@ -488,5 +549,4 @@ public class UserDataServiceImpl implements UserDataService {
                     return deserializeUserEntityToString(updatedUserEntity);
                 });
     }
-
 }

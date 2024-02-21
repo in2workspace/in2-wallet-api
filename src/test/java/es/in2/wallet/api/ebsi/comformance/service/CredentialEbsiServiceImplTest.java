@@ -3,7 +3,6 @@ package es.in2.wallet.api.ebsi.comformance.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.ebsi.comformance.service.impl.CredentialEbsiServiceImpl;
 import es.in2.wallet.api.exception.FailedDeserializingException;
 import es.in2.wallet.api.exception.ParseErrorException;
 import es.in2.wallet.api.model.CredentialIssuerMetadata;
