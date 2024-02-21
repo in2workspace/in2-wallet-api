@@ -8,6 +8,5 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 public interface CredentialEbsiService {
-    Mono<CredentialResponse> getCredential(String processId, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String authorizationToken, String format, List<String> types);
-
+    Mono<CredentialResponse> getCredential(String processId, String did, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types);
 }

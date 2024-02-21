@@ -13,7 +13,7 @@ import es.in2.wallet.api.model.PresentationSubmission;
 import es.in2.wallet.api.model.VcSelectorResponse;
 import es.in2.wallet.api.service.PresentationService;
 import es.in2.wallet.api.service.UserDataService;
-import es.in2.wallet.api.util.MessageUtils;
+import es.in2.wallet.api.util.ApplicationUtils;
 import es.in2.wallet.broker.service.BrokerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.*;
 
+import static es.in2.wallet.api.util.ApplicationUtils.*;
 import static es.in2.wallet.api.util.MessageUtils.*;
 
 @Slf4j
@@ -36,21 +37,35 @@ public class VpTokenServiceImpl implements VpTokenService {
     private final BrokerService brokerService;
     private final PresentationService presentationService;
 
+    /**
+     * Initiates the process to exchange the authorization token and JWT for a VP Token Request,
+     * logging the authorization response with the code upon success.
+     *
+     * @param processId An identifier for the process, used for logging.
+     * @param authorizationToken The authorization token provided by the client.
+     * @param authorisationServerMetadata Metadata about the authorisation server.
+     * @param jwt The JWT that contains the presentation definition or a URI to it.
+     */
     @Override
     public Mono<Map<String, String>> getVpRequest(String processId, String authorizationToken, AuthorisationServerMetadata authorisationServerMetadata, String jwt) {
-        return completeTokenExchange(processId, authorizationToken, authorisationServerMetadata, jwt)
+        return completeVpTokenExchange(processId, authorizationToken, authorisationServerMetadata, jwt)
                 .doOnSuccess(tokenResponse -> log.info("ProcessID: {} - Token Response: {}", processId, tokenResponse));
     }
 
+
     /**
-     * Completes the token exchange process using the provided parameters and code verifier.
+     * Completes the VP Token exchange process by building a VP token response and extracting query parameters from it.
      */
-    private Mono<Map<String, String>> completeTokenExchange(String processId, String authorizationToken,AuthorisationServerMetadata authorisationServerMetadata, String jwt) {
+    private Mono<Map<String, String>> completeVpTokenExchange(String processId, String authorizationToken, AuthorisationServerMetadata authorisationServerMetadata, String jwt) {
         return buildVpTokenResponse(processId,authorizationToken,jwt,authorisationServerMetadata)
-                .flatMap(MessageUtils::extractAllQueryParams);
+                .flatMap(ApplicationUtils::extractAllQueryParams);
     }
 
-
+    /**
+     * Builds the VP Token response based on the JWT and authorization token, using the authorisation server metadata.
+     * This involves processing the presentation definition to understand the required credentials and constructing
+     * the signed verifiable presentation and presentation submission accordingly.
+     */
     private Mono<String> buildVpTokenResponse(String processId, String authorizationToken, String jwt, AuthorisationServerMetadata authorisationServerMetadata) {
         return extractRequiredParamFromJwt(jwt)
                 .flatMap(params -> processPresentationDefinition(params.get(3))
@@ -68,6 +83,10 @@ public class VpTokenServiceImpl implements VpTokenService {
                         })
                 );
     }
+    /**
+     * Sends the VP Token response to the redirect URI specified in the JWT, as an application/x-www-form-urlencoded payload.
+     * This includes the VP token, presentation submission, and state parameters.
+     */
     private Mono<String> sendVpTokenResponse(String vpToken, List<String> params,PresentationSubmission presentationSubmission){
         try {
             String body = "vp_token=" + URLEncoder.encode(vpToken, StandardCharsets.UTF_8)
@@ -84,6 +103,10 @@ public class VpTokenServiceImpl implements VpTokenService {
             return Mono.error(new FailedSerializingException("Error while serializing Presentation Submission"));
         }
     }
+
+    /**
+     * Builds a signed JWT Verifiable Presentation by extracting user data and credentials based on the VC type list provided.
+     */
     private Mono<String> buildSignedJwtVerifiablePresentationByVcTypeList(String processId, String authorizationToken, List<String> vcTypeList, String nonce, AuthorisationServerMetadata authorisationServerMetadata) {
         return getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId, userId))
@@ -101,7 +124,6 @@ public class VpTokenServiceImpl implements VpTokenService {
                         )
                 );
     }
-
 
     private Mono<List<String>> extractRequiredParamFromJwt(String jwt) {
         try {
@@ -139,6 +161,14 @@ public class VpTokenServiceImpl implements VpTokenService {
         }
     }
 
+    /**
+     * Processes a JSON string representing a Presentation Definition into a map containing relevant properties.
+     * This method deserializes the JSON string into a PresentationDefinition object, extracts and collects
+     * specific attributes like presentation definition ID, types, and input descriptor IDs into a map for
+     * further processing or use.
+     *
+     * @param jsonDefinition The JSON string representation of a Presentation Definition.
+     */
     private Mono<Map<String, Object>> processPresentationDefinition(String jsonDefinition) {
         return Mono.fromCallable(() -> {
             PresentationDefinition definition = objectMapper.readValue(jsonDefinition, PresentationDefinition.class);
@@ -152,6 +182,13 @@ public class VpTokenServiceImpl implements VpTokenService {
         });
     }
 
+    /**
+     * Extracts types specified within the constraints of input descriptors from a Presentation Definition.
+     * It navigates through each input descriptor and its fields to find and collect the 'const' values specified
+     * in the 'contains' filter, which represent the types of credentials required by the presentation.
+     *
+     * @param definition The Presentation Definition object to extract types from.
+     */
     private List<String> extractTypes(PresentationDefinition definition) {
         List<String> typesList = new ArrayList<>();
         for (PresentationDefinition.InputDescriptor descriptor : definition.inputDescriptors()) {
@@ -165,6 +202,14 @@ public class VpTokenServiceImpl implements VpTokenService {
         return typesList;
     }
 
+    /**
+     * Finds and returns the 'const' node from a field's filter if it exists.
+     * This helper method looks for a 'const' node within a 'contains' node in the filter definition
+     * of a field within an input descriptor's constraints. It is used to identify the specific types
+     * required by the input descriptor.
+     *
+     * @param field The field object to search the 'const' node in.
+     */
     private JsonNode findConstNode(PresentationDefinition.InputDescriptor.Constraint.Field field) {
         JsonNode filterNode = field.filter();
         if (filterNode != null && filterNode.isObject()) {
@@ -179,6 +224,12 @@ public class VpTokenServiceImpl implements VpTokenService {
         return null;
     }
 
+    /**
+     * Extracts the IDs of input descriptors from a Presentation Definition.
+     * This method iterates through each input descriptor of the definition and collects their IDs.
+     *
+     * @param definition The Presentation Definition object to extract input descriptor IDs from.
+     */
     private List<String> extractInputDescriptorIds(PresentationDefinition definition) {
         List<String> inputDescriptorIds = new ArrayList<>();
         for (PresentationDefinition.InputDescriptor descriptor : definition.inputDescriptors()) {
@@ -187,9 +238,15 @@ public class VpTokenServiceImpl implements VpTokenService {
         return inputDescriptorIds;
     }
 
-
-
-
+    /**
+     * Builds a Presentation Submission object based on the given IDs and presentation definition ID.
+     * This method constructs a Presentation Submission object with a dynamically created list of descriptor maps.
+     * Each descriptor map corresponds to an input descriptor identified by the given IDs, with nested descriptor maps
+     * specifying the path to locate the verifiable credential within the presentation.
+     *
+     * @param ids The list of input descriptor IDs to include in the presentation submission.
+     * @param presentationDefinitionId The ID of the presentation definition that this submission relates to.
+     */
     private Mono<PresentationSubmission> buildPresentationSubmission(List<String> ids, String presentationDefinitionId) {
         List<PresentationSubmission.DescriptorMap> descriptorMaps = new ArrayList<>();
 

@@ -8,7 +8,7 @@ import es.in2.wallet.api.model.AuthorisationRequestForIssuance;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
 import es.in2.wallet.api.model.CredentialIssuerMetadata;
 import es.in2.wallet.api.model.CredentialOffer;
-import es.in2.wallet.api.util.MessageUtils;
+import es.in2.wallet.api.util.ApplicationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,9 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.*;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
+import static es.in2.wallet.api.util.MessageUtils.CODEVERIFIERALLOWEDCHARACTERS;
+import static es.in2.wallet.api.util.MessageUtils.GLOBAL_STATE;
 
 @Slf4j
 @Service
@@ -31,15 +33,15 @@ public class AuthorisationRequestServiceImpl implements AuthorisationRequestServ
     private final ObjectMapper objectMapper;
     @Override
     public Mono<Tuple2<String, String>> getRequestWithOurGeneratedCodeVerifier(String processId, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata, String did) {
-        return performAuthorizationFlow(credentialOffer, credentialIssuerMetadata, authorisationServerMetadata, did)
+        return performAuthorizationRequest(credentialOffer, credentialIssuerMetadata, authorisationServerMetadata, did)
                 .doOnSuccess(tokenResponse -> log.info("ProcessID: {} - Token Response: {}", processId, tokenResponse));
     }
 
     /**
-     * Orchestrates the authorization flow.
-     * Generates a code verifier, initiates the authorization request and completes the token exchange.
+     * Orchestrates the authorization request flow.
+     * Generates a code verifier, initiates the authorization request.
      */
-    private Mono<Tuple2<String, String>> performAuthorizationFlow(CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, AuthorisationServerMetadata authorisationServerMetadata, String did) {
+    private Mono<Tuple2<String, String>> performAuthorizationRequest(CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, AuthorisationServerMetadata authorisationServerMetadata, String did) {
         return generateCodeVerifier()
                 .flatMap(codeVerifier -> initiateAuthorizationRequest(credentialOffer, credentialIssuerMetadata, authorisationServerMetadata, did, codeVerifier))
                 .flatMap(this::extractRequest);
@@ -50,25 +52,45 @@ public class AuthorisationRequestServiceImpl implements AuthorisationRequestServ
      * and then extracting all query parameters.
      */
     private Mono<Tuple2<Map<String, String>, String>> initiateAuthorizationRequest(CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, AuthorisationServerMetadata authorisationServerMetadata, String did, String codeVerifier) {
-        return buildEbsiAuthRequest(credentialOffer, credentialIssuerMetadata, codeVerifier, did)
+        return buildAuthRequest(credentialOffer, credentialIssuerMetadata, codeVerifier, did)
                 .flatMap(this::authRequestBodyToUrlEncodedString)
                 .flatMap(authRequestEncodedBody -> sendAuthRequest(authorisationServerMetadata, authRequestEncodedBody))
-                .flatMap(MessageUtils::extractAllQueryParams)
+                .flatMap(ApplicationUtils::extractAllQueryParams)
                 .map(params -> Tuples.of(params, codeVerifier));
     }
 
+
     /**
-     * Completes the token exchange process using the provided parameters and code verifier.
+     * Extracts the JWT and the code verifier from the given parameters and code verifier tuple.
+     * This method utilizes the provided parameters to retrieve a JWT using the {@link #getJwtRequest} method.
+     * It then combines the retrieved JWT with the code verifier into a Tuple2 object.
+     *
+     * @param paramsAndCodeVerifier A Tuple2 containing a map of parameters and a code verifier string.
+     * The parameters map is expected to include either 'request' or 'request_uri' used to retrieve the JWT.
+     * The code verifier is a string used in the OAuth 2.0 PKCE flow.
      */
-    private Mono<Tuple2<String, String>> extractRequest( Tuple2<Map<String, String>, String> paramsAndCodeVerifier) {
+    private Mono<Tuple2<String, String>> extractRequest(Tuple2<Map<String, String>, String> paramsAndCodeVerifier) {
         Map<String, String> params = paramsAndCodeVerifier.getT1();
         String codeVerifier = paramsAndCodeVerifier.getT2();
 
         return getJwtRequest(params)
                 .map(jwt ->Tuples.of(jwt, codeVerifier));
     }
-    private Mono<AuthorisationRequestForIssuance> buildEbsiAuthRequest(CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String codeVerifier, String did) {
-        return generateEbsiCodeChallenge(codeVerifier)
+
+    /**
+     * Builds the authorisation request for issuance of Verifiable Credentials (VCs) based on the OAuth 2.0 Rich Authorisation Request framework.
+     * This method constructs the request by specifying the types of VCs being requested using the {@code authorization_details} parameter.
+     * It leverages Proof Key for Code Exchange (PKCE) by generating a code challenge from the provided code verifier.
+     *
+     * @param credentialOffer The credential offer received, which includes details about the VCs being offered.
+     * @param credentialIssuerMetadata Metadata about the credential issuer, including the issuer's URL.
+     * @param codeVerifier The code verifier for PKCE to secure the code exchange process in the OAuth 2.0 flow.
+     * @param did The decentralized identifier (DID) representing the client's identity.
+     * This request is initiated by the Client (Holder Wallet) to the Authorisation Server to request the issuance of specific VCs.
+     * The request must be compatible with a Request Object signed by the Relying Party, and the Client should only use PKCE for security.
+     */
+    private Mono<AuthorisationRequestForIssuance> buildAuthRequest(CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String codeVerifier, String did) {
+        return generatePKCECodeChallenge(codeVerifier)
                 .map(codeChallenge -> {
                     List<AuthorisationRequestForIssuance.AuthorizationDetail> authorizationDetailsEbsi =
                             credentialOffer.credentials().stream()
@@ -135,6 +157,15 @@ public class AuthorisationRequestServiceImpl implements AuthorisationRequestServ
                 .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while sending Authorization Request")));
     }
 
+    /**
+     * Extracts and returns a JWT based on the provided parameters.
+     * The method checks for either a 'request' or 'request_uri' parameter in the provided map.
+     * If 'request_uri' is present, it performs a GET request to the specified URI to retrieve the JWT.
+     * If 'request' is present, it directly returns the JWT contained within the parameter value.
+     *
+     * @param params A map containing the request parameters, expected to include either 'request' or 'request_uri'.
+     * @throws IllegalArgumentException if neither 'request' nor 'request_uri' is found in the parameters.
+     */
     private Mono<String> getJwtRequest(Map<String, String> params) {
         if (params.get("request_uri") != null){
             List<Map.Entry<String, String>> headers = new ArrayList<>();
@@ -171,7 +202,7 @@ public class AuthorisationRequestServiceImpl implements AuthorisationRequestServ
      * @param codeVerifier The code verifier string.
      * @return A BASE64URL-encoded SHA256 hash of the code verifier.
      */
-    private Mono<String> generateEbsiCodeChallenge(String codeVerifier){
+    private Mono<String> generatePKCECodeChallenge(String codeVerifier){
         return Mono.fromCallable(() -> {
             // Apply SHA-256 hash to the code verifier
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

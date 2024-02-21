@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.UUID;
 
-import static es.in2.wallet.api.util.MessageUtils.getCleanBearerAndUserIdFromToken;
+import static es.in2.wallet.api.util.ApplicationUtils.getCleanBearerAndUserIdFromToken;
 
 @RestController
 @RequestMapping("/api/v2/credentials")
@@ -33,7 +33,7 @@ public class VerifiableCredentialController {
             description = "Retrieve a list of Verifiable Credentials",
             tags = {"Verifiable Credential Management"}
     )
-    @ApiResponse(responseCode = "200", description = "Verifiable credential retrieved successfully.")
+    @ApiResponse(responseCode = "200", description = "Verifiable credentials retrieved successfully.")
     @ApiResponse(responseCode = "400", description = "Invalid request.")
     @ApiResponse(responseCode = "500", description = "Internal server error.")
     public Mono<List<CredentialsBasicInfo>> getVerifiableCredentialList(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {

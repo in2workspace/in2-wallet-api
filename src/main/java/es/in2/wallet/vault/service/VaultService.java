@@ -7,7 +7,7 @@ import java.util.Map;
 public interface VaultService {
     Mono<Void> saveSecret(Map<String, String> secrets);
 
-    Mono<String> getSecretByKey(String key, String type);
+    Mono<String> getSecretByKey(String key);
 
     Mono<Void> deleteSecretByKey(String key);
 }

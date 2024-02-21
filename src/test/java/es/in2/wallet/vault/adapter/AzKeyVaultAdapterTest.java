@@ -59,7 +59,7 @@ class AzKeyVaultAdapterTest {
             put(PUBLIC_KEY_TYPE, "examplePublicKey");
         }});
 
-        StepVerifier.create(azKeyVaultAdapter.getSecretByKey("exampleDid", PRIVATE_KEY_TYPE))
+        StepVerifier.create(azKeyVaultAdapter.getSecretByKey("exampleDid"))
                 .expectNext("examplePrivateKey")
                 .verifyComplete();
     }

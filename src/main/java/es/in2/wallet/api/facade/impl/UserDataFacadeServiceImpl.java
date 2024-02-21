@@ -21,20 +21,37 @@ public class UserDataFacadeServiceImpl implements UserDataFacadeService {
     private final BrokerService brokerService;
     private final UserDataService userDataService;
     private final VaultService vaultService;
+
+    /**
+     * Retrieves a list of basic information about the verifiable credentials (VCs) associated with a given user ID.
+     *
+     * @param processId A unique identifier for the process, used for logging and tracking.
+     * @param userId The unique identifier of the user whose VCs are to be retrieved.
+     */
     @Override
     public Mono<List<CredentialsBasicInfo>> getUserVCs(String processId, String userId) {
-        // Retrieve the UserEntity from the Context Broker
         return brokerService.getEntityById(processId, userId)
                 .flatMap(optionalEntity -> optionalEntity
                         .map(userDataService::getUserVCsInJson)
-                        .orElseGet(() -> Mono.error(new RuntimeException("There's no credential available.")))
+                        .orElseGet(() -> {
+                            log.error("User with ID {} has no entity or credentials yet.", userId);
+                            return Mono.error(new RuntimeException("There's no credential available."));
+                        })
                 )
                 .doOnSuccess(list -> log.info("Retrieved VCs in JSON for userId: {}", userId))
-                .onErrorResume(e -> {
-                    log.error("Error in retrieving VCs in JSON for userId: {}", userId, e);
-                    return Mono.error(e);
-                });
+                .onErrorResume(Mono::error);
     }
+
+    /**
+     * Deletes a specific verifiable credential (VC) by its ID for a given user.
+     * This method first retrieves the entity associated with the user. If the entity is found, it then
+     * extracts the Decentralized Identifier (DID) from the VC, deletes the secret key associated with the DID
+     * in the vault, and finally deletes the VC itself.
+     *
+     * @param processId A unique identifier for the process, used for logging and tracking.
+     * @param credentialId The unique identifier of the credential to be deleted.
+     * @param userId The unique identifier of the user from whom the VC is to be deleted.
+     */
 
     @Override
     public Mono<Void> deleteVerifiableCredentialById(String processId,String credentialId, String userId) {

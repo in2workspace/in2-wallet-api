@@ -1,15 +1,13 @@
-package es.in2.wallet.api.ebsi.comformance.configuration;
+package es.in2.wallet.api.ebsi.comformance.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.ebsi.comformance.configuration.properties.IdentityProviderProperties;
+import es.in2.wallet.api.ebsi.comformance.config.properties.IdentityProviderProperties;
 import es.in2.wallet.api.service.DidKeyGeneratorService;
-import es.in2.wallet.api.service.KeyGenerationService;
 import es.in2.wallet.api.service.UserDataService;
-import es.in2.wallet.api.util.MessageUtils;
+import es.in2.wallet.api.util.ApplicationUtils;
 import es.in2.wallet.broker.service.BrokerService;
-import es.in2.wallet.vault.service.VaultService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM;
 
 @Component
 @RequiredArgsConstructor
@@ -32,9 +32,7 @@ public class EbsiConfig
 {
     private final ObjectMapper objectMapper;
     private final IdentityProviderProperties identityProviderProperties;
-    private final KeyGenerationService keyGenerationService;
     private final DidKeyGeneratorService didKeyGeneratorService;
-    private final VaultService vaultService;
     private final BrokerService brokerService;
     private final UserDataService userDataService;
 
@@ -43,9 +41,9 @@ public class EbsiConfig
     @PostConstruct
     @Tag(name = "EbsiConfig", description = "Generate Did for ebsi purposes")
     public void init(){
-        generateDid().subscribe(did -> this.didForEbsi = did);
+        generateEbsiDid().subscribe(did -> this.didForEbsi = did);
     }
-    private Mono<String> generateDid(){
+    private Mono<String> generateEbsiDid(){
         String processId = UUID.randomUUID().toString();
         MDC.put("processId", processId);
         List<Map.Entry<String, String>> headers = new ArrayList<>();
@@ -74,14 +72,14 @@ public class EbsiConfig
 
                     return Mono.just(token);
                 })
-                .flatMap(MessageUtils::getUserIdFromToken)
+                .flatMap(ApplicationUtils::getUserIdFromToken)
                 .flatMap(userId -> brokerService.getEntityById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
                                 .map(entity -> getDidForUserAlreadyCreated(processId, userId))
                                 .orElseGet(() ->
-                                        generateAndSaveKeyPair()
-                                                .flatMap(map -> createAndUpdateUser(processId, userId, map.get("did"))
-                                                        .thenReturn(map.get("did"))
+                                        generateDid()
+                                                .flatMap(did -> createAndUpdateUser(processId, userId, did)
+                                                        .thenReturn(did)
                                                 )
                                 )
                         )
@@ -95,10 +93,8 @@ public class EbsiConfig
 
 
     }
-    private Mono<Map<String, String>> generateAndSaveKeyPair() {
-        return keyGenerationService.generateES256r1ECKeyPair()
-                .flatMap(didKeyGeneratorService::generateDidKeyJwkJcsPubWithFromKeyPair)
-                .flatMap(map -> vaultService.saveSecret(map).thenReturn(map));
+    private Mono<String> generateDid() {
+        return didKeyGeneratorService.generateDidKeyJwkJcsPub();
     }
 
     private Mono<Void> createAndUpdateUser(String processId, String userId, String did) {

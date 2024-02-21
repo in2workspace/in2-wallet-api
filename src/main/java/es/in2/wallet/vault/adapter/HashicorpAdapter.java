@@ -33,7 +33,6 @@ public class HashicorpAdapter implements GenericVaultService {
         return vaultOperations.write("kv/" + secrets.get("did"),
                         VaultSecretData.builder()
                                 .privateKey(secrets.get(PRIVATE_KEY_TYPE))
-                                .publicKey(secrets.get(PUBLIC_KEY_TYPE))
                                 .build())
                 .doOnSuccess(voidValue -> log.debug("ProcessID: {} - Secret saved successfully", processId))
                 .doOnError(error -> log.error("ProcessID: {} - Error saving secret: {}", processId, error.getMessage(), error))
@@ -42,7 +41,7 @@ public class HashicorpAdapter implements GenericVaultService {
     }
 
     @Override
-    public Mono<String> getSecretByKey(String key, String type) {
+    public Mono<String> getSecretByKey(String key) {
         String processId = MDC.get(PROCESS_ID);
         return vaultOperations.read("kv/" + key)
                 .flatMap(response -> {
@@ -50,13 +49,8 @@ public class HashicorpAdapter implements GenericVaultService {
                         if (response.getData() != null) {
                             String json = objectMapper.writeValueAsString(response.getData());
                             VaultSecretData secret = objectMapper.readValue(json, VaultSecretData.class);
-                            if (PRIVATE_KEY_TYPE.equals(type)) {
-                                return Mono.just(secret.privateKey());
-                            } else if (PUBLIC_KEY_TYPE.equals(type)) {
-                                return Mono.just(secret.publicKey());
-                            } else {
-                                return Mono.error(new IllegalStateException("Invalid type"));
-                            }
+
+                            return Mono.just(secret.privateKey());
                         } else {
                             return Mono.error(new CredentialNotFoundException("Secret not found"));
                         }

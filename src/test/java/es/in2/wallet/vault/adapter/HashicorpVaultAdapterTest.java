@@ -18,11 +18,8 @@ import javax.security.auth.login.CredentialNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.MessageUtils.PRIVATE_KEY_TYPE;
-import static es.in2.wallet.api.util.MessageUtils.PUBLIC_KEY_TYPE;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class HashicorpVaultAdapterTest {
@@ -60,8 +57,7 @@ class HashicorpVaultAdapterTest {
 
         Map<String, Object> data = new HashMap<>();
         VaultSecretData vaultSecretData = VaultSecretData.builder()
-                .privateKey("key1")
-                .publicKey("key2").build();
+                .privateKey("key1").build();
         data.put(key,vaultSecretData);
         VaultResponse vaultResponse = new VaultResponse();
         vaultResponse.setData(data);
@@ -70,31 +66,11 @@ class HashicorpVaultAdapterTest {
         when(objectMapper.writeValueAsString(any())).thenReturn("{\"privateKey\":\"key1\", \"publicKey\":\"key2\"}");
         when(objectMapper.readValue(anyString(), eq(VaultSecretData.class))).thenReturn(vaultSecretData);
 
-        StepVerifier.create(hashicorpAdapter.getSecretByKey(key, PRIVATE_KEY_TYPE))
+        StepVerifier.create(hashicorpAdapter.getSecretByKey(key))
                 .expectNext("key1")
                 .verifyComplete();
     }
 
-    @Test
-    void getPublicKeyByKeySuccess() throws JsonProcessingException {
-        String key = "did:key:1234";
-
-        Map<String, Object> data = new HashMap<>();
-        VaultSecretData vaultSecretData = VaultSecretData.builder()
-                .privateKey("key1")
-                .publicKey("key2").build();
-        data.put(key,vaultSecretData);
-        VaultResponse vaultResponse = new VaultResponse();
-        vaultResponse.setData(data);
-
-        when(vaultOperations.read(anyString())).thenReturn(Mono.just(vaultResponse));
-        when(objectMapper.writeValueAsString(any())).thenReturn("{\"privateKey\":\"key1\", \"publicKey\":\"key2\"}");
-        when(objectMapper.readValue(anyString(), eq(VaultSecretData.class))).thenReturn(vaultSecretData);
-
-        StepVerifier.create(hashicorpAdapter.getSecretByKey(key, PUBLIC_KEY_TYPE))
-                .expectNext("key2")
-                .verifyComplete();
-    }
 
     @Test
     void getSecretByKeyNotFound() {
@@ -104,7 +80,7 @@ class HashicorpVaultAdapterTest {
 
         when(vaultOperations.read(anyString())).thenReturn(Mono.just(vaultResponse));
 
-        StepVerifier.create(hashicorpAdapter.getSecretByKey("did:key:123", PUBLIC_KEY_TYPE))
+        StepVerifier.create(hashicorpAdapter.getSecretByKey("did:key:123"))
                 .expectError(CredentialNotFoundException.class)
                 .verify();
     }
@@ -117,7 +93,7 @@ class HashicorpVaultAdapterTest {
         Map<String, Object> data = new HashMap<>();
         VaultSecretData vaultSecretData = VaultSecretData.builder()
                 .privateKey("key1")
-                .publicKey("key2").build();
+                .build();
         data.put(key,vaultSecretData);
         VaultResponse vaultResponse = new VaultResponse();
         vaultResponse.setData(data);
@@ -125,7 +101,7 @@ class HashicorpVaultAdapterTest {
         when(vaultOperations.read(anyString())).thenReturn(Mono.just(vaultResponse));
         when(objectMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("Error") {});
 
-        StepVerifier.create(hashicorpAdapter.getSecretByKey(key, PUBLIC_KEY_TYPE))
+        StepVerifier.create(hashicorpAdapter.getSecretByKey(key))
                 .expectError(ParseErrorException.class)
                 .verify();
     }

@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
-import static es.in2.wallet.api.util.MessageUtils.getCleanBearerToken;
+import static es.in2.wallet.api.util.ApplicationUtils.getCleanBearerToken;
 
 @Tag(name = "QR Codes", description = "QR code management API")
 @Slf4j

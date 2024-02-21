@@ -3,9 +3,11 @@ package es.in2.wallet.api.service.impl;
 import com.nimbusds.jose.Algorithm;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
-import es.in2.wallet.api.service.DidKeyGeneratorService;
+import es.in2.wallet.api.exception.KeyPairGenerationError;
 import es.in2.wallet.api.exception.ParseErrorException;
 import es.in2.wallet.api.model.UVarInt;
+import es.in2.wallet.api.service.DidKeyGeneratorService;
+import es.in2.wallet.vault.service.VaultService;
 import io.ipfs.multibase.Base58;
 import lombok.RequiredArgsConstructor;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
@@ -15,34 +17,47 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECGenParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.MessageUtils.DID;
+import static es.in2.wallet.api.util.MessageUtils.PRIVATE_KEY_TYPE;
 
 
 @Service
 @RequiredArgsConstructor
 public class DidKeyGeneratorServiceImpl implements DidKeyGeneratorService {
 
+    private final VaultService vaultService;
     @Override
-    public Mono<Map<String, String>> generateDidKeyJwkJcsPubWithFromKeyPair(KeyPair keyPair) {
-        Map<String, String> result = new HashMap<>();
-        result.put(DID, generateDidKeyJwkJcsPub(keyPair));
-        result.put(PUBLIC_KEY_TYPE , getPublicKeyJwkString((ECPublicKey) keyPair.getPublic()));
-        result.put(PRIVATE_KEY_TYPE , getPrivateKeyJwkString(keyPair));
-        return Mono.just(result);
+    public Mono<String> generateDidKeyJwkJcsPub() {
+        return generateES256r1ECKeyPair().flatMap(keyPair -> {
+            String did = generateDidKeyJwkJcsPub(keyPair);
+            String privateKey = getPrivateKeyJwkString(keyPair);
+            Map<String, String> result = new HashMap<>();
+            result.put(DID, did);
+            result.put(PRIVATE_KEY_TYPE , privateKey);
+            return vaultService.saveSecret(result)
+                    .thenReturn(did);
+        });
     }
 
     @Override
-    public Mono<Map<String, String>> generateDidKeyFromKeyPair(KeyPair keyPair) {
-        Map<String, String> result = new HashMap<>();
-        result.put(DID, generateDidKey(keyPair));
-        result.put(PUBLIC_KEY_TYPE , getPublicKeyJwkString((ECPublicKey) keyPair.getPublic()));
-        result.put(PRIVATE_KEY_TYPE , getPrivateKeyJwkString(keyPair));
-        return Mono.just(result);
+    public Mono<String> generateDidKey() {
+        return generateES256r1ECKeyPair().flatMap(keyPair -> {
+            String did = generateDidKey(keyPair);
+            String privateKey = getPrivateKeyJwkString(keyPair);
+            Map<String, String> result = new HashMap<>();
+            result.put(DID, did);
+            result.put(PRIVATE_KEY_TYPE , privateKey);
+            return vaultService.saveSecret(result)
+                    .thenReturn(did);
+        });
     }
 
     // Generates a DID Key using JWK with JCS Public format
@@ -115,5 +130,18 @@ public class DidKeyGeneratorServiceImpl implements DidKeyGeneratorService {
 
        // Encode the combined byte array to Base58
        return Base58.encode(multicodecAndRawKey);
+    }
+
+    private Mono<KeyPair> generateES256r1ECKeyPair() {
+        return Mono.fromCallable(() -> {
+            try {
+                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("ECDSA", "BC");
+                ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
+                keyPairGenerator.initialize(ecSpec, new SecureRandom());
+                return keyPairGenerator.generateKeyPair();
+            } catch (Exception e) {
+                throw new KeyPairGenerationError("Error generating EC key pair: " + e);
+            }
+        });
     }
 }

@@ -8,7 +8,7 @@ import es.in2.wallet.api.model.AuthorisationServerMetadata;
 import es.in2.wallet.api.model.CredentialOffer;
 import es.in2.wallet.api.model.TokenResponse;
 import es.in2.wallet.api.service.impl.PreAuthorizedServiceImpl;
-import es.in2.wallet.api.util.MessageUtils;
+import es.in2.wallet.api.util.ApplicationUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,7 +24,10 @@ import reactor.test.StepVerifier;
 import java.util.List;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -48,7 +51,7 @@ class PreAuthorizedServiceImplTest {
 
     @Test
     void getPreAuthorizedTokenWithoutPinTest() throws JsonProcessingException {
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)) {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             String token = "ey123";
             CredentialOffer.Grant.PreAuthorizedCodeGrant preAuthorizedCodeGrant = CredentialOffer.Grant.PreAuthorizedCodeGrant.builder().preAuthorizedCode("321").build();
@@ -69,7 +72,7 @@ class PreAuthorizedServiceImplTest {
     }
     @Test
     void getPreAuthorizedTokenWithoutPinExceptionTest(){
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)) {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             String token = "ey123";
             CredentialOffer.Grant.PreAuthorizedCodeGrant preAuthorizedCodeGrant = CredentialOffer.Grant.PreAuthorizedCodeGrant.builder().preAuthorizedCode("321").build();
@@ -87,7 +90,7 @@ class PreAuthorizedServiceImplTest {
     }
     @Test
     void getPreAuthorizedTokenWithPinTest() throws JsonProcessingException {
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)) {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             String token = "ey123";
             String userId = "user123";

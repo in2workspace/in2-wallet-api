@@ -12,6 +12,7 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.api.service.SignerService;
 import es.in2.wallet.api.exception.ParseErrorException;
 import es.in2.wallet.api.model.JWTSType;
+import es.in2.wallet.vault.service.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -32,39 +33,42 @@ import static es.in2.wallet.api.util.MessageUtils.*;
 public class SignerServiceImpl implements SignerService {
 
     private final ObjectMapper objectMapper;
+    private final VaultService vaultService;
 
     @Override
-    public Mono<String> buildJWTSFromJsonNode(JsonNode document, String did, String documentType, String privateKey) {
+    public Mono<String> buildJWTSFromJsonNode(JsonNode document, String did, String documentType) {
         String processId = MDC.get(PROCESS_ID);
 
-        return identifyDocumentType(documentType)
-                .flatMap(docType -> Mono.fromCallable(() -> {
-                    try {
-                        ECKey ecJWK = JWK.parse(privateKey).toECKey();
-                        log.debug("ECKey: {}", ecJWK);
+        return  vaultService.getSecretByKey(did)
+                .flatMap(privateKey -> identifyDocumentType(documentType)
+                    .flatMap(docType -> Mono.fromCallable(() -> {
+                        try {
+                            ECKey ecJWK = JWK.parse(privateKey).toECKey();
+                            log.debug("ECKey: {}", ecJWK);
 
-                        JWSAlgorithm jwsAlgorithm = mapToJWSAlgorithm(ecJWK.getAlgorithm());
-                        JWSSigner signer = new ECDSASigner(ecJWK);
+                            JWSAlgorithm jwsAlgorithm = mapToJWSAlgorithm(ecJWK.getAlgorithm());
+                            JWSSigner signer = new ECDSASigner(ecJWK);
 
-                        JOSEObjectType joseObjectType = docType.equals(PROOF_JWT) ?
-                                new JOSEObjectType("openid4vci-proof+jwt") : JOSEObjectType.JWT;
+                            JOSEObjectType joseObjectType = docType.equals(PROOF_JWT) ?
+                                    new JOSEObjectType("openid4vci-proof+jwt") : JOSEObjectType.JWT;
 
-                        String didWithKey = extractAfterPattern(did);
-                        JWSHeader header = new JWSHeader.Builder(jwsAlgorithm)
-                                .type(joseObjectType)
-                                .keyID(didWithKey)
-                                .build();
+                            String didWithKey = extractAfterPattern(did);
+                            JWSHeader header = new JWSHeader.Builder(jwsAlgorithm)
+                                    .type(joseObjectType)
+                                    .keyID(didWithKey)
+                                    .build();
 
-                        JWTClaimsSet payload = convertJsonNodeToJWTClaimsSet(document);
-                        SignedJWT signedJWT = new SignedJWT(header, payload);
-                        signedJWT.sign(signer);
-                        log.debug("JWT signed successfully");
-                        return signedJWT.serialize();
-                    } catch (Exception e) {
-                        log.error("Error while creating the Signed JWT", e);
-                        throw new ParseErrorException("Error while encoding the JWT: " + e.getMessage());
-                    }
-                }))
+                            JWTClaimsSet payload = convertJsonNodeToJWTClaimsSet(document);
+                            SignedJWT signedJWT = new SignedJWT(header, payload);
+                            signedJWT.sign(signer);
+                            log.debug("JWT signed successfully");
+                            return signedJWT.serialize();
+                        } catch (Exception e) {
+                            log.error("Error while creating the Signed JWT", e);
+                            throw new ParseErrorException("Error while encoding the JWT: " + e.getMessage());
+                        }
+                    }))
+                )
                 .doOnSuccess(jwt -> log.debug("ProcessID: {} - Created JWT: {}", processId, jwt))
                 .doOnError(throwable -> log.error("ProcessID: {} - Error creating the jwt: {}", processId, throwable.getMessage()));
     }
@@ -105,7 +109,7 @@ public class SignerServiceImpl implements SignerService {
         if (matcher.find()) {
             return str+"#"+matcher.group(1);
         } else {
-            return "";
+            return str;
         }
     }
 

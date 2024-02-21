@@ -10,7 +10,6 @@ import es.in2.wallet.api.service.PresentationService;
 import es.in2.wallet.api.service.SignerService;
 import es.in2.wallet.api.service.UserDataService;
 import es.in2.wallet.broker.service.BrokerService;
-import es.in2.wallet.vault.service.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,7 +23,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.api.util.MessageUtils.JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1;
+import static es.in2.wallet.api.util.MessageUtils.VERIFIABLE_PRESENTATION;
 
 @Service
 @RequiredArgsConstructor
@@ -33,9 +34,17 @@ public class PresentationServiceImpl implements PresentationService {
     private final ObjectMapper objectMapper;
     private final UserDataService userDataService;
     private final BrokerService brokerService;
-    private final VaultService vaultService;
     private final SignerService signerService;
 
+    /**
+     * Creates and signs a Verifiable Presentation (VP) using the selected Verifiable Credentials (VCs).
+     * This method retrieves the subject DID from the first VC, constructs an unsigned VP, and signs it.
+     *
+     * @param authorizationToken   The authorization token to identify the user.
+     * @param vcSelectorResponse   The response containing the selected VCs for the VP.
+     * @param nonce                A unique nonce for the VP.
+     * @param audience             The intended audience of the VP.
+     */
     @Override
     public Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse,String nonce, String audience) {
         // Get the subject DID from the first credential in the list
@@ -49,8 +58,7 @@ public class PresentationServiceImpl implements PresentationService {
                         .flatMap(did ->
                                 // Create the unsigned verifiable presentation
                                 createUnsignedPresentation(verifiableCredentialsList, did,nonce,audience)
-                                        .flatMap(document -> vaultService.getSecretByKey(did,PRIVATE_KEY_TYPE)
-                                            .flatMap(privateKey -> signerService.buildJWTSFromJsonNode(document,did,"vp",privateKey)))
+                                        .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp"))
                         )
                 )
                         // Log success
@@ -63,11 +71,23 @@ public class PresentationServiceImpl implements PresentationService {
                 );
     }
 
+    /**
+     * Retrieves a list of Verifiable Credential JWTs based on the VCs selected in the VcSelectorResponse.
+     *
+     * @param entity               The entity ID associated with the VCs.
+     * @param vcSelectorResponse   The VcSelectorResponse containing the IDs of the selected VCs.
+     */
     private Mono<List<String>> getVerifiableCredentials(String entity, VcSelectorResponse vcSelectorResponse) {
         return Flux.fromIterable(vcSelectorResponse.selectedVcList())
                 .flatMap(verifiableCredential -> userDataService.getVerifiableCredentialByIdAndFormat(entity,verifiableCredential.id(),"vc_jwt"))
                 .collectList();
     }
+
+    /**
+     * Extracts the subject DID from the first Verifiable Credential in the list.
+     *
+     * @param verifiableCredentialsList The list of VC JWTs.
+     */
     private Mono<String> getSubjectDidFromTheFirstVcOfTheList(List<String> verifiableCredentialsList) {
         return Mono.fromCallable(() -> {
             // Check if the list is not empty
@@ -88,6 +108,14 @@ public class PresentationServiceImpl implements PresentationService {
         });
     }
 
+    /**
+     * Creates an unsigned Verifiable Presentation containing the selected VCs.
+     *
+     * @param vcs       The list of VC JWTs to include in the VP.
+     * @param holderDid The DID of the holder of the VPs.
+     * @param nonce     A unique nonce for the VP.
+     * @param audience  The intended audience of the VP.
+     */
     private Mono<JsonNode> createUnsignedPresentation(
             List<String> vcs,
             String holderDid,

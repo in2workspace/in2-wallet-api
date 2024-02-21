@@ -16,7 +16,9 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
 
 @Slf4j
 @Service
@@ -54,9 +56,9 @@ public class CredentialIssuerMetadataServiceImpl implements CredentialIssuerMeta
      *
      * @param response The response String to be parsed.
      * @return An instance of Mono<CredentialIssuerMetadata>.
-     * @deprecated (since = "1.5", forRemoval = true) This implementation is temporary and should be replaced in future versions.
+     * @deprecated (since = "1.0.0", forRemoval = true) This implementation is temporary and should be replaced in future versions.
      */
-    @Deprecated(since = "2.0.0", forRemoval = true)
+    @Deprecated(since = "1.0.0", forRemoval = true)
     private Mono<CredentialIssuerMetadata> parseCredentialIssuerMetadataResponse(String response) {
         try {
             JsonNode rootNode = objectMapper.readTree(response);

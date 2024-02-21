@@ -7,7 +7,7 @@ import es.in2.wallet.api.config.properties.AuthServerProperties;
 import es.in2.wallet.api.model.CredentialIssuerMetadata;
 import es.in2.wallet.api.model.CredentialOffer;
 import es.in2.wallet.api.service.impl.CredentialIssuerMetadataServiceImpl;
-import es.in2.wallet.api.util.MessageUtils;
+import es.in2.wallet.api.util.ApplicationUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,7 +21,9 @@ import reactor.test.StepVerifier;
 import java.util.List;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,7 +37,7 @@ class CredentialIssuerMetadataServiceImplTest {
 
     @Test
     void getCredentialIssuerMetadataFromCredentialOfferWithCredentialEndpointHardcodedTest() throws JsonProcessingException {
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)) {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             CredentialOffer credentialOffer = CredentialOffer.builder().credentialIssuer("example").build();
             List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
@@ -59,7 +61,7 @@ class CredentialIssuerMetadataServiceImplTest {
     }
     @Test
     void getCredentialIssuerMetadataFromCredentialOfferWithoutCredentialEndpointHardcodedTest() throws JsonProcessingException {
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)) {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             CredentialOffer credentialOffer = CredentialOffer.builder().credentialIssuer("example").build();
             List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
@@ -81,7 +83,7 @@ class CredentialIssuerMetadataServiceImplTest {
     }
     @Test
     void getCredentialIssuerMetadataError(){
-        try (MockedStatic<MessageUtils> ignored = Mockito.mockStatic(MessageUtils.class)) {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             CredentialOffer credentialOffer = CredentialOffer.builder().credentialIssuer("example").build();
             List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
