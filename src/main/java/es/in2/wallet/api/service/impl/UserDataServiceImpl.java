@@ -99,50 +99,42 @@ public class UserDataServiceImpl implements UserDataService {
     public Mono<String> saveVC(String userEntity, List<CredentialResponse> credentials) {
         return serializeUserEntity(userEntity)
                 .flatMap(entity -> {
-                    // Separate credentials by format using Java Stream API, prioritizing JWT format.
-                    List<CredentialResponse> jwtCredentials = credentials.stream()
-                            .filter(cred -> VC_JWT.equals(cred.format()))
-                            .toList(); // Using Stream.toList() for a more concise approach
-                    List<CredentialResponse> cborCredentials = credentials.stream()
-                            .filter(cred -> VC_CWT.equals(cred.format()))
-                            .toList();
+                    CredentialResponse selectedCredential = credentials.stream()
+                            .filter(cred -> VC_JWT.equals(cred.format()) || VC_CWT.equals(cred.format()))
+                            .findFirst()
+                            .orElseThrow(() -> new RuntimeException("No suitable credential format found."));
 
-                    // Process JWT credentials first if they exist
-                    Flux<VCAttribute> jwtAttributes = Flux.fromIterable(jwtCredentials)
-                            .flatMap(cred -> extractVcJsonFromVcJwt(cred.credential())
-                                    .flatMap(vcJson -> extractVerifiableCredentialIdFromVcJson(vcJson)
-                                            .map(vcId -> new VCAttribute(vcId, VC_JSON, vcJson))));
+                    Mono<JsonNode> vcJsonMono = selectedCredential.format().equals(VC_JWT) ?
+                            extractVcJsonFromVcJwt(selectedCredential.credential()) :
+                            fromVpCborToVcJsonReactive(selectedCredential.credential());
 
-                    // Process CBOR credentials only if there are no JWT credentials or after processing JWTs
-                    Flux<VCAttribute> cborAttributes = jwtCredentials.isEmpty() ? Flux.fromIterable(cborCredentials)
-                            .flatMap(cred -> fromVpCborToVcJsonReactive(cred.credential())
-                                    .flatMap(vcJson -> extractVerifiableCredentialIdFromVcJson(vcJson)
-                                            .map(vcId -> new VCAttribute(vcId, VC_JSON, vcJson)))) : Flux.empty();
-
-                    // Combine JWT and CBOR attributes streams, process them, and update the user entity
-                    return Flux.concat(jwtAttributes, cborAttributes)
-                            .collectList()
-                            .map(vcAttributes -> {
-                                // Update the list of VCAttributes in the user entity with new ones
+                    return vcJsonMono.flatMap(vcJson -> extractVerifiableCredentialIdFromVcJson(vcJson)
+                            .flatMap(vcId -> {
+                                List<VCAttribute> vcAttributes = new ArrayList<>();
+                                for (CredentialResponse cred : credentials) {
+                                    vcAttributes.add(new VCAttribute(vcId, cred.format(), cred.credential()));
+                                }
+                                vcAttributes.add(new VCAttribute(vcId, VC_JSON, vcJson));
                                 List<VCAttribute> updatedVCs = new ArrayList<>(entity.vcs().value());
                                 updatedVCs.addAll(vcAttributes);
-
-                                // Create a new UserEntity with the updated list of VCAttributes
                                 EntityAttribute<List<VCAttribute>> vcs = new EntityAttribute<>(entity.vcs().type(), updatedVCs);
-                                return UserEntity.builder()
+
+                                UserEntity updatedUserEntity = UserEntity.builder()
                                         .id(entity.id())
                                         .type(entity.type())
                                         .vcs(vcs)
                                         .dids(entity.dids())
                                         .build();
-                            });
+
+                                return deserializeUserEntityToString(updatedUserEntity);
+                            }));
                 })
-                .flatMap(this::deserializeUserEntityToString) // Convert the updated user entity back to string
-                .doOnSuccess(updatedUserEntity -> log.info("Verifiable Credential saved successfully: {}", updatedUserEntity)); // Log success message
+                .doOnSuccess(updatedUserEntity -> log.info("Verifiable Credential saved successfully: {}", updatedUserEntity))
+                .onErrorResume(e -> {
+                    log.error("Error saving Verifiable Credential: {}", e.getMessage());
+                    return Mono.error(new RuntimeException("Error processing Verifiable Credential", e));
+                });
     }
-
-
-
 
 
     private Mono<JsonNode> fromVpCborToVcJsonReactive(String qrData) {

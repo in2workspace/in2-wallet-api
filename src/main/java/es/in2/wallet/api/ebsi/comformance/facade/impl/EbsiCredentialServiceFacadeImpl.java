@@ -8,7 +8,6 @@ import es.in2.wallet.api.ebsi.comformance.service.IdTokenService;
 import es.in2.wallet.api.ebsi.comformance.service.VpTokenService;
 import es.in2.wallet.api.model.*;
 import es.in2.wallet.api.service.*;
-import es.in2.wallet.api.service.impl.ProofJWTServiceImpl;
 import es.in2.wallet.broker.service.BrokerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,7 @@ public class EbsiCredentialServiceFacadeImpl implements EbsiCredentialServiceFac
     private final PreAuthorizedService preAuthorizedService;
     private final IdTokenService idTokenService;
     private final VpTokenService vpTokenService;
-    private final ProofJWTServiceImpl proofJWTService;
+    private final ProofJWTService proofJWTService;
     private final AuthorisationRequestService authorisationRequestService;
     private final AuthorisationResponseService authorisationResponseService;
     private final SignerService signerService;
