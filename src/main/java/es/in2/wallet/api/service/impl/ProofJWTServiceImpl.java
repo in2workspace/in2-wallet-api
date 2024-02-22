@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 @Service
 @Slf4j
@@ -19,12 +20,15 @@ import java.time.Instant;
 public class ProofJWTServiceImpl implements ProofJWTService {
     private final ObjectMapper objectMapper;
     @Override
-    public Mono<JsonNode> buildCredentialRequest(String nonce, String issuer) {
+    public Mono<JsonNode> buildCredentialRequest(String nonce, String issuer, String did) {
         try {
             Instant issueTime = Instant.now();
+            Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
             JWTClaimsSet payload = new JWTClaimsSet.Builder()
+                    .issuer(did)
                     .audience(issuer)
                     .issueTime(java.util.Date.from(issueTime))
+                    .expirationTime(java.util.Date.from(expirationTime))
                     .claim("nonce", nonce)
                     .build();
             return Mono.just(objectMapper.readTree(payload.toString()));

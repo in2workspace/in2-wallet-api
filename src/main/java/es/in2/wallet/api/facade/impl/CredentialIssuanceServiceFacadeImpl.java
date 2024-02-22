@@ -1,6 +1,9 @@
 package es.in2.wallet.api.facade.impl;
 
-import es.in2.wallet.api.ebsi.comformance.service.*;
+import es.in2.wallet.api.ebsi.comformance.service.AuthorisationRequestService;
+import es.in2.wallet.api.ebsi.comformance.service.AuthorisationResponseService;
+import es.in2.wallet.api.ebsi.comformance.service.IdTokenService;
+import es.in2.wallet.api.ebsi.comformance.service.VpTokenService;
 import es.in2.wallet.api.facade.CredentialIssuanceServiceFacade;
 import es.in2.wallet.api.model.*;
 import es.in2.wallet.api.service.*;
@@ -9,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static es.in2.wallet.api.util.ApplicationUtils.extractResponseType;
 import static es.in2.wallet.api.util.ApplicationUtils.getUserIdFromToken;
@@ -32,7 +38,6 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
     private final VpTokenService vpTokenService;
     private final AuthorisationRequestService authorisationRequestService;
     private final AuthorisationResponseService authorisationResponseService;
-    private final CredentialEbsiService credentialEbsiService;
 
     @Override
     public Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent) {
@@ -62,13 +67,12 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * 5. Processes the user entity based on the obtained credential and DID.
      */
     private Mono<Void> getCredentialWithPreAuthorizedCode(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
-        return getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
-                .flatMap(tokenResponse -> generateDid()
-                        .flatMap(did -> buildAndSignCredentialRequest(tokenResponse, did, credentialIssuerMetadata)
-                                .flatMap(signedJWT -> getCredential(processId, signedJWT, tokenResponse, credentialIssuerMetadata)
-                                        .flatMap(credentialResponse -> processUserEntity(processId, authorizationToken, credentialResponse,did))
-                                )
-                        )
+        return generateDid().flatMap(did ->
+                getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
+                        .flatMap(tokenResponse -> getCredentialRecursive(
+                                processId, tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), new ArrayList<>(), 0
+                        ))
+                        .flatMap(credentials -> processUserEntity(processId,authorizationToken,credentials,did))
                 );
     }
 
@@ -91,8 +95,11 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
                                     }
                                 })
                                 .flatMap(params -> authorisationResponseService.sendTokenRequest(tuple.getT2(), did, authorisationServerMetadata, params)))
-                        .flatMap(tokenResponse -> credentialEbsiService.getCredential(processId, did, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
-                        .flatMap(credentialResponse -> processUserEntity(processId, authorizationToken, credentialResponse, did)));
+                        // get Credentials
+                        .flatMap(tokenResponse -> getCredentialRecursive(
+                                processId, tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), new ArrayList<>(), 0
+                        ))
+                        .flatMap(credentials -> processUserEntity(processId, authorizationToken, credentials, did)));
     }
 
     /**
@@ -116,17 +123,9 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * Constructs a credential request using the nonce from the token response and the issuer's information.
      * The request is then signed using the generated DID and private key to ensure its authenticity.
      */
-    private Mono<String> buildAndSignCredentialRequest(TokenResponse tokenResponse, String did, CredentialIssuerMetadata credentialIssuerMetadata) {
-        return proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer())
+    private Mono<String> buildAndSignCredentialRequest(String nonce, String did, String issuer) {
+        return proofJWTService.buildCredentialRequest(nonce, issuer,did)
                 .flatMap(json -> signerService.buildJWTSFromJsonNode(json, did, "proof"));
-    }
-
-    /**
-     * Retrieves the credential based on the signed JWT, token response, and issuer metadata.
-     * This step involves communicating with the credential service to obtain the actual credential.
-     */
-    private Mono<CredentialResponse> getCredential(String processId, String signedJWT, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata) {
-        return credentialService.getCredential(processId, signedJWT, tokenResponse, credentialIssuerMetadata);
     }
 
     /**
@@ -134,12 +133,12 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * If the user entity exists, it is updated with the new credential.
      * If not, a new user entity is created and then updated with the credential.
      */
-    private Mono<Void> processUserEntity(String processId, String authorizationToken, CredentialResponse credentialResponse, String did) {
+    private Mono<Void> processUserEntity(String processId, String authorizationToken, List<CredentialResponse> credentials, String did) {
         return getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
-                                .map(entity -> updateEntity(processId, userId, credentialResponse, entity,did))
-                                .orElseGet(() -> createAndUpdateUser(processId, userId, credentialResponse,did))
+                                .map(entity -> updateEntity(processId, userId, credentials, entity,did))
+                                .orElseGet(() -> createAndUpdateUser(processId, userId, credentials,did))
                         )
                 );
     }
@@ -149,7 +148,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * Following the update, a second operation is triggered to save the VC (Verifiable Credential) to the entity.
      * This process involves saving the DID, updating the entity, retrieving the updated entity, saving the VC, and finally updating the entity again with the VC information.
      */
-    private Mono<Void> updateEntity(String processId, String userId, CredentialResponse credentialResponse, String entity, String did) {
+    private Mono<Void> updateEntity(String processId, String userId, List<CredentialResponse> credentials, String entity, String did) {
         return userDataService.saveDid(entity, did, "did:key")
                 .flatMap(updatedEntity ->
                         brokerService.updateEntity(processId, userId, updatedEntity)
@@ -158,7 +157,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
                         brokerService.getEntityById(processId, userId)
                                 .flatMap(optionalEntity ->
                                         optionalEntity.map(updatedEntity ->
-                                                        userDataService.saveVC(updatedEntity, credentialResponse.credential())
+                                                        userDataService.saveVC(updatedEntity, credentials)
                                                                 .flatMap(vcUpdatedEntity ->
                                                                         brokerService.updateEntity(processId, userId, vcUpdatedEntity)
                                                                 )
@@ -172,7 +171,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * After creation, the entity is updated with the DID information.
      * This involves creating the user, posting the entity, saving the DID to the entity, updating the entity with the DID, retrieving the updated entity, saving the VC, and performing a final update with the VC information.
      */
-    private Mono<Void> createAndUpdateUser(String processId, String userId, CredentialResponse credentialResponse, String did) {
+    private Mono<Void> createAndUpdateUser(String processId, String userId, List<CredentialResponse> credentials, String did) {
         return userDataService.createUserEntity(userId)
                 .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
                 .then(brokerService.getEntityById(processId, userId))
@@ -183,7 +182,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
                                                 .then(brokerService.getEntityById(processId, userId))
                                                 .flatMap(updatedOptionalEntity ->
                                                         updatedOptionalEntity.map(updatedEntity ->
-                                                                        userDataService.saveVC(updatedEntity, credentialResponse.credential())
+                                                                        userDataService.saveVC(updatedEntity, credentials)
                                                                                 .flatMap(vcUpdatedEntity -> brokerService.updateEntity(processId, userId, vcUpdatedEntity))
                                                                                 .then()
                                                                 )
@@ -194,4 +193,20 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
                 );
     }
 
+    private Mono<List<CredentialResponse>> getCredentialRecursive(String processId, TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce, List<CredentialResponse> credentialResponses, int index) {
+        if (index >= credentialOffer.credentials().size()) {
+            return Mono.just(credentialResponses);
+        }
+
+        CredentialOffer.Credential credential = credentialOffer.credentials().get(index);
+        return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
+                .flatMap(jwt -> credentialService.getCredential(processId, jwt, tokenResponse, credentialIssuerMetadata, credential.format(), credential.types()))
+                .flatMap(credentialResponse -> {
+                    credentialResponses.add(credentialResponse);
+                    String newNonce = credentialResponse.c_nonce() != null ? credentialResponse.c_nonce() : nonce;
+                    return getCredentialRecursive(
+                            processId, tokenResponse, credentialOffer, credentialIssuerMetadata, did, newNonce, credentialResponses, index + 1
+                    );
+                });
+    }
 }

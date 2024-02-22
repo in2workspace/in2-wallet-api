@@ -2,7 +2,10 @@ package es.in2.wallet.api.ebsi.comformance.facade.impl;
 
 import es.in2.wallet.api.ebsi.comformance.config.EbsiConfig;
 import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialServiceFacade;
-import es.in2.wallet.api.ebsi.comformance.service.*;
+import es.in2.wallet.api.ebsi.comformance.service.AuthorisationRequestService;
+import es.in2.wallet.api.ebsi.comformance.service.AuthorisationResponseService;
+import es.in2.wallet.api.ebsi.comformance.service.IdTokenService;
+import es.in2.wallet.api.ebsi.comformance.service.VpTokenService;
 import es.in2.wallet.api.model.*;
 import es.in2.wallet.api.service.*;
 import es.in2.wallet.api.service.impl.ProofJWTServiceImpl;
@@ -10,7 +13,6 @@ import es.in2.wallet.broker.service.BrokerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -164,7 +166,7 @@ public class EbsiCredentialServiceFacadeImpl implements EbsiCredentialServiceFac
      * The request is then signed using the generated DID and private key to ensure its authenticity.
      */
     private Mono<String> buildAndSignCredentialRequest(String nonce, String did, String issuer) {
-        return proofJWTService.buildCredentialRequest(nonce, issuer)
+        return proofJWTService.buildCredentialRequest(nonce, issuer,did)
                 .flatMap(json -> signerService.buildJWTSFromJsonNode(json, did, "proof"));
     }
 
