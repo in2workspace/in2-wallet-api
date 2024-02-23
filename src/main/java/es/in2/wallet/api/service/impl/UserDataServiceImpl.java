@@ -95,6 +95,16 @@ public class UserDataServiceImpl implements UserDataService {
         }
     }
 
+    /**
+     * Saves Verifiable Credentials (VCs) for a user entity, handling both JWT and CWT formats.
+     * This method serializes the user entity, processes each credential to extract or convert to JSON,
+     * and updates the user entity with both the original format credentials and their JSON representation.
+     * The JSON is used for displaying purposes, while the original formats are retained for integrity.
+     *
+     * @param userEntity The serialized user entity to which the credentials are to be saved.
+     * @param credentials The list of CredentialResponse objects containing the VCs in various formats.
+     */
+
     @Override
     public Mono<String> saveVC(String userEntity, List<CredentialResponse> credentials) {
         return serializeUserEntity(userEntity)

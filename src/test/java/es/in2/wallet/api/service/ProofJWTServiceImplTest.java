@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
+import es.in2.wallet.api.exception.ParseErrorException;
 import es.in2.wallet.api.service.impl.ProofJWTServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,5 +50,18 @@ class ProofJWTServiceImplTest {
                                 jsonNode.has("nonce") && jsonNode.get("nonce").asText().equals(nonce)
                 )
                 .verifyComplete();
+    }
+
+    @Test
+    void buildCredentialRequestTestParseErrorException() throws JsonProcessingException {
+        String nonce = "sampleNonce";
+        String issuer = "sampleIssuer";
+        String did = "sampleDid";
+        when(objectMapper.readTree(anyString())).thenThrow(new JsonProcessingException("Serialization error") {});
+
+        // Executing the test
+        StepVerifier.create(proofJWTService.buildCredentialRequest(nonce, issuer, did))
+                .expectError(ParseErrorException.class)
+                .verify();
     }
 }

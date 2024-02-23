@@ -35,7 +35,7 @@ public class ProofJWTServiceImpl implements ProofJWTService {
         }
         catch (JsonProcessingException e){
             log.error("Error while parsing the JWT payload", e);
-            throw new ParseErrorException("Error while parsing the JWT payload: " + e.getMessage());
+            return Mono.error(new ParseErrorException("Error while parsing the JWT payload: " + e.getMessage()));
         }
     }
 }

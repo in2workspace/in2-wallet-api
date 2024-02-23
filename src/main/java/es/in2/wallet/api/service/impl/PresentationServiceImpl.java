@@ -134,7 +134,6 @@ public class PresentationServiceImpl implements PresentationService {
 
             Instant issueTime = Instant.now();
             Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
-            String v =objectMapper.writeValueAsString(vpBuilder);
             Map<String, Object> vpParsed = JWTClaimsSet.parse(objectMapper.writeValueAsString(vpBuilder)).getClaims();
             JWTClaimsSet payload = new JWTClaimsSet.Builder()
                     .issuer(holderDid)

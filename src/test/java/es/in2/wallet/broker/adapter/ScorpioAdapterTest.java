@@ -1,7 +1,10 @@
 package es.in2.wallet.broker.adapter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import es.in2.wallet.api.exception.JsonReadingException;
 import es.in2.wallet.broker.config.properties.BrokerPathProperties;
 import es.in2.wallet.broker.config.properties.BrokerProperties;
 import okhttp3.mockwebserver.MockResponse;
@@ -21,11 +24,13 @@ import reactor.test.StepVerifier;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Optional;
 
 import static es.in2.wallet.api.util.MessageUtils.ATTRIBUTES;
 import static es.in2.wallet.api.util.MessageUtils.ENTITY_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -200,5 +205,22 @@ class ScorpioAdapterTest {
         assertEquals("PATCH", recordedRequest.getMethod());
         assertEquals(MediaType.valueOf("application/ld+json").toString(), recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
+    }
+    @Test
+    void getEntityByIdTestWithNotFoundResponse() throws Exception {
+        String processId = "processId123";
+        String userId = "123";
+
+        // Enqueue a mock response with a 5xx server error
+        mockWebServer.enqueue(new MockResponse().setResponseCode(404));
+
+        // Test the getEntityById method expecting an empty result
+        StepVerifier.create(scorpioAdapter.getEntityById(processId,userId))
+                .expectNextMatches(Optional::isEmpty) // Verify that an empty Optional is received
+                .verifyComplete();
+
+        // Verify the GET request was made correctly
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/entities" + ENTITY_PREFIX + userId, recordedRequest.getPath());
     }
 }
