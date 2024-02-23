@@ -95,5 +95,21 @@ class CredentialIssuerMetadataServiceImplTest {
         }
     }
 
+    @Test
+    void getCredentialIssuerMetadataFromCredentialOfferFailedDeserializingException() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
+            String processId = "123";
+            CredentialOffer credentialOffer = CredentialOffer.builder().credentialIssuer("example").build();
+            List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
+
+            when(getRequest("example/.well-known/openid-credential-issuer",headers)).thenReturn(Mono.just("response"));
+            when(objectMapper.readTree("response")).thenThrow(new JsonProcessingException("Deserialization error"){});
+
+            StepVerifier.create(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer))
+                    .expectError(RuntimeException.class)
+                    .verify();
+        }
+    }
+
 
 }
