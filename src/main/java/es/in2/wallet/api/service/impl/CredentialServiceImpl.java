@@ -117,11 +117,7 @@ public class CredentialServiceImpl implements CredentialService {
                         .types(types)
                         .proof(CredentialRequest.Proof.builder().proofType("jwt").jwt(jwt).build())
                         .build())
-                .doOnNext(requestBody -> log.debug("Credential Request Body: {}", requestBody))
-                .onErrorResume(e -> {
-                    log.error("Error creating CredentialRequestBodyDTO", e);
-                    return Mono.error(new RuntimeException("Error creating CredentialRequestBodyDTO", e));
-                });
+                .doOnNext(requestBody -> log.debug("Credential Request Body: {}", requestBody));
     }
 
 }

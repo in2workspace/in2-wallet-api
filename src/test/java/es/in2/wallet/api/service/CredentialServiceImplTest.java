@@ -211,4 +211,51 @@ class CredentialServiceImplTest {
                     .verifyComplete();
         }
     }
+
+    @Test
+    void getCredentialDeferredErrorTest() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
+            String jwt = "ey34324";
+            CredentialOffer.Credential credential = CredentialOffer.Credential.builder().types(List.of("LEARCredential")).format("jwt_vc").build();
+            List<CredentialOffer.Credential> credentials = List.of(credential);
+
+            TokenResponse tokenResponse = TokenResponse.builder().accessToken("token").cNonce("nonce").build();
+
+            CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").credentialEndpoint("endpoint").build();
+
+
+            CredentialResponse mockDeferredResponse1 = CredentialResponse.builder()
+                    .acceptanceToken("deferredToken")
+                    .build();
+
+
+            List<Map.Entry<String, String>> headersForCredentialRequest = new ArrayList<>();
+            headersForCredentialRequest.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
+            headersForCredentialRequest.add(new AbstractMap.SimpleEntry<>(HEADER_AUTHORIZATION, BEARER + tokenResponse.accessToken()));
+
+            List<Map.Entry<String, String>> headersForDeferredCredentialRequest = new ArrayList<>();
+            headersForDeferredCredentialRequest.add(new AbstractMap.SimpleEntry<>(HEADER_AUTHORIZATION, BEARER + "deferredToken"));
+
+
+            when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
+
+            when(postRequest(credentialIssuerMetadata.credentialEndpoint(), headersForCredentialRequest, "credentialRequest"))
+                    .thenReturn(Mono.just("deferredResponse"));
+
+            when(postRequest(credentialIssuerMetadata.deferredCredentialEndpoint(), headersForDeferredCredentialRequest, ""))
+                    .thenReturn(Mono.just("deferredResponseRecursive"));
+
+
+            when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
+            when(objectMapper.readValue("deferredResponse", CredentialResponse.class)).thenReturn(mockDeferredResponse1);
+
+            when(objectMapper.readValue("deferredResponseRecursive", CredentialResponse.class))
+                    .thenThrow(new IllegalStateException("No credential or new acceptance token received") {});
+
+            StepVerifier.withVirtualTime(() -> credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata, credentials.get(0).format(), credentials.get(0).types()))
+                    .thenAwait(Duration.ofSeconds(10))
+                    .expectError(FailedDeserializingException.class)
+                    .verify();
+        }
+    }
 }
