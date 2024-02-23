@@ -157,7 +157,7 @@ public class UserDataServiceImpl implements UserDataService {
                 return vcJsonObject;
             } catch (JsonProcessingException e) {
                 log.error("Error processing JSON", e);
-                throw new RuntimeException(e);
+                throw new ParseErrorException(e.getMessage());
             }
         });
     }
@@ -179,7 +179,7 @@ public class UserDataServiceImpl implements UserDataService {
 
             return jsonOut.toString(StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new RuntimeException("Error processing data", e);
+            throw new ParseErrorException("Error processing data: " + e);
         }
     }
 

@@ -8,5 +8,5 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 public interface CredentialService {
-    Mono<CredentialResponse> getCredential(String processId, String jwt, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types);
+    Mono<CredentialResponse> getCredential(String jwt, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types);
 }

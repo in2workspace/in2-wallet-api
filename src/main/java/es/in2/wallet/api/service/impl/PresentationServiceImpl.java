@@ -24,8 +24,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import static es.in2.wallet.api.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.api.util.MessageUtils.JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1;
-import static es.in2.wallet.api.util.MessageUtils.VERIFIABLE_PRESENTATION;
+import static es.in2.wallet.api.util.MessageUtils.*;
 
 @Service
 @RequiredArgsConstructor
@@ -79,7 +78,7 @@ public class PresentationServiceImpl implements PresentationService {
      */
     private Mono<List<String>> getVerifiableCredentials(String entity, VcSelectorResponse vcSelectorResponse) {
         return Flux.fromIterable(vcSelectorResponse.selectedVcList())
-                .flatMap(verifiableCredential -> userDataService.getVerifiableCredentialByIdAndFormat(entity,verifiableCredential.id(),"vc_jwt"))
+                .flatMap(verifiableCredential -> userDataService.getVerifiableCredentialByIdAndFormat(entity,verifiableCredential.id(),VC_JWT))
                 .collectList();
     }
 
@@ -135,6 +134,7 @@ public class PresentationServiceImpl implements PresentationService {
 
             Instant issueTime = Instant.now();
             Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
+            String v =objectMapper.writeValueAsString(vpBuilder);
             Map<String, Object> vpParsed = JWTClaimsSet.parse(objectMapper.writeValueAsString(vpBuilder)).getClaims();
             JWTClaimsSet payload = new JWTClaimsSet.Builder()
                     .issuer(holderDid)

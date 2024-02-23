@@ -76,7 +76,7 @@ public class EbsiCredentialServiceFacadeImpl implements EbsiCredentialServiceFac
         return ebsiConfig.getDid()
                 .flatMap(did -> preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
                         .flatMap(tokenResponse -> getCredentialRecursive(
-                                processId, tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), new ArrayList<>(), 0
+                                 tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), new ArrayList<>(), 0
                         ))
                         .flatMap(credentialResponses -> processUserEntity(processId, authorizationToken, credentialResponses))
                 );
@@ -108,7 +108,7 @@ public class EbsiCredentialServiceFacadeImpl implements EbsiCredentialServiceFac
                         )
                         // get Credentials
                         .flatMap(tokenResponse -> getCredentialRecursive(
-                                processId, tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), new ArrayList<>(), 0
+                                 tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), new ArrayList<>(), 0
                         ))
                 )
                 // save Credential
@@ -169,19 +169,18 @@ public class EbsiCredentialServiceFacadeImpl implements EbsiCredentialServiceFac
                 .flatMap(json -> signerService.buildJWTSFromJsonNode(json, did, "proof"));
     }
 
-    private Mono<List<CredentialResponse>> getCredentialRecursive(String processId, TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce, List<CredentialResponse> credentialResponses, int index) {
+    private Mono<List<CredentialResponse>> getCredentialRecursive(TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce, List<CredentialResponse> credentialResponses, int index) {
         if (index >= credentialOffer.credentials().size()) {
             return Mono.just(credentialResponses);
         }
-
         CredentialOffer.Credential credential = credentialOffer.credentials().get(index);
         return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
-                .flatMap(jwt -> credentialService.getCredential(processId, jwt, tokenResponse, credentialIssuerMetadata, credential.format(), credential.types()))
+                .flatMap(jwt -> credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credential.format(), credential.types()))
                 .flatMap(credentialResponse -> {
                     credentialResponses.add(credentialResponse);
                     String newNonce = credentialResponse.c_nonce() != null ? credentialResponse.c_nonce() : nonce;
                     return getCredentialRecursive(
-                            processId, tokenResponse, credentialOffer, credentialIssuerMetadata, did, newNonce, credentialResponses, index + 1
+                            tokenResponse, credentialOffer, credentialIssuerMetadata, did, newNonce, credentialResponses, index + 1
                     );
                 });
     }

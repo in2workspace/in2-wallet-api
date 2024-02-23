@@ -11,6 +11,7 @@ import es.in2.wallet.api.model.TokenResponse;
 import es.in2.wallet.api.service.CredentialService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -29,7 +30,8 @@ public class CredentialServiceImpl implements CredentialService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public Mono<CredentialResponse> getCredential(String processId, String jwt, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types) {
+    public Mono<CredentialResponse> getCredential(String jwt, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types) {
+        String processId = MDC.get(PROCESS_ID);
         // build CredentialRequest
         return buildCredentialRequest(jwt,format,types)
                 .doOnSuccess(credentialRequest -> log.info("ProcessID: {} - CredentialRequest: {}", processId, credentialRequest))
