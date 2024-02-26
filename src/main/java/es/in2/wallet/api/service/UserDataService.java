@@ -27,6 +27,4 @@ public interface UserDataService {
     Mono<List<String>> getDidsByUserEntity(String userEntity);
 
     Mono<String> deleteSelectedDidFromUserEntity(String did, String userEntity);
-
-
 }

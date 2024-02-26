@@ -1,7 +1,9 @@
 package es.in2.wallet.api.controller;
 
+import es.in2.wallet.api.facade.AttestationExchangeServiceFacade;
 import es.in2.wallet.api.facade.CredentialPresentationForTurnstileServiceFacade;
 import es.in2.wallet.api.model.CredentialsBasicInfo;
+import es.in2.wallet.api.model.VcSelectorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,17 @@ import static es.in2.wallet.api.util.ApplicationUtils.getCleanBearerToken;
 public class VerifiablePresentationController {
 
     private final CredentialPresentationForTurnstileServiceFacade credentialPresentationForTurnstileServiceFacade;
+    private final AttestationExchangeServiceFacade attestationExchangeServiceFacade;
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<Void> createVerifiablePresentation(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+                                                   @RequestBody VcSelectorResponse vcSelectorResponse) {
+        String processId = UUID.randomUUID().toString();
+        MDC.put("processId", processId);
+        return getCleanBearerToken(authorizationHeader)
+                .flatMap(authorizationToken ->
+                        attestationExchangeServiceFacade.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse));
+    }
     @PostMapping("/cbor")
     @ResponseStatus(HttpStatus.OK)
     @Operation(

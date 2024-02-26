@@ -14,17 +14,4 @@ public record PresentationSubmission(
         @JsonProperty("descriptor_map")
         List<DescriptorMap> descriptorMap
 ) {
-    @Builder
-    public record DescriptorMap(
-            @JsonProperty("id")
-            String id,
-            @JsonProperty("format")
-            String format,
-            @JsonProperty("path")
-            String path,
-            @JsonProperty("path_nested")
-            DescriptorMap pathNested
-    ){
-
-    }
 }

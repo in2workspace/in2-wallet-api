@@ -45,7 +45,8 @@ public class MessageUtils {
     public static final String GLOBAL_STATE = "MTo3NzcwMjoyNDU1NTkwMjMzOjE3MDU5MTE3NDA=";
     public static final String AUTH_CODE_GRANT_TYPE = "authorization_code";
     public static final String CODEVERIFIERALLOWEDCHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
-
+    public static final String CUSTOMER_PRESENTATION_DEFINITION = "CustomerPresentationDefinition";
+    public static final String CUSTOMER_PRESENTATION_SUBMISSION = "CustomerPresentationSubmission";
     public static final String JWT_VC = "jwt_vc";
     public static final String JWT_VP = "jwt_vp";
     public static final String ALLOWED_METHODS = "*";
