@@ -39,6 +39,7 @@ public class MessageUtils {
     public static final String ISSUER_SUB = "sub";
     public static final String VC_JWT = "vc_jwt";
     public static final String VC_JSON = "vc_json";
+    public static final String VC_CWT = "cwt_vc";
     public static final String PROPERTY_TYPE = "Property";
     public static final String CREDENTIAL_SUBJECT = "credentialSubject";
     public static final String GLOBAL_STATE = "MTo3NzcwMjoyNDU1NTkwMjMzOjE3MDU5MTE3NDA=";

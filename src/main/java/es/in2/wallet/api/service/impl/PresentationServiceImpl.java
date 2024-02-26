@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import es.in2.wallet.api.model.CredentialsBasicInfo;
 import es.in2.wallet.api.model.VcSelectorResponse;
 import es.in2.wallet.api.model.VerifiablePresentation;
 import es.in2.wallet.api.service.PresentationService;
@@ -24,8 +25,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import static es.in2.wallet.api.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.api.util.MessageUtils.JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1;
-import static es.in2.wallet.api.util.MessageUtils.VERIFIABLE_PRESENTATION;
+import static es.in2.wallet.api.util.MessageUtils.*;
 
 @Service
 @RequiredArgsConstructor
@@ -47,27 +47,44 @@ public class PresentationServiceImpl implements PresentationService {
      */
     @Override
     public Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse,String nonce, String audience) {
-        // Get the subject DID from the first credential in the list
+        return createSignedVerifiablePresentation(processId, authorizationToken, nonce, audience, vcSelectorResponse.selectedVcList());
+    }
+
+    /**
+     * Creates and signs a Verifiable Presentation (VP) using the selected Verifiable Credential (VC).
+     * This method retrieves the subject DID from the first VC, constructs an unsigned VP, and signs it.
+     *
+     * @param authorizationToken   The authorization token to identify the user.
+     * @param credentialsBasicInfo The selected VC for the VP.
+     * @param nonce                A unique nonce for the VP.
+     * @param audience             The intended audience of the VP.
+     */
+    @Override
+    public Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, CredentialsBasicInfo credentialsBasicInfo, String nonce, String audience) {
+        return createSignedVerifiablePresentation(processId, authorizationToken, nonce, audience, List.of(credentialsBasicInfo));
+    }
+
+    private Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken,String nonce, String audience, List<CredentialsBasicInfo> selectedVcList) {
         return  getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId,userId))
                 .flatMap(optionalEntity -> optionalEntity
-                        .map(entity -> getVerifiableCredentials(entity,vcSelectorResponse))
+                        .map(entity -> getVerifiableCredentials(entity,selectedVcList, VC_CWT))
                         .orElseGet(() -> Mono.error(new RuntimeException("Failed to retrieve entity."))
-                )
-                .flatMap(verifiableCredentialsList -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsList)
-                        .flatMap(did ->
-                                // Create the unsigned verifiable presentation
-                                createUnsignedPresentation(verifiableCredentialsList, did,nonce,audience)
-                                        .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp"))
                         )
-                )
+                        .flatMap(verifiableCredentialsList -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsList)
+                                .flatMap(did ->
+                                        // Create the unsigned verifiable presentation
+                                        createUnsignedPresentation(verifiableCredentialsList, did,nonce,audience)
+                                                .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp"))
+                                )
+                        )
                         // Log success
                         .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
-                    // Handle errors
-                    .onErrorResume(e -> {
-                        log.error("Error in creating Verifiable Presentation: ", e);
-                        return Mono.error(e);
-                    })
+                        // Handle errors
+                        .onErrorResume(e -> {
+                            log.error("Error in creating Verifiable Presentation: ", e);
+                            return Mono.error(e);
+                        })
                 );
     }
 
@@ -75,11 +92,12 @@ public class PresentationServiceImpl implements PresentationService {
      * Retrieves a list of Verifiable Credential JWTs based on the VCs selected in the VcSelectorResponse.
      *
      * @param entity               The entity ID associated with the VCs.
-     * @param vcSelectorResponse   The VcSelectorResponse containing the IDs of the selected VCs.
+     * @param selectedVcList       The selected VCs.
+     * @param format               The format of the VCs
      */
-    private Mono<List<String>> getVerifiableCredentials(String entity, VcSelectorResponse vcSelectorResponse) {
-        return Flux.fromIterable(vcSelectorResponse.selectedVcList())
-                .flatMap(verifiableCredential -> userDataService.getVerifiableCredentialByIdAndFormat(entity,verifiableCredential.id(),"vc_jwt"))
+    private Mono<List<String>> getVerifiableCredentials(String entity, List<CredentialsBasicInfo> selectedVcList, String format) {
+        return Flux.fromIterable(selectedVcList)
+                .flatMap(verifiableCredential -> userDataService.getVerifiableCredentialByIdAndFormat(entity,verifiableCredential.id(),format))
                 .collectList();
     }
 
