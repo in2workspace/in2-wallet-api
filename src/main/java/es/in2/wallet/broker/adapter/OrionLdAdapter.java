@@ -48,11 +48,11 @@ public class OrionLdAdapter implements GenericBrokerService {
                 .retrieve()
                 .onStatus(status -> status != null && status.is4xxClientError(), response -> response.createException().flatMap(Mono::error))
                 .bodyToMono(String.class)
-                .map(Optional::of) // Envuelve el cuerpo de la respuesta en un Optional
+                .map(Optional::of)
                 .doOnNext(body -> log.info("Response body: {}", body))
                 .doOnError(error -> log.error("Error occurred: ", error))
-                .onErrorResume(WebClientResponseException.NotFound.class, e -> Mono.just(Optional.empty())) // Maneja específicamente el caso 404 aquí
-                .defaultIfEmpty(Optional.empty()); // Maneja el caso en que la respuesta es exitosa pero no hay cuerpo
+                .onErrorResume(WebClientResponseException.NotFound.class, e -> Mono.just(Optional.empty()))
+                .defaultIfEmpty(Optional.empty());
     }
 
     @Override

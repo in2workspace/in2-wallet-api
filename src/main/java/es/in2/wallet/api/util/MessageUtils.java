@@ -28,7 +28,7 @@ public class MessageUtils {
     public static final String JWT_PROOF_CLAIM = "openid4vci-proof+jwt";
     public static final Pattern PROOF_DOCUMENT_PATTERN = Pattern.compile("proof");
     public static final Pattern VP_DOCUMENT_PATTERN = Pattern.compile("vp");
-    public static final Pattern VC_DOCUMENT_PATTERN = Pattern.compile("vc");
+    public static final Pattern JWT_TYPE = Pattern.compile("JWT");
     public static final String JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1 = "https://www.w3.org/2018/credentials/v1";
     public static final String VERIFIABLE_PRESENTATION = "VerifiablePresentation";
 
@@ -37,8 +37,8 @@ public class MessageUtils {
     public static final String CONTENT_TYPE_URL_ENCODED_FORM = "application/x-www-form-urlencoded";
     public static final String ISSUER_TOKEN_PROPERTY_NAME = "iss";
     public static final String ISSUER_SUB = "sub";
-    public static final String VC_JWT = "vc_jwt";
-    public static final String VC_JSON = "vc_json";
+    public static final String VC_JWT = "jwt_vc";
+    public static final String VC_JSON = "json_vc";
     public static final String VC_CWT = "cwt_vc";
     public static final String PROPERTY_TYPE = "Property";
     public static final String CREDENTIAL_SUBJECT = "credentialSubject";

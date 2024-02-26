@@ -35,7 +35,7 @@ class SignerServiceImplTest {
 
     @SuppressWarnings("unchecked")
     @ParameterizedTest
-    @ValueSource(strings = {"proof", "vp", "vc"})
+    @ValueSource(strings = {"proof", "vp", "jwt"})
     void testSignDocumentWithDifferentTypesAndDidPK(String documentType) throws JsonProcessingException {
         String json = "{\"document\":\"sign this document\"}";
         ObjectMapper objectMapper = new ObjectMapper();
@@ -58,7 +58,7 @@ class SignerServiceImplTest {
 
     @SuppressWarnings("unchecked")
     @ParameterizedTest
-    @ValueSource(strings = {"proof", "vp", "vc"})
+    @ValueSource(strings = {"proof", "vp", "jwt"})
     void testSignDocumentWithDifferentTypesWithoutDidPK(String documentType) throws JsonProcessingException {
         String json = "{\"document\":\"sign this document\"}";
         ObjectMapper objectMapper = new ObjectMapper();
@@ -79,7 +79,7 @@ class SignerServiceImplTest {
                 .verifyComplete();
     }
     @ParameterizedTest
-    @ValueSource(strings = {"proof", "vp", "vc"})
+    @ValueSource(strings = {"proof", "vp", "jwt"})
     void testSignDocumentFailure(String documentType) throws JsonProcessingException {
         String json = "{\"document\":\"sign this document\"}";
         ObjectMapper objectMapper = new ObjectMapper();

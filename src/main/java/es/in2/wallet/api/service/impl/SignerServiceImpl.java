@@ -9,9 +9,9 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.wallet.api.service.SignerService;
 import es.in2.wallet.api.exception.ParseErrorException;
 import es.in2.wallet.api.model.JWTSType;
+import es.in2.wallet.api.service.SignerService;
 import es.in2.wallet.vault.service.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static es.in2.wallet.api.model.JWTSType.*;
-import static es.in2.wallet.api.model.JWTSType.VC_JWT;
 import static es.in2.wallet.api.util.MessageUtils.*;
 
 @Slf4j
@@ -91,8 +90,8 @@ public class SignerServiceImpl implements SignerService {
         return Mono.fromSupplier(() -> {
             if (PROOF_DOCUMENT_PATTERN.matcher(documentType).matches()) {
                 return PROOF_JWT;
-            } else if (VC_DOCUMENT_PATTERN.matcher(documentType).matches()) {
-                return VC_JWT;
+            } else if (JWT_TYPE.matcher(documentType).matches()) {
+                return JWT;
             } else if (VP_DOCUMENT_PATTERN.matcher(documentType).matches()) {
                 return VP_JWT;
             } else {
