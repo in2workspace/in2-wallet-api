@@ -4,6 +4,7 @@ import COSE.*;
 import COSE.AlgorithmID;
 import COSE.CoseException;
 import COSE.OneKey;
+import com.nimbusds.jose.JOSEObject;
 import com.upokecenter.cbor.CBORObject;
 import es.in2.wallet.api.service.CborGenerationService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterInputStream;
 
@@ -22,7 +24,7 @@ import java.util.zip.DeflaterInputStream;
 @Slf4j
 public class CborGenerationServiceImpl implements CborGenerationService {
     @Override
-    public Mono<String> generateCbor(String processId, String authorizationToken, String content) {
+    public Mono<String> generateCbor(String processId, String authorizationToken, String content) throws ParseException {
         return generateCborFromJson(content)
                 .doOnSuccess(cbor -> log.info("ProcessID: {} - Cbor generated correctly: {}", processId, cbor))
                 .flatMap(cbor -> {
@@ -35,8 +37,8 @@ public class CborGenerationServiceImpl implements CborGenerationService {
                 .flatMap(this::compressAndConvertToBase45FromCOSE);
     }
 
-    private Mono<byte[]> generateCborFromJson(String content) {
-        return Mono.just((CBORObject.FromJSONString(content)).EncodeToBytes());
+    private Mono<byte[]> generateCborFromJson(String content) throws ParseException {
+        return Mono.just((CBORObject.FromJSONString(JOSEObject.parse(content).getPayload().toString())).EncodeToBytes());
     }
 
     private Mono<byte[]> generateCOSEBytesFromCBOR(byte[] cbor) throws CoseException {

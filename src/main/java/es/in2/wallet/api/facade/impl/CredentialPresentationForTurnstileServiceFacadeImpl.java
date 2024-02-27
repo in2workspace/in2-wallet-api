@@ -1,5 +1,6 @@
 package es.in2.wallet.api.facade.impl;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import es.in2.wallet.api.facade.CredentialPresentationForTurnstileServiceFacade;
 import es.in2.wallet.api.model.CredentialsBasicInfo;
 import es.in2.wallet.api.service.CborGenerationService;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.nio.ByteBuffer;
+import java.text.ParseException;
 import java.util.Base64;
 import java.util.UUID;
 
@@ -28,7 +30,13 @@ public class CredentialPresentationForTurnstileServiceFacadeImpl implements Cred
                     .flatMap(audience -> presentationService.createSignedVerifiablePresentation(processId, authorizationToken, credentialsBasicInfo, nonce, audience)
                     )
                 )
-                .flatMap(vp -> cborGenerationService.generateCbor(processId, authorizationToken, vp));
+                .flatMap(vp -> {
+                    try {
+                        return cborGenerationService.generateCbor(processId, authorizationToken, vp);
+                    } catch (ParseException e) {
+                        return Mono.error(new JsonParseException("Error parsing the Verifiable Presentation"));
+                    }
+                });
     }
 
     private static Mono<String> generateNonce() {

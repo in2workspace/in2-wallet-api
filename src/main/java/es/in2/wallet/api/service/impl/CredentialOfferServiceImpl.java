@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE;
-import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
+import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.MessageUtils.BEARER;
 
 @Slf4j
 @Service
@@ -27,11 +27,11 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public Mono<CredentialOffer> getCredentialOfferFromCredentialOfferUri(String processId, String credentialOfferUri) {
+    public Mono<CredentialOffer> getCredentialOfferFromCredentialOfferUri(String processId, String credentialOfferUri, String authorizationToken) {
         return parseCredentialOfferUri(credentialOfferUri)
                 .doOnSuccess(credentialOfferUriValue -> log.info("ProcessId: {}, Credential Offer Uri parsed successfully: {}", processId, credentialOfferUriValue))
                 .doOnError(e -> log.error("ProcessId: {}, Error while parsing Credential Offer Uri: {}", processId, e.getMessage()))
-                .flatMap(this::getCredentialOffer)
+                .flatMap(credentialOfferUriValue -> getCredentialOffer(credentialOfferUriValue, authorizationToken))
                 .doOnSuccess(credentialOffer -> log.info("ProcessId: {}, Credential Offer fetched successfully: {}", processId, credentialOffer))
                 .doOnError(e -> log.error("ProcessId: {}, Error while fetching Credential Offer: {}", processId, e.getMessage()))
                 .flatMap(this::parseCredentialOfferResponse)
@@ -52,8 +52,10 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
 
         });
     }
-    private Mono<String> getCredentialOffer(String credentialOfferUri) {
-        List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
+    private Mono<String> getCredentialOffer(String credentialOfferUri, String authorizationToken) {
+        List<Map.Entry<String, String>> headers = List.of(
+                Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON),
+                Map.entry(HEADER_AUTHORIZATION, BEARER + authorizationToken));
         return getRequest(credentialOfferUri, headers)
                 .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching credentialOffer from the issuer")));
     }

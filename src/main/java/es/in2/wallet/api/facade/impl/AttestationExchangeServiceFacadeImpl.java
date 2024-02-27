@@ -37,7 +37,7 @@ public class AttestationExchangeServiceFacadeImpl implements AttestationExchange
     public Mono<VcSelectorRequest> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, String qrContent) {
         log.info("ProcessID: {} - Processing a Verifiable Credential Login Request", processId);
         // Get Authorization Request executing the VC Login Request
-        return authorizationRequestService.getAuthorizationRequestFromVcLoginRequest(processId, qrContent)
+        return authorizationRequestService.getAuthorizationRequestFromVcLoginRequest(processId, qrContent, authorizationToken)
                 // Validate the Verifier which issues the Authorization Request
                 .flatMap(jwtAuthorizationRequest ->
                         verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest)
@@ -88,7 +88,7 @@ public class AttestationExchangeServiceFacadeImpl implements AttestationExchange
                 .flatMap(verifiablePresentation ->
                 {
                     try {
-                        return authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation);
+                        return authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation, authorizationToken);
                     } catch (JsonProcessingException e) {
                         return Mono.error(new FailedDeserializingException("Error while deserializing Credential: " + e));
                     }

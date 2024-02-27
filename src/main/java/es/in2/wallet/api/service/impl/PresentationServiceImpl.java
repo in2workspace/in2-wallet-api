@@ -47,7 +47,7 @@ public class PresentationServiceImpl implements PresentationService {
      */
     @Override
     public Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse,String nonce, String audience) {
-        return createSignedVerifiablePresentation(processId, authorizationToken, nonce, audience, vcSelectorResponse.selectedVcList());
+        return createSignedVerifiablePresentation(processId, authorizationToken, nonce, audience, vcSelectorResponse.selectedVcList(), VC_JWT);
     }
 
     /**
@@ -61,30 +61,31 @@ public class PresentationServiceImpl implements PresentationService {
      */
     @Override
     public Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, CredentialsBasicInfo credentialsBasicInfo, String nonce, String audience) {
-        return createSignedVerifiablePresentation(processId, authorizationToken, nonce, audience, List.of(credentialsBasicInfo));
+        return createSignedVerifiablePresentation(processId, authorizationToken, nonce, audience, List.of(credentialsBasicInfo), VC_CWT);
     }
 
-    private Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken,String nonce, String audience, List<CredentialsBasicInfo> selectedVcList) {
+    private Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken,String nonce, String audience, List<CredentialsBasicInfo> selectedVcList, String format) {
         return  getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId,userId))
                 .flatMap(optionalEntity -> optionalEntity
-                        .map(entity -> getVerifiableCredentials(entity,selectedVcList, VC_CWT))
+                        .map(entity -> getVerifiableCredentials(entity,selectedVcList, VC_JWT)
+                            .flatMap(verifiableCredentialsListJWT -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsListJWT)
+                                    .flatMap(did -> getVerifiableCredentials(entity,selectedVcList, format)
+                                            .flatMap(verifiableCredentialsList -> // Create the unsigned verifiable presentation
+                                                    createUnsignedPresentation(verifiableCredentialsList, did,nonce,audience)
+                                                            .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp")))
+                                    )
+                            )
+                            // Log success
+                            .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
+                            // Handle errors
+                            .onErrorResume(e -> {
+                                log.error("Error in creating Verifiable Presentation: ", e);
+                                return Mono.error(e);
+                            })
+                        )
                         .orElseGet(() -> Mono.error(new RuntimeException("Failed to retrieve entity."))
                         )
-                        .flatMap(verifiableCredentialsList -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsList)
-                                .flatMap(did ->
-                                        // Create the unsigned verifiable presentation
-                                        createUnsignedPresentation(verifiableCredentialsList, did,nonce,audience)
-                                                .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp"))
-                                )
-                        )
-                        // Log success
-                        .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
-                        // Handle errors
-                        .onErrorResume(e -> {
-                            log.error("Error in creating Verifiable Presentation: ", e);
-                            return Mono.error(e);
-                        })
                 );
     }
 

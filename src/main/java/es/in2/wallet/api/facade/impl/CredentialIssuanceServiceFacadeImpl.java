@@ -42,7 +42,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
     @Override
     public Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent) {
         // get Credential Offer
-        return credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)
+        return credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent, authorizationToken)
                 //get Issuer Server Metadata
                 .flatMap(credentialOffer -> credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId, credentialOffer)
                         //get Authorisation Server Metadata
@@ -116,7 +116,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * The method returns a map containing key pair details, including the DID.
      */
     private Mono<String> generateDid() {
-        return didKeyGeneratorService.generateDidKeyJwkJcsPub();
+        return didKeyGeneratorService.generateDidKey();
     }
 
     /**

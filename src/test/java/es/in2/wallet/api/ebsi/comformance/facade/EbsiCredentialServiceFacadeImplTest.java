@@ -92,7 +92,7 @@ class EbsiCredentialServiceFacadeImplTest {
             String jwtProof = "jwt";
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
             when(ebsiConfig.getDid()).thenReturn(Mono.just(did));
@@ -130,7 +130,7 @@ class EbsiCredentialServiceFacadeImplTest {
             String jwtProof = "jwt";
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
             when(ebsiConfig.getDid()).thenReturn(Mono.just(did));
@@ -174,7 +174,7 @@ class EbsiCredentialServiceFacadeImplTest {
             mockedMap.put("code","123");
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
             when(ebsiConfig.getDid()).thenReturn(Mono.just(did));
@@ -217,7 +217,7 @@ class EbsiCredentialServiceFacadeImplTest {
             mockedMap.put("code","123");
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
             when(ebsiConfig.getDid()).thenReturn(Mono.just(did));

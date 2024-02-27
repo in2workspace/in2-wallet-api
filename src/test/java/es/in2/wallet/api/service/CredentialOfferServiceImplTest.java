@@ -22,6 +22,7 @@ import java.util.Map;
 import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
 import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE;
 import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +44,7 @@ class CredentialOfferServiceImplTest {
 
             when(objectMapper.readValue("response", CredentialOffer.class)).thenReturn(expectedCredentialOffer);
 
-            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent))
+            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent,anyString()))
                     .expectNext(expectedCredentialOffer)
                     .verifyComplete();
 
@@ -63,7 +64,7 @@ class CredentialOfferServiceImplTest {
 
             when(objectMapper.readValue("response", CredentialOffer.class)).thenReturn(expectedCredentialOffer);
 
-            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent))
+            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent,anyString()))
                     .expectNext(expectedCredentialOffer)
                     .verifyComplete();
 
@@ -81,7 +82,7 @@ class CredentialOfferServiceImplTest {
             when(objectMapper.readValue("response", CredentialOffer.class))
                     .thenThrow(new JsonProcessingException("Deserialization error") {});
 
-            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent))
+            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent,anyString()))
                     .expectError(FailedDeserializingException.class)
                     .verify();
 
