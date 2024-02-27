@@ -1,8 +1,9 @@
 package es.in2.wallet.vault.adapter;
 
-import com.azure.security.keyvault.secrets.SecretClient;
+import com.azure.security.keyvault.secrets.SecretAsyncClient;
 import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 import com.azure.security.keyvault.secrets.models.SecretProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -10,8 +11,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.vault.support.VaultResponse;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +28,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AzKeyVaultAdapterTest {
     @Mock
-    private SecretClient secretClient;
+    private SecretAsyncClient secretAsyncClient;
 
     @Mock
     private ObjectMapper objectMapper;
@@ -33,13 +37,20 @@ class AzKeyVaultAdapterTest {
     private AzKeyVaultAdapter azKeyVaultAdapter;
 
     @Test
-    void saveSecretSuccessTest() throws Exception {
+    void saveSecretSuccessTest() throws JsonProcessingException {
         Map<String, String> secrets = new HashMap<>();
         secrets.put("did", "exampleDid");
 
+        KeyVaultSecret newSecret = new KeyVaultSecret(
+                "",
+                "")
+                .setProperties(new SecretProperties()
+                        .setExpiresOn(OffsetDateTime.now().plusDays(60))
+                        .setContentType("application/json"));
+
         when(objectMapper.writeValueAsString(any(Map.class))).thenReturn("{\"did\":\"exampleDid\"}");
 
-        when(secretClient.setSecret(any(KeyVaultSecret.class))).thenReturn(null);
+        when(secretAsyncClient.setSecret(any(KeyVaultSecret.class))).thenReturn(Mono.just(newSecret));
 
         StepVerifier.create(azKeyVaultAdapter.saveSecret(secrets))
                 .verifyComplete();
@@ -52,7 +63,7 @@ class AzKeyVaultAdapterTest {
         KeyVaultSecret secret = new KeyVaultSecret("exampleDid", secretValue)
                 .setProperties(new SecretProperties().setContentType("application/json"));
 
-        when(secretClient.getSecret(anyString())).thenReturn(secret);
+        when(secretAsyncClient.getSecret(anyString())).thenReturn(Mono.just(secret));
 
         when(objectMapper.readValue(anyString(), any(TypeReference.class))).thenReturn(new HashMap<String, String>() {{
             put(PRIVATE_KEY_TYPE, "examplePrivateKey");
@@ -66,7 +77,7 @@ class AzKeyVaultAdapterTest {
 
     @Test
     void deleteSecretByKeySuccessTest() {
-        when(secretClient.beginDeleteSecret(anyString())).thenReturn(null);
+        when(secretAsyncClient.beginDeleteSecret(anyString())).thenReturn(null);
 
         StepVerifier.create(azKeyVaultAdapter.deleteSecretByKey("exampleDid"))
                 .verifyComplete();
