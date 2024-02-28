@@ -32,7 +32,7 @@ class CredentialOfferServiceImplTest {
     @InjectMocks
     private CredentialOfferServiceImpl credentialOfferService;
     @Test
-    void getCredentialOfferTest() throws JsonProcessingException {
+    void getCredentialOfferWithAuthTest() throws JsonProcessingException {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             String qrContent = "openid-credential-offer://?credential_offer_uri=https%3A%2F%2Fapi-conformance.ebsi.eu%2Fconformance%2Fv3%2Fissuer-mock%2Foffers%2F00067a17-681f-4b41-9794-cb7c98570a7a";
@@ -46,7 +46,7 @@ class CredentialOfferServiceImplTest {
 
             when(objectMapper.readValue("response", CredentialOffer.class)).thenReturn(expectedCredentialOffer);
 
-            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent))
+            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId,qrContent,authorizationToken))
                     .expectNext(expectedCredentialOffer)
                     .verifyComplete();
 
@@ -54,7 +54,7 @@ class CredentialOfferServiceImplTest {
     }
 
     @Test
-    void getCredentialOfferAlreadyParsedTest() throws JsonProcessingException {
+    void getCredentialOfferWithAuthAlreadyParsedTest() throws JsonProcessingException {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             String qrContent = "https://api-conformance.ebsi.eu/conformance/v3/issuer-mock/offers/00067a17-681f-4b41-9794-cb7c98570a7a";
@@ -68,7 +68,7 @@ class CredentialOfferServiceImplTest {
 
             when(objectMapper.readValue("response", CredentialOffer.class)).thenReturn(expectedCredentialOffer);
 
-            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent))
+            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId,qrContent,authorizationToken))
                     .expectNext(expectedCredentialOffer)
                     .verifyComplete();
 
@@ -76,7 +76,7 @@ class CredentialOfferServiceImplTest {
     }
 
     @Test
-    void getCredentialOfferFailedDeserializingException() throws JsonProcessingException {
+    void getCredentialOfferWithAuthFailedDeserializingException() throws JsonProcessingException {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             String qrContent = "openid-credential-offer://?credential_offer_uri=https%3A%2F%2Fapi-conformance.ebsi.eu%2Fconformance%2Fv3%2Fissuer-mock%2Foffers%2F00067a17-681f-4b41-9794-cb7c98570a7a";
@@ -88,7 +88,7 @@ class CredentialOfferServiceImplTest {
             when(objectMapper.readValue("response", CredentialOffer.class))
                     .thenThrow(new JsonProcessingException("Deserialization error") {});
 
-            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent))
+            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId,qrContent,authorizationToken))
                     .expectError(FailedDeserializingException.class)
                     .verify();
 

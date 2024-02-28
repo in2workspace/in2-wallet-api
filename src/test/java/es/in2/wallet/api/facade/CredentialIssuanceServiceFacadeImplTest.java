@@ -91,7 +91,7 @@ class CredentialIssuanceServiceFacadeImplTest {
             String jwtProof = "jwt";
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
             when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
@@ -130,7 +130,7 @@ class CredentialIssuanceServiceFacadeImplTest {
             String jwtProof = "jwt";
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
             when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
@@ -175,7 +175,7 @@ class CredentialIssuanceServiceFacadeImplTest {
             mockedMap.put("code","123");
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
             when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
@@ -219,7 +219,7 @@ class CredentialIssuanceServiceFacadeImplTest {
             mockedMap.put("code","123");
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
             when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
