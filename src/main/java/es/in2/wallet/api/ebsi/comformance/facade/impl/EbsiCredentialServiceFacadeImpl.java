@@ -50,7 +50,7 @@ public class EbsiCredentialServiceFacadeImpl implements EbsiCredentialServiceFac
     @Override
     public Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent) {
         // get Credential Offer
-        return credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent, authorizationToken)
+        return credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)
                 //get Issuer Server Metadata
                 .flatMap(credentialOffer -> credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId, credentialOffer)
                         //get Authorisation Server Metadata

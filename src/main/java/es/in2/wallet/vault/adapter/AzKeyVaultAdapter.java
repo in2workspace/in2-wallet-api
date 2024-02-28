@@ -82,7 +82,7 @@ public class AzKeyVaultAdapter implements GenericVaultService {
         String processId = MDC.get(PROCESS_ID);
         return Mono.fromRunnable(() -> {
                     try {
-                        secretAsyncClient.beginDeleteSecret(parseDidUriToAzureKeyVaultSecretName(key));
+                        secretAsyncClient.beginDeleteSecret(parseDidUriToAzureKeyVaultSecretName(deMatch(key)));
                     } catch (Exception e) {
                         log.error("ProcessID: {} - Failed to delete secret: {}", processId, e.getMessage());
                     }

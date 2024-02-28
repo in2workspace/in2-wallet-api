@@ -46,7 +46,7 @@ class CredentialOfferServiceImplTest {
 
             when(objectMapper.readValue("response", CredentialOffer.class)).thenReturn(expectedCredentialOffer);
 
-            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent,authorizationToken))
+            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent))
                     .expectNext(expectedCredentialOffer)
                     .verifyComplete();
 
@@ -68,7 +68,7 @@ class CredentialOfferServiceImplTest {
 
             when(objectMapper.readValue("response", CredentialOffer.class)).thenReturn(expectedCredentialOffer);
 
-            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent,authorizationToken))
+            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent))
                     .expectNext(expectedCredentialOffer)
                     .verifyComplete();
 
@@ -88,7 +88,7 @@ class CredentialOfferServiceImplTest {
             when(objectMapper.readValue("response", CredentialOffer.class))
                     .thenThrow(new JsonProcessingException("Deserialization error") {});
 
-            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent,authorizationToken))
+            StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId,qrContent))
                     .expectError(FailedDeserializingException.class)
                     .verify();
 
