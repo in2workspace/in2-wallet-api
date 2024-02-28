@@ -64,10 +64,9 @@ public class AuthorizationRequestServiceImplTest {
     void getAuthorizationRequestFromJwtAuthorizationRequestClaimTest() {
         String processId = "123";
         String jwtAuthorizationRequestClaim = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJhdXRoX3JlcXVlc3QiOiJodHRwOi8vZXhhbXBsZS5jb20vP3Njb3BlPWRhdGExLGRhdGEyLGRhdGEzJnJlc3BvbnNlX3R5cGU9dnBfdG9rZW4mcmVzcG9uc2VfbW9kZT1mb3JtX3Bvc3QmY2xpZW50X2lkPW15Q2xpZW50SWQmcmVkaXJlY3RfdXJpPWh0dHA6Ly9leGFtcGxlLmNvbS9yZWRpcmVjdCZzdGF0ZT1teVN0YXRlJm5vbmNlPW15Tm9uY2UifQ.PGO_Wx61hUcTFNndZIFM86KVMVQDl2y0vyUdHWbwvyg";
-        // Call the method to test
+
         Mono<AuthorizationRequest> result = authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestClaim(processId, jwtAuthorizationRequestClaim);
 
-        // Verify the result
         StepVerifier.create(result)
                 .expectNextMatches(authRequest ->
                         authRequest.scope().contains("data1") &&

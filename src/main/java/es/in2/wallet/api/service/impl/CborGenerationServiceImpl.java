@@ -24,7 +24,7 @@ import java.util.zip.DeflaterInputStream;
 @Slf4j
 public class CborGenerationServiceImpl implements CborGenerationService {
     @Override
-    public Mono<String> generateCbor(String processId, String authorizationToken, String content) throws ParseException {
+    public Mono<String> generateCbor(String processId, String content) throws ParseException {
         return generateCborFromJson(content)
                 .doOnSuccess(cbor -> log.info("ProcessID: {} - Cbor generated correctly: {}", processId, cbor))
                 .flatMap(cbor -> {
