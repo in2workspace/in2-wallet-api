@@ -28,7 +28,7 @@ public class CredentialPresentationForTurnstileServiceFacadeImpl implements Cred
                 )
                 .flatMap(vp -> {
                     try {
-                        return cborGenerationService.generateCbor(processId, authorizationToken, vp);
+                        return cborGenerationService.generateCbor(processId, vp);
                     } catch (ParseException e) {
                         return Mono.error(new JsonParseException("Error parsing the Verifiable Presentation"));
                     }
