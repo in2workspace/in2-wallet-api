@@ -1,13 +1,8 @@
 package es.in2.wallet.api.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
-import com.nimbusds.jose.jwk.Curve;
-import com.nimbusds.jose.jwk.ECKey;
-import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.api.exception.JwtInvalidFormatException;
 import es.in2.wallet.api.exception.ParseErrorException;
@@ -17,24 +12,15 @@ import io.ipfs.multibase.Base58;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
-import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
-import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.security.*;
+
 import java.security.interfaces.ECPublicKey;
-import java.security.spec.EncodedKeySpec;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -57,7 +43,7 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
                 .flatMap(signedJwt -> validateClientIdClaim(processId, signedJwt))
                 .flatMap(signedJwt -> getEcPublicKey(processId, signedJwt)
                         // Verify the Authorization Request
-                        .flatMap(publicKey -> verifySignedJwtWithDidDocument(processId, publicKey))
+                        .flatMap(publicKey -> verifySignedJwtWithPublicKey(processId, publicKey))
                         .flatMap(jwsVerifier -> checkJWSVerifierResponse(signedJwt, jwsVerifier)
                                 .doOnSuccess(v -> log.info("ProcessID: {} - Authorization Request verified successfully", processId))
                         )
@@ -138,7 +124,7 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
         return new BCECPublicKey("ECDSA", keySpec, BouncyCastleProvider.CONFIGURATION);
     }
 
-    private Mono<ECDSAVerifier> verifySignedJwtWithDidDocument(String processId, ECPublicKey ecPublicJWK) {
+    private Mono<ECDSAVerifier> verifySignedJwtWithPublicKey(String processId, ECPublicKey ecPublicJWK) {
         return Mono.fromCallable(() -> new ECDSAVerifier(ecPublicJWK))
                 .doOnSuccess(jwsVerifier -> log.info("ProcessID: {} - JWS Verifier generated successfully: {}", processId, jwsVerifier))
                 .onErrorResume(e -> Mono.error(new ParseErrorException("Error verifying Jwt with Public EcKey " + e)));
