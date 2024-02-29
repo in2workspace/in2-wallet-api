@@ -1,6 +1,5 @@
 package es.in2.wallet.api.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jwt.SignedJWT;
@@ -32,9 +31,6 @@ import static es.in2.wallet.api.util.MessageUtils.*;
 @Service
 @RequiredArgsConstructor
 public class VerifierValidationServiceImpl implements VerifierValidationService {
-
-    private final ObjectMapper objectMapper;
-
     @Override
     public Mono<String> verifyIssuerOfTheAuthorizationRequest(String processId, String jwtAuthorizationRequest) {
         // Parse the Authorization Request in JWT format
@@ -88,7 +84,6 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
 
     private Mono<ECPublicKey> getEcPublicKey(String processId, SignedJWT signedJWTAuthorizationRequest) {
         String kid = signedJWTAuthorizationRequest.getHeader().getKeyID();
-
         return Mono.fromCallable(() ->
                    decodeDidKey(kid)
                 )
@@ -118,7 +113,7 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
         return Arrays.copyOfRange(multiCodeAndRawKey, codeVarInt.getLength(), multiCodeAndRawKey.length);
     }
 
-    public static ECPublicKey decodeKey(byte[] encoded) {
+    private ECPublicKey decodeKey(byte[] encoded) {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256r1");
         ECPublicKeySpec keySpec = new ECPublicKeySpec(params.getCurve().decodePoint(encoded), params);
         return new BCECPublicKey("ECDSA", keySpec, BouncyCastleProvider.CONFIGURATION);
