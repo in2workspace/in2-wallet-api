@@ -31,7 +31,7 @@ public class MessageUtils {
     public static final Pattern JWT_TYPE = Pattern.compile("JWT");
     public static final String JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1 = "https://www.w3.org/2018/credentials/v1";
     public static final String VERIFIABLE_PRESENTATION = "VerifiablePresentation";
-
+    public static final String DID_KEY_PREFIX = "did:key:z";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String CONTENT_TYPE_APPLICATION_JSON = "application/json";
     public static final String CONTENT_TYPE_URL_ENCODED_FORM = "application/x-www-form-urlencoded";

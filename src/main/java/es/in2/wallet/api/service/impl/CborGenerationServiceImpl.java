@@ -5,8 +5,13 @@ import COSE.AlgorithmID;
 import COSE.CoseException;
 import COSE.OneKey;
 import com.nimbusds.jose.JOSEObject;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.shaded.gson.JsonArray;
+import com.nimbusds.jose.shaded.gson.JsonObject;
+import com.nimbusds.jose.shaded.gson.JsonParser;
 import com.upokecenter.cbor.CBORObject;
 import es.in2.wallet.api.service.CborGenerationService;
+import io.swagger.v3.core.util.Json;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.minvws.encoding.Base45;
@@ -16,6 +21,8 @@ import reactor.core.publisher.Mono;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.List;
+import java.util.Map;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterInputStream;
 
@@ -38,7 +45,31 @@ public class CborGenerationServiceImpl implements CborGenerationService {
     }
 
     private Mono<byte[]> generateCborFromJson(String content) throws ParseException {
-        return Mono.just((CBORObject.FromJSONString(JOSEObject.parse(content).getPayload().toString())).EncodeToBytes());
+        return modifyPayload(content)
+                .flatMap(modifiedPayload -> Mono.just((CBORObject.FromJSONString(modifiedPayload)).EncodeToBytes()));
+
+    }
+
+    private Mono<String> modifyPayload(String token) throws ParseException {
+        String vcPayload = JOSEObject.parse(token).getPayload().toString();
+
+        // Parse the original VP JSON
+        JsonObject vpJsonObject = JsonParser.parseString(vcPayload).getAsJsonObject();
+
+        // Select the VC from the VP
+        JsonObject vpContent = vpJsonObject.getAsJsonObject("vp");
+
+        JsonArray verifiableCredentialArray = vpContent.getAsJsonArray("verifiableCredential");
+
+        if (!verifiableCredentialArray.isEmpty()) {
+            // Get the first element as a string
+            String firstCredential = verifiableCredentialArray.get(0).getAsString();
+
+            // Replace "verifiableCredential" in vpContent with the first credential
+            vpContent.addProperty("verifiableCredential", firstCredential);
+        }
+
+        return Mono.just(vpJsonObject.toString());
     }
 
     private Mono<byte[]> generateCOSEBytesFromCBOR(byte[] cbor) throws CoseException {
