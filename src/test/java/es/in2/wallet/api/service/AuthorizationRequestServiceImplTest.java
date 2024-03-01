@@ -21,7 +21,7 @@ import static es.in2.wallet.api.util.MessageUtils.HEADER_AUTHORIZATION;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class AuthorizationRequestServiceImplTest {
+class AuthorizationRequestServiceImplTest {
 
     @InjectMocks
     private AuthorizationRequestServiceImpl authorizationRequestService;
