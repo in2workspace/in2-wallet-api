@@ -11,7 +11,7 @@ import java.text.ParseException;
 import java.util.Objects;
 
 @ExtendWith(MockitoExtension.class)
-public class CborGenerationServiceImplTest {
+class CborGenerationServiceImplTest {
 
     @InjectMocks
     private CborGenerationServiceImpl cborGenerationService;
@@ -19,8 +19,7 @@ public class CborGenerationServiceImplTest {
     @Test
     void generateCborTest() throws ParseException {
         String processId = "123";
-        String content = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-
+        String content = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2cCI6eyJpZCI6InMiLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwiaG9sZGVyIjoicyIsIkBjb250ZXh0IjpbInMiXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiYSJdfSwiZXhwIjoxNzA4NzUwNjE2LCJpYXQiOjE3MDg2OTA2MTYsImlzcyI6InMiLCJqdGkiOiJzIiwibmJmIjoxNzA4NjkwNjE2LCJzdWIiOiJzIiwibm9uY2UiOiJzIn0.3vEfvTOP6Y38zHBuHypon2qcLshl1ZxcHHAjIY6z6JQ";
         StepVerifier.create(cborGenerationService.generateCbor(processId, content))
                 .expectNextMatches(Objects::nonNull)
                 .verifyComplete();

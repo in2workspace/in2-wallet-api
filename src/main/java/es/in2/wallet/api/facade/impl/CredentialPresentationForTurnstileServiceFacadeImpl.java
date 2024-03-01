@@ -10,10 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.nio.ByteBuffer;
 import java.text.ParseException;
-import java.util.Base64;
-import java.util.UUID;
+
 
 
 @Slf4j
@@ -25,10 +23,8 @@ public class CredentialPresentationForTurnstileServiceFacadeImpl implements Cred
 
     @Override
     public Mono<String> createVerifiablePresentationForTurnstile(String processId, String authorizationToken, CredentialsBasicInfo credentialsBasicInfo) {
-        return generateNonce()
-                .flatMap(nonce -> generateAudience()
-                    .flatMap(audience -> presentationService.createSignedVerifiablePresentation(processId, authorizationToken, credentialsBasicInfo, nonce, audience)
-                    )
+        return generateAudience()
+                .flatMap(audience -> presentationService.createSignedVerifiablePresentation(processId, authorizationToken, credentialsBasicInfo, credentialsBasicInfo.id(), audience)
                 )
                 .flatMap(vp -> {
                     try {
@@ -37,17 +33,6 @@ public class CredentialPresentationForTurnstileServiceFacadeImpl implements Cred
                         return Mono.error(new JsonParseException("Error parsing the Verifiable Presentation"));
                     }
                 });
-    }
-
-    private static Mono<String> generateNonce() {
-        return Mono.fromCallable(() -> {
-            UUID randomUUID = UUID.randomUUID();
-            ByteBuffer byteBuffer = ByteBuffer.wrap(new byte[16]);
-            byteBuffer.putLong(randomUUID.getMostSignificantBits());
-            byteBuffer.putLong(randomUUID.getLeastSignificantBits());
-            byte[] uuidBytes = byteBuffer.array();
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(uuidBytes);
-        });
     }
 
     private static Mono<String> generateAudience() {
