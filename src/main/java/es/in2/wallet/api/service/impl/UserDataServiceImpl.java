@@ -5,7 +5,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jwt.SignedJWT;
+import com.upokecenter.cbor.CBORObject;
 import es.in2.wallet.api.exception.NoSuchDidException;
 import es.in2.wallet.api.exception.NoSuchVerifiableCredentialException;
 import es.in2.wallet.api.exception.ParseErrorException;
@@ -13,12 +15,18 @@ import es.in2.wallet.api.model.*;
 import es.in2.wallet.api.service.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import nl.minvws.encoding.Base45;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.commons.compress.utils.IOUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.*;
 
@@ -88,37 +96,110 @@ public class UserDataServiceImpl implements UserDataService {
     }
 
     /**
-     * Saves a Verifiable Credential (VC) and its JSON content for a user entity.
-     * @param userEntity The user entity to which the VC belongs.
-     * @param vcJwt The VC in JWT format.
+     * Saves Verifiable Credentials (VCs) for a user entity, handling both JWT and CWT formats.
+     * This method serializes the user entity, processes each credential to extract or convert to JSON,
+     * and updates the user entity with both the original format credentials and their JSON representation.
+     * The JSON is used for displaying purposes, while the original formats are retained for integrity.
+     *
+     * @param userEntity The serialized user entity to which the credentials are to be saved.
+     * @param credentials The list of CredentialResponse objects containing the VCs in various formats.
      */
+
     @Override
-    public Mono<String> saveVC(String userEntity, String vcJwt) {
-        // Extract the JSON content from the VC JWT.
+    public Mono<String> saveVC(String userEntity, List<CredentialResponse> credentials) {
         return serializeUserEntity(userEntity)
-                .flatMap(entity ->extractVcJsonFromVcJwt(vcJwt)
-                .flatMap(vcJson -> extractVerifiableCredentialIdFromVcJson(vcJson)
-                        .flatMap(vcId -> {
-                            // Create new VCAttributes for both the VC JWT and its JSON content.
-                            VCAttribute newVCJwt = new VCAttribute(vcId, VC_JWT, vcJwt);
-                            VCAttribute newVCJson = new VCAttribute(vcId, VC_JSON, vcJson);
+                .flatMap(entity -> {
+                    CredentialResponse selectedCredential = credentials.stream()
+                            .filter(cred -> VC_JWT.equals(cred.format()) || VC_CWT.equals(cred.format()))
+                            .findFirst()
+                            .orElseThrow(() -> new RuntimeException("No suitable credential format found."));
 
-                            // Update the list of VCAttributes in the UserEntity.
-                            List<VCAttribute> updatedVCs = new ArrayList<>(entity.vcs().value());
-                            updatedVCs.add(newVCJwt);
-                            updatedVCs.add(newVCJson);
+                    Mono<JsonNode> vcJsonMono = selectedCredential.format().equals(VC_JWT) ?
+                            extractVcJsonFromVcJwt(selectedCredential.credential()) :
+                            fromVpCborToVcJsonReactive(selectedCredential.credential());
 
-                            // Create a new EntityAttribute for the updated list of VCAttributes.
-                            EntityAttribute<List<VCAttribute>> vcs = new EntityAttribute<>(entity.vcs().type(), updatedVCs);
+                    return vcJsonMono.flatMap(vcJson -> extractVerifiableCredentialIdFromVcJson(vcJson)
+                            .flatMap(vcId -> {
+                                List<VCAttribute> vcAttributes = new ArrayList<>();
+                                for (CredentialResponse cred : credentials) {
+                                    vcAttributes.add(new VCAttribute(vcId, cred.format(), cred.credential()));
+                                }
+                                vcAttributes.add(new VCAttribute(vcId, VC_JSON, vcJson));
+                                List<VCAttribute> updatedVCs = new ArrayList<>(entity.vcs().value());
+                                updatedVCs.addAll(vcAttributes);
+                                EntityAttribute<List<VCAttribute>> vcs = new EntityAttribute<>(entity.vcs().type(), updatedVCs);
 
-                            // Return the updated UserEntity with the new list of VCAttributes.
-                            UserEntity user = UserEntity.builder().id(entity.id()).type(entity.type()).vcs(vcs).dids(entity.dids()).build();
-                            return deserializeUserEntityToString(user);
-                        }))
-                // Log a success message when the VC has been successfully added to the UserEntity.
-                .doOnSuccess(updatedUserEntity -> log.info("Verifiable Credential saved successfully: {}", updatedUserEntity)));
+                                UserEntity updatedUserEntity = UserEntity.builder()
+                                        .id(entity.id())
+                                        .type(entity.type())
+                                        .vcs(vcs)
+                                        .dids(entity.dids())
+                                        .build();
+
+                                return deserializeUserEntityToString(updatedUserEntity);
+                            }));
+                })
+                .doOnSuccess(updatedUserEntity -> log.info("Verifiable Credential saved successfully: {}", updatedUserEntity))
+                .onErrorResume(e -> {
+                    log.error("Error saving Verifiable Credential: {}", e.getMessage());
+                    return Mono.error(new RuntimeException("Error processing Verifiable Credential", e));
+                });
     }
 
+
+    private Mono<JsonNode> fromVpCborToVcJsonReactive(String qrData) {
+        return Mono.fromCallable(() -> {
+            String vp = decodeToJSONstring(qrData);
+
+            try {
+                JsonNode vpJsonObject = objectMapper.readTree(vp);
+                JsonNode vpContent = objectMapper.readTree(vpJsonObject.get("vp").toString());
+                String cvId = vpJsonObject.get("nonce").asText();
+
+                String vcCbor = vpContent.get("verifiableCredential").asText();
+                String vc = decodeToJSONstring(vcCbor);
+
+                JsonNode vcJsonObject = objectMapper.readTree(vc);
+                JsonNode vcContent = objectMapper.readTree(vcJsonObject.get("vc").toString());
+                ((ObjectNode) vcContent).put("id", cvId);
+                ((ObjectNode) vcJsonObject).set("vc", vcContent);
+
+                return vcJsonObject;
+            } catch (JsonProcessingException e) {
+                log.error("Error processing JSON", e);
+                throw new ParseErrorException(e.getMessage());
+            }
+        });
+    }
+
+    private String decodeToJSONstring(String qrData) {
+        String rawStringData = removeQuotes(qrData);
+        byte[] zip = Base45.getDecoder().decode(rawStringData);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(zip);
+            CompressorStreamFactory factory = new CompressorStreamFactory();
+            IOUtils.copy(factory.createCompressorInputStream(CompressorStreamFactory.DEFLATE, bais), baos);
+            byte[] cose = baos.toByteArray();
+
+            CBORObject cborObject = CBORObject.DecodeFromBytes(cose);
+            ByteArrayOutputStream jsonOut = new ByteArrayOutputStream();
+            cborObject.WriteJSONTo(jsonOut);
+
+            return jsonOut.toString(StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new ParseErrorException("Error processing data: " + e);
+        }
+    }
+
+    private String removeQuotes(String input) {
+        if (input.startsWith("\"") && input.endsWith("\"")) {
+            return input.substring(1, input.length() - 1);
+        } else {
+            return input;
+        }
+    }
     /**
      * Extracts the JSON content from a Verifiable Credential JWT.
      *
@@ -488,5 +569,4 @@ public class UserDataServiceImpl implements UserDataService {
                     return deserializeUserEntityToString(updatedUserEntity);
                 });
     }
-
 }

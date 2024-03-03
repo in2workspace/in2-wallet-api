@@ -67,6 +67,20 @@ dependencies {
 //	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+	// Base45 dependency
+	implementation "io.github.ehn-digital-green-development:base45:0.0.3"
+
+	// Apache Commons Compress for compression and decompression
+	implementation "org.apache.commons:commons-compress:1.21"
+
+	// CBOR for CBOR data format handling
+	implementation "com.upokecenter:cbor:4.5.2"
+
+	// COSE for handling CBOR Object Signing and Encryption
+	implementation "com.augustcellars.cose:cose-java:1.1.0"
+
+	// JSON processing
+	implementation "org.json:json:20231013"
 	// JSON
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'

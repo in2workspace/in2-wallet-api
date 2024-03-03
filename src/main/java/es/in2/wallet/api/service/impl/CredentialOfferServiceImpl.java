@@ -1,8 +1,6 @@
 package es.in2.wallet.api.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import es.in2.wallet.api.exception.FailedCommunicationException;
 import es.in2.wallet.api.exception.FailedDeserializingException;
 import es.in2.wallet.api.model.CredentialOffer;
@@ -14,12 +12,12 @@ import reactor.core.publisher.Mono;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE;
+import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
 
 @Slf4j
 @Service
@@ -60,42 +58,12 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
                 .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching credentialOffer from the issuer")));
     }
 
-    /**
-     * Parses the Credential Offer response and handles backward compatibility.
-     * If the response contains credentials as a list of strings, it converts them to a list of Credential objects.
-     * This method is marked as deprecated and is intended to be replaced in future versions for improved logic.
-     *
-     * @param response The response String to be parsed.
-     * @return A Mono<CredentialOffer> instance.
-     * @deprecated (since = "1.0.0", forRemoval = true) Temporary implementation to handle backward compatibility.
-     */
-    @Deprecated(since = "1.0.0", forRemoval = true)
     private Mono<CredentialOffer> parseCredentialOfferResponse(String response) {
         try {
-            JsonNode rootNode = objectMapper.readTree(response);
-            // Check if credentials are provided as an array of strings
-            if (rootNode.has(CREDENTIALS) && rootNode.get(CREDENTIALS).isArray() &&
-                    rootNode.get(CREDENTIALS).get(0).isTextual()) {
-                // Custom logic for handling credentials as a list of strings
-                List<String> list = new ArrayList<>();
-                for (JsonNode node : rootNode.get(CREDENTIALS)) {
-                    list.add(node.asText());
-                }
-                CredentialOffer.Credential credential = CredentialOffer.Credential.builder().types(list).build();
-                // Remove old 'credentials' node from the root
-                ((ObjectNode) rootNode).remove(CREDENTIALS);
-                // Deserialize the modified root node to CredentialOffer
-                CredentialOffer credentialOffer = objectMapper.treeToValue(rootNode, CredentialOffer.class);
-                return Mono.just(CredentialOffer.builder()
-                        .credentialIssuer(credentialOffer.credentialIssuer())
-                        .credentials(List.of(credential))
-                        .grant(credentialOffer.grant())
-                        .build());
-            } else {
-                // Standard deserialization for Credential Offer
-                return Mono.just(objectMapper.readValue(response, CredentialOffer.class));
-            }
-        } catch (Exception e) {
+            // Standard deserialization for Credential Offer
+            return Mono.just(objectMapper.readValue(response, CredentialOffer.class));
+        }
+         catch (Exception e) {
             return Mono.error(new FailedDeserializingException("Error while deserializing CredentialOffer: " + e));
         }
     }
