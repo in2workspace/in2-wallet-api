@@ -23,11 +23,6 @@ import java.security.SecureRandom;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
-import java.util.HashMap;
-import java.util.Map;
-
-import static es.in2.wallet.api.util.MessageUtils.DID;
-import static es.in2.wallet.api.util.MessageUtils.PRIVATE_KEY_TYPE;
 
 
 @Service
