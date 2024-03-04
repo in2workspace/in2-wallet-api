@@ -16,8 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE;
-import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
+import static es.in2.wallet.api.util.MessageUtils.*;
 
 @Slf4j
 @Service
