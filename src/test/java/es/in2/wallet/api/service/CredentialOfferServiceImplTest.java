@@ -1,6 +1,7 @@
 package es.in2.wallet.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.api.exception.FailedDeserializingException;
 import es.in2.wallet.api.model.CredentialOffer;
@@ -39,6 +40,12 @@ class CredentialOfferServiceImplTest {
                     Map.entry(HEADER_AUTHORIZATION, BEARER + authorizationToken));
             CredentialOffer.Credential credential = CredentialOffer.Credential.builder().format("jwt_vc").build();
             CredentialOffer expectedCredentialOffer = CredentialOffer.builder().credentialIssuer("https://example.com").credentials(List.of(credential)).build();
+
+            String json = "{\"credentials\":[\"LEARCredential\"], \"credential_issuer\":\"https://example.com\"}";
+            String json2 = "{\"credential_issuer\":\"https://example.com\"}";
+            ObjectMapper objectMapper2 = new ObjectMapper();
+            JsonNode jsonNode = objectMapper2.readTree(json);
+            JsonNode jsonNode2 = objectMapper2.readTree(json2);
 
             when(getRequest("https://api-conformance.ebsi.eu/conformance/v3/issuer-mock/offers/00067a17-681f-4b41-9794-cb7c98570a7a",headers)).thenReturn(Mono.just("response"));
 
