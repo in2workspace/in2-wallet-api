@@ -21,8 +21,6 @@ import java.util.Map;
 
 import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
 import static es.in2.wallet.api.util.MessageUtils.*;
-import static es.in2.wallet.api.util.MessageUtils.BEARER;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)

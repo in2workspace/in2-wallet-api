@@ -7,7 +7,8 @@ import es.in2.wallet.api.exception.KeyPairGenerationError;
 import es.in2.wallet.api.exception.ParseErrorException;
 import es.in2.wallet.api.model.UVarInt;
 import es.in2.wallet.api.service.DidKeyGeneratorService;
-import es.in2.wallet.vault.service.VaultService;
+import es.in2.wallet.api.service.VaultService;
+import es.in2.wallet.vault.model.secret.KeyVaultSecret;
 import io.ipfs.multibase.Base58;
 import lombok.RequiredArgsConstructor;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
@@ -39,10 +40,11 @@ public class DidKeyGeneratorServiceImpl implements DidKeyGeneratorService {
         return generateES256r1ECKeyPair().flatMap(keyPair -> {
             String did = generateDidKeyJwkJcsPub(keyPair);
             String privateKey = getPrivateKeyJwkString(keyPair);
-            Map<String, String> result = new HashMap<>();
-            result.put(DID, did);
-            result.put(PRIVATE_KEY_TYPE , privateKey);
-            return vaultService.saveSecret(result)
+            KeyVaultSecret secret = KeyVaultSecret.builder()
+                    .value(privateKey)
+                    .build();
+
+            return vaultService.saveSecret(did, secret)
                     .thenReturn(did);
         });
     }
@@ -52,10 +54,11 @@ public class DidKeyGeneratorServiceImpl implements DidKeyGeneratorService {
         return generateES256r1ECKeyPair().flatMap(keyPair -> {
             String did = generateDidKey(keyPair);
             String privateKey = getPrivateKeyJwkString(keyPair);
-            Map<String, String> result = new HashMap<>();
-            result.put(DID, did);
-            result.put(PRIVATE_KEY_TYPE , privateKey);
-            return vaultService.saveSecret(result)
+            KeyVaultSecret secret = KeyVaultSecret.builder()
+                    .value(privateKey)
+                    .build();
+
+            return vaultService.saveSecret(did, secret)
                     .thenReturn(did);
         });
     }

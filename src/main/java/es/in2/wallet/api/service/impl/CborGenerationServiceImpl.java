@@ -1,9 +1,6 @@
 package es.in2.wallet.api.service.impl;
 
 import COSE.*;
-import COSE.AlgorithmID;
-import COSE.CoseException;
-import COSE.OneKey;
 import com.nimbusds.jose.JOSEObject;
 import com.nimbusds.jose.shaded.gson.JsonArray;
 import com.nimbusds.jose.shaded.gson.JsonObject;

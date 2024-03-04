@@ -7,7 +7,6 @@ import es.in2.wallet.api.exception.FailedCommunicationException;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
 import es.in2.wallet.api.model.TokenResponse;
 import es.in2.wallet.api.util.ApplicationUtils;
-import es.in2.wallet.api.util.MessageUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

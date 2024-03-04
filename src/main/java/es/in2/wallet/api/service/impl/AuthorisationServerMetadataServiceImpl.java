@@ -1,7 +1,7 @@
 package es.in2.wallet.api.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.config.properties.AuthServerProperties;
+import es.in2.wallet.api.config.AppConfig;
 import es.in2.wallet.api.exception.FailedCommunicationException;
 import es.in2.wallet.api.exception.FailedDeserializingException;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
@@ -24,7 +24,7 @@ import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
 @RequiredArgsConstructor
 public class AuthorisationServerMetadataServiceImpl implements AuthorisationServerMetadataService {
     private final ObjectMapper objectMapper;
-    private final AuthServerProperties authServerProperties;
+    private final AppConfig appConfig;
 
     @Override
     public Mono<AuthorisationServerMetadata> getAuthorizationServerMetadataFromCredentialIssuerMetadata(String processId, CredentialIssuerMetadata credentialIssuerMetadata) {
@@ -60,19 +60,17 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
     private Mono<AuthorisationServerMetadata> parseCredentialIssuerMetadataResponse(String response) {
         try {
             AuthorisationServerMetadata authorisationServerMetadata = objectMapper.readValue(response, AuthorisationServerMetadata.class);
-            if (authorisationServerMetadata.tokenEndpoint().startsWith(authServerProperties.domain())){
+            if (authorisationServerMetadata.tokenEndpoint().startsWith(appConfig.getAuthServerExternalDomain())){
                 AuthorisationServerMetadata authorisationServerMetadataWithTokenEndpointHardcoded = AuthorisationServerMetadata.builder()
                         .issuer(authorisationServerMetadata.issuer())
                         .authorizationEndpoint(authorisationServerMetadata.authorizationEndpoint())
-                        .tokenEndpoint(authServerProperties.tokenEndpoint())
+                        .tokenEndpoint(appConfig.getAuthServerTokenEndpoint())
                         .build();
                 return Mono.just(authorisationServerMetadataWithTokenEndpointHardcoded);
             }
 
-            else {
-                // deserialize Credential Issuer Metadata
-                return Mono.just(authorisationServerMetadata);
-            }
+            // deserialize Credential Issuer Metadata
+            return Mono.just(authorisationServerMetadata);
         }
         catch (Exception e) {
             return Mono.error(new FailedDeserializingException("Error while deserializing Credential Issuer Metadata: " + e));

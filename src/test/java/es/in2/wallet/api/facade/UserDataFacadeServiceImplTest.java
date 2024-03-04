@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.api.facade.impl.UserDataFacadeServiceImpl;
 import es.in2.wallet.api.model.CredentialsBasicInfo;
 import es.in2.wallet.api.service.UserDataService;
+import es.in2.wallet.api.service.VaultService;
 import es.in2.wallet.broker.service.BrokerService;
-import es.in2.wallet.vault.service.VaultService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,7 +19,6 @@ import reactor.test.StepVerifier;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)

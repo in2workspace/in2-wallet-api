@@ -1,0 +1,46 @@
+server:
+  port: 8088
+
+# Context Broker Configuration
+broker:
+  provider: "scorpio"
+  externalDomain: "https://epu-dev-ca-01.thankfulsand-d95793a6.westeurope.azurecontainerapps.io"
+  internalDomain: "https://epu-dev-ca-01.thankfulsand-d95793a6.westeurope.azurecontainerapps.io"
+  paths:
+    entities: "/ngsi-ld/v1/entities"
+
+# Configuration providers
+app:
+  config-source:
+    name: yaml # azure yaml
+
+# Vault providers
+vault:
+  provider:
+    name: azure # azure hashicorp
+
+# Azure Configuration
+azure:
+  # App Configuration
+  app:
+      label:
+        global: service-discovery
+  # KeyVault Configuration
+  keyvault:
+    #endpoint: key-vault-uri
+    endpoint: https://epu-dev-kv-01.vault.azure.net/
+
+auth-server:
+  external-domain: https://preproduccio-iep.dev.in2.es/cross-keycloak/realms/EAAProvider
+  internal-domain: https://epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io/realms/EAAProvider
+  token-endpoint: https://epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token
+
+wallet-wda:
+  url: https://walletidp.dev.in2.es
+
+management:
+  health:
+    vault:
+      enabled: false
+  tracing:
+    enabled: false

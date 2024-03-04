@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.api.exception.JsonReadingException;
-import es.in2.wallet.broker.config.properties.BrokerProperties;
+import es.in2.wallet.broker.config.properties.BrokerConfig;
 import es.in2.wallet.broker.service.GenericBrokerService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -26,19 +26,19 @@ import static es.in2.wallet.api.util.MessageUtils.ENTITY_PREFIX;
 public class ScorpioAdapter implements GenericBrokerService {
 
     private final ObjectMapper objectMapper;
-    private final BrokerProperties brokerProperties;
+    private final BrokerConfig brokerConfig;
     private WebClient webClient;
 
     @PostConstruct
     public void init() {
-        this.webClient = WebClient.builder().baseUrl(brokerProperties.externalDomain()).build();
+        this.webClient = WebClient.builder().baseUrl(brokerConfig.getExternalDomain()).build();
     }
 
     @Override
     public Mono<Void> postEntity(String processId, String requestBody) {
         MediaType mediaType = getContentTypeAndAcceptMediaType(requestBody);
         return webClient.post()
-                .uri(brokerProperties.paths().entities())
+                .uri(brokerConfig.getPathEntities())
                 .accept(mediaType)
                 .contentType(mediaType)
                 .bodyValue(requestBody)
@@ -52,7 +52,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     @Override
     public Mono<Optional<String>> getEntityById(String processId, String userId) {
         return webClient.get()
-                .uri(brokerProperties.paths().entities() + ENTITY_PREFIX + userId)
+                .uri(brokerConfig.getPathEntities() + ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .onStatus(status -> status != null && status.is4xxClientError(), response -> response.createException().flatMap(Mono::error))
@@ -70,7 +70,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     public Mono<Void> updateEntity(String processId, String userId, String requestBody) {
         MediaType mediaType = getContentTypeAndAcceptMediaType(requestBody);
         return webClient.patch()
-                .uri(brokerProperties.paths().entities() + ENTITY_PREFIX + userId + ATTRIBUTES)
+                .uri(brokerConfig.getPathEntities() + ENTITY_PREFIX + userId + ATTRIBUTES)
                 .accept(mediaType)
                 .contentType(mediaType)
                 .bodyValue(requestBody)

@@ -12,13 +12,11 @@ import reactor.core.publisher.Mono;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
 import static es.in2.wallet.api.util.MessageUtils.*;
-import static es.in2.wallet.api.util.MessageUtils.BEARER;
 
 @Slf4j
 @Service

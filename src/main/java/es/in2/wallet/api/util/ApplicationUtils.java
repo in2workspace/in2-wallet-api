@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -11,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
+import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +30,7 @@ public class ApplicationUtils {
     private ApplicationUtils() {
         throw new IllegalStateException("Utility class");
     }
+
     private static final WebClient WEB_CLIENT = WebClient.builder().clientConnector(new ReactorClientHttpConnector(HttpClient.create().followRedirect(false)))
             .build();
     public static Mono<String> postRequest(String url, List<Map.Entry<String, String>> headers, String body) {

@@ -12,7 +12,7 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.api.exception.ParseErrorException;
 import es.in2.wallet.api.model.JWTSType;
 import es.in2.wallet.api.service.SignerService;
-import es.in2.wallet.vault.service.VaultService;
+import es.in2.wallet.api.service.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -42,7 +42,7 @@ public class SignerServiceImpl implements SignerService {
                 .flatMap(privateKey -> identifyDocumentType(documentType)
                     .flatMap(docType -> Mono.fromCallable(() -> {
                         try {
-                            ECKey ecJWK = JWK.parse(privateKey).toECKey();
+                            ECKey ecJWK = JWK.parse(privateKey.value().toString()).toECKey();
                             log.debug("ECKey: {}", ecJWK);
 
                             JWSAlgorithm jwsAlgorithm = mapToJWSAlgorithm(ecJWK.getAlgorithm());
