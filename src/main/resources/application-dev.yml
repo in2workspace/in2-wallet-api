@@ -1,72 +1,24 @@
-# Spring Configuration
-spring:
-  application:
-    name: "wallet-server"
-  main:
-    web-application-type: reactive
-
-
-# Spring Logging Configuration
-logging:
-  pattern:
-    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
-  level:
-    es.in2.wallet: INFO
-
-# Spring Management Configuration - Actuator
-management:
-  endpoints:
-    enabled-by-default: false
-    web:
-      exposure:
-        include: health, info, loggers, metrics, prometheus
-      base-path: /
-      path-mapping:
-        health: health
-        info: info
-        loggers: loggers
-        metrics: metrics
-        prometheus: prometheus
-  endpoint:
-    health:
-      enabled: true
-      show-details: always
-      vault:
-        enabled: false
-    loggers:
-      enabled: true
-    metrics:
-      enabled: true
-    prometheus:
-      enabled: true
-    tracing:
-      enabled: false
-
-# SpringDoc Configuration - OpenAPI 3.0 Documentation & Swagger UI
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    tags-sorter: alpha
-    operations-sorter: method
-
-# Server Configuration
 server:
-  port: 8081
+  port: 8088
 
 # Context Broker Configuration
 broker:
   provider: "scorpio"
-  externalDomain: "http://localhost:9090"
-  internalDomain: "http://localhost:9090"
+  external-url:
+    scheme: "https"
+    domain: "aca-wallet-scorpio-ms-uri"
+    port: 443
+  internal-url:
+    scheme: "https"
+    domain: "aca-wallet-scorpio-ms-uri"
+    port: 443
   paths:
     entities: "/ngsi-ld/v1/entities"
 
 # Configuration providers
 app:
   config-source:
-    name: yaml # azure yaml
+    name: azure # azure yaml
 
 # Vault providers
 vault:
@@ -77,36 +29,39 @@ vault:
 azure:
   # App Configuration
   app:
-    config:
-      endpoint: ${APP_CONFIG_ENDPOINT}
       label:
         global: service-discovery
   # KeyVault Configuration
   keyvault:
-    #endpoint: key-vault-uri
-    endpoint: https://epu-dev-kv-01.vault.azure.net/
-
-# KeyVault Configuration Hashicorp
-hashicorp:
-  vault:
-    path: /kv # Example for yml configuration
-    #path: azure-kv-key # Example for azure configuration
-    host: localhost
-    port: 8200
-    scheme: http
-    token: hvs.48sBkFvHj3xK9c9s8xRdZws9
+    endpoint: key-vault-uri
+    #endpoint: https://epu-dev-kv-01.vault.azure.net/
 
 auth-server:
-  external-domain: http://localhost:8080/realms/EAAProvider
-  internal-domain: http://localhost:8080/realms/EAAProvider
-  token-endpoint: http://localhost:8080/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token
-
-identity-provider:
-  url: http://localhost:8080/realms/wallet/protocol/openid-connect/token
-  client-secret: fV51P8jFBo8VnFKMMuP3imw3H3i5mNck
-  client-id: user-registry-client
-  username: adminWallet
-  password: adminPass
+  #externalUrl-domain: https://preproduccio-iep.dev.in2.es/cross-keycloak
+  external-url:
+    scheme: https
+    domain: public-api-uri-for-iep-apps
+    port: 443
+    path: "/cross-keycloak/realms/EAAProvider"
+  #internalUrl-domain: https://epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io/realms/EAAProvider
+  internal-url:
+    scheme: https
+    domain: aca-cross-keycloak-ms-uri
+    port: 443
+    path: "/realms/EAAProvider"
+  #token-endpoint: https://epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token
+  token-url:
+    scheme: https
+    domain: aca-cross-keycloak-ms-uri
+    port: 443
+    path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
 
 wallet-wda:
-  url: http://localhost:4200
+  url: https://walletidp.dev.in2.es
+
+management:
+  health:
+    vault:
+      enabled: false
+  tracing:
+    enabled: false

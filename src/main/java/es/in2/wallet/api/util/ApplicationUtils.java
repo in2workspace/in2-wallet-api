@@ -18,6 +18,7 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +32,13 @@ public class ApplicationUtils {
         throw new IllegalStateException("Utility class");
     }
 
-    private static final WebClient WEB_CLIENT = WebClient.builder().clientConnector(new ReactorClientHttpConnector(HttpClient.create().followRedirect(false)))
+    private static final WebClient WEB_CLIENT = WebClient.builder()
+            .clientConnector(new ReactorClientHttpConnector(
+                    HttpClient.create()
+                            .followRedirect(false)
+                            .responseTimeout(Duration.ofSeconds(120))))
             .build();
+
     public static Mono<String> postRequest(String url, List<Map.Entry<String, String>> headers, String body) {
         return WEB_CLIENT.post()
                 .uri(url)

@@ -26,7 +26,7 @@ public class OrionLdAdapter implements GenericBrokerService {
 
     @PostConstruct
     public void init() {
-        this.webClient = WebClient.builder().baseUrl(brokerConfig.getExternalDomain()).build();
+        this.webClient = WebClient.builder().baseUrl(brokerConfig.getExternalUrl()).build();
     }
 
     @Override

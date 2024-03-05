@@ -4,19 +4,6 @@ spring:
     name: "wallet-server"
   main:
     web-application-type: reactive
-  cloud:
-    vault:
-      host: localhost
-      port: 8201
-      authentication: token
-      token: hvs.e2uxu4RA8jZfgvraL6MVS8XN
-      scheme: http
-      kv:
-        enabled: true
-    azure:
-      keyvault:
-        secret:
-          endpoint: https://example
 
 
 # Spring Logging Configuration
@@ -66,7 +53,7 @@ springdoc:
 
 # Server Configuration
 server:
-  port: 8080
+  port: 8081
 
 # Context Broker Configuration
 broker:
@@ -110,11 +97,12 @@ hashicorp:
     token: hvs.48sBkFvHj3xK9c9s8xRdZws9
 
 auth-server:
-  domain: https://issuerkeycloak.demo.in2.es/realms/EAAProvider
-  token-endpoint: https://issuerkeycloak.demo.in2.es/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token
+  external-domain: http://localhost:8080/realms/EAAProvider
+  internal-domain: http://localhost:8080/realms/EAAProvider
+  token-endpoint: http://localhost:8080/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token
 
 identity-provider:
-  url: http://localhost:9099/realms/wallet/protocol/openid-connect/token
+  url: http://localhost:8080/realms/wallet/protocol/openid-connect/token
   client-secret: fV51P8jFBo8VnFKMMuP3imw3H3i5mNck
   client-id: user-registry-client
   username: adminWallet
