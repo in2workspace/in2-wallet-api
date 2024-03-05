@@ -62,6 +62,7 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
         });
     }
     private Mono<String> getCredentialOffer(String credentialOfferUri, String authorizationToken) {
+        log.info("CredentialOfferServiceImpl - getCredentialOffer invoked");
         List<Map.Entry<String, String>> headers;
         if (authorizationToken != null) {
              headers = List.of(
@@ -73,10 +74,11 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
                     Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
         }
         return getRequest(credentialOfferUri, headers)
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching credentialOffer from the issuer")));
+                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching credentialOffer from the issuer. Reason: " + e.getMessage())));
     }
 
     private Mono<CredentialOffer> parseCredentialOfferResponse(String response) {
+        log.info("CredentialOfferServiceImpl - parseCredentialOfferResponse invoked()");
         try {
             // Standard deserialization for Credential Offer
             return Mono.just(objectMapper.readValue(response, CredentialOffer.class));

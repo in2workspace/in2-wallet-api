@@ -67,6 +67,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * 5. Processes the user entity based on the obtained credential and DID.
      */
     private Mono<Void> getCredentialWithPreAuthorizedCode(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
+        log.info("ProcessId: {} - Getting Credential with Pre-Authorized Code", processId);
         return generateDid().flatMap(did ->
                 getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
                         .flatMap(tokenResponse -> getCredentialRecursive(
@@ -134,6 +135,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * If not, a new user entity is created and then updated with the credential.
      */
     private Mono<Void> processUserEntity(String processId, String authorizationToken, List<CredentialResponse> credentials, String did) {
+        log.info("ProcessId: {} - Processing User Entity", processId);
         return getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity

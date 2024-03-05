@@ -22,6 +22,7 @@ public class AzureConfigAdapter implements GenericConfigAdapter {
     public String getConfiguration(String key){
         return getConfigurationValue(key);
     }
+
     private String getConfigurationValue(String key) {
         return configurationClient.getConfigurationSetting(key, azureProperties.label().global()).getValue();
     }

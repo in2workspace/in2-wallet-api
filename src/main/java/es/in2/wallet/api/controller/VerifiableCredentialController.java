@@ -1,6 +1,7 @@
 package es.in2.wallet.api.controller;
 
 
+import es.in2.wallet.api.config.SwaggerConfig;
 import es.in2.wallet.api.facade.UserDataFacadeService;
 import es.in2.wallet.api.model.CredentialsBasicInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,7 +32,7 @@ public class VerifiableCredentialController {
     @Operation(
             summary = "List Verifiable Credentials",
             description = "Retrieve a list of Verifiable Credentials",
-            tags = {"Verifiable Credential Management"}
+            tags = (SwaggerConfig.TAG_PUBLIC)
     )
     @ApiResponse(responseCode = "200", description = "Verifiable credentials retrieved successfully.")
     @ApiResponse(responseCode = "400", description = "Invalid request.")
@@ -50,7 +51,7 @@ public class VerifiableCredentialController {
     @Operation(
             summary = "Delete Verifiable Credential",
             description = "Delete the verifiable credential from the context broker.",
-            tags = {"Verifiable Credential Management"}
+            tags = (SwaggerConfig.TAG_PUBLIC)
     )
     @ApiResponse(responseCode = "200", description = "Verifiable credential deleted successfully.")
     @ApiResponse(responseCode = "400", description = "Invalid request.")

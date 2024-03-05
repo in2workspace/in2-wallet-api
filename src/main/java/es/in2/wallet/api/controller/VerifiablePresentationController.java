@@ -1,5 +1,6 @@
 package es.in2.wallet.api.controller;
 
+import es.in2.wallet.api.config.SwaggerConfig;
 import es.in2.wallet.api.facade.AttestationExchangeServiceFacade;
 import es.in2.wallet.api.facade.CredentialPresentationForTurnstileServiceFacade;
 import es.in2.wallet.api.model.CredentialsBasicInfo;
@@ -28,6 +29,11 @@ public class VerifiablePresentationController {
     private final AttestationExchangeServiceFacade attestationExchangeServiceFacade;
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(
+            summary = "Save DID",
+            description = "Save a Decentralized Identifier (DID)",
+            tags = (SwaggerConfig.TAG_PUBLIC)
+    )
     public Mono<Void> createVerifiablePresentation(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
                                                    @RequestBody VcSelectorResponse vcSelectorResponse) {
         String processId = UUID.randomUUID().toString();
@@ -40,7 +46,8 @@ public class VerifiablePresentationController {
     @ResponseStatus(HttpStatus.OK)
     @Operation(
             summary = "Verifiable Presentation in CBOR format",
-            description = "Create a Verifiable Presentation in CBOR format"
+            description = "Create a Verifiable Presentation in CBOR format",
+            tags = (SwaggerConfig.TAG_PUBLIC)
     )
     @ApiResponse(responseCode = "200", description = "Verifiable presentation retrieved successfully.")
     @ApiResponse(responseCode = "400", description = "Invalid request.")
