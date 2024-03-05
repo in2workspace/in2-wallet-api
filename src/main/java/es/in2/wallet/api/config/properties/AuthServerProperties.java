@@ -8,18 +8,18 @@ import java.util.Optional;
 /**
  * AuthServerProperties
  *
- * @param externalUrl - externalUrl auth-server url
- * @param internalUrl - internalUrl auth-server url
- * @param tokenUrl - token Endpoint
+ * @param externalDomain - external auth-server url
+ * @param internalDomain - internal auth-server url
+ * @param tokenEndpoint - token Endpoint
  */
 @ConfigurationProperties(prefix = "auth-server")
-public record AuthServerProperties(UrlProperties externalUrl, UrlProperties internalUrl, UrlProperties tokenUrl) {
+public record AuthServerProperties(String externalDomain, String internalDomain, String tokenEndpoint) {
 
     @ConstructorBinding
-    public AuthServerProperties(UrlProperties externalUrl, UrlProperties internalUrl, UrlProperties tokenUrl) {
-        this.externalUrl = Optional.ofNullable(externalUrl).orElse(new UrlProperties("http", "externalissuerkeycloak.demo.in2.es", 8080, "EAAProvider"));
-        this.internalUrl = Optional.ofNullable(internalUrl).orElse(new UrlProperties("http", "issuerkeycloak.demo.in2.es", 8080, "EAAProvider"));
-        this.tokenUrl = Optional.ofNullable(tokenUrl).orElse(new UrlProperties("http", "issuerkeycloak.demo.in2.es", 8080, "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"));
+    public AuthServerProperties(String externalDomain, String internalDomain, String tokenEndpoint) {
+        this.externalDomain = Optional.ofNullable(externalDomain).orElse("https://issuerkeycloak.demo.in2.es/realms/EAAProvider");
+        this.internalDomain = Optional.ofNullable(internalDomain).orElse("https://issuerkeycloak.demo.in2.es/realms/EAAProvider");
+        this.tokenEndpoint = Optional.ofNullable(tokenEndpoint).orElse("https://issuerkeycloak.demo.in2.es/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token");
     }
 
 }

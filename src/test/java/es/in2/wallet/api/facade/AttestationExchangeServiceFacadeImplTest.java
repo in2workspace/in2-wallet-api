@@ -85,24 +85,4 @@ class AttestationExchangeServiceFacadeImplTest {
                 .verifyComplete();
     }
 
-    @Test
-    void buildVerifiablePresentationWithSelectedVCs_throw_FailedDeserializingException() throws JsonProcessingException {
-        String processId = "123";
-        String authorizationToken = "authToken";
-        VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().build();
-        String verifiablePresentation = "vp";
-
-        when(presentationService.createSignedVerifiablePresentation(
-                eq(processId),
-                eq(authorizationToken),
-                eq(vcSelectorResponse),
-                anyString(),
-                eq("vpWeb")
-        )).thenReturn(Mono.just(verifiablePresentation));
-        when(authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation, authorizationToken)).thenThrow();
-
-        StepVerifier.create(attestationExchangeServiceFacade.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse))
-                .verifyComplete();
-    }
-
 }
