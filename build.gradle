@@ -43,13 +43,16 @@ sonar {
 						"src/main/java/es/in2/wallet/api/model/**, " +
 						"src/main/java/es/in2/wallet/api/util/**, " +
 						"src/main/java/es/in2/wallet/api/ebsi/comformance/config/**, " +
-						"src/main/java/es/in2/wallet/broker/properties/config/**, " +
+						"src/main/java/es/in2/wallet/broker/config/**, " +
 						"src/main/java/es/in2/wallet/broker/util/**, " +
 						"src/main/java/es/in2/wallet/configuration/adapter/azure/config/**, " +
+						"src/main/java/es/in2/wallet/configuration/model/**, " +
 						"src/main/java/es/in2/wallet/configuration/util/**, " +
 						"src/main/java/es/in2/wallet/vault/adapter/azure/config/**, " +
 						"src/main/java/es/in2/wallet/vault/adapter/hashicorp/config/**, " +
-						"src/main/java/es/in2/wallet/vault/util/**"
+						"src/main/java/es/in2/wallet/vault/adapter/hashicorp/model/**, " +
+						"src/main/java/es/in2/wallet/vault/util/**, " +
+						"src/main/java/es/in2/wallet/vault/model/**"
 	}
 }
 
