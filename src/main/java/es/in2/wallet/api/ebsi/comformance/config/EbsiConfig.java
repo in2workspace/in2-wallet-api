@@ -38,7 +38,7 @@ public class EbsiConfig
 
 
     private String didForEbsi;
-    @PostConstruct
+    //@PostConstruct
     @Tag(name = "EbsiConfig", description = "Generate Did for ebsi purposes")
     public void init(){
         generateEbsiDid().subscribe(did -> this.didForEbsi = did);

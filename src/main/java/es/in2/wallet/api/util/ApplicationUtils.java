@@ -4,14 +4,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.epoll.EpollChannelOption;
+import io.netty.handler.logging.LogLevel;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
+import reactor.netty.transport.logging.AdvancedByteBufFormat;
 
 import javax.net.ssl.SSLException;
 import java.net.URI;
@@ -23,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static es.in2.wallet.api.util.MessageUtils.BEARER;
 
@@ -32,12 +41,40 @@ public class ApplicationUtils {
         throw new IllegalStateException("Utility class");
     }
 
-    private static final WebClient WEB_CLIENT = WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(
-                    HttpClient.create()
-                            .followRedirect(false)
-                            .responseTimeout(Duration.ofSeconds(120))))
+    /*
+        *
+        * //TODO: This is a temporary solution to the issue
+        * Added connection timeouts configuration due to https://github.com/reactor/reactor-netty/issues/764#issuecomment-1011373248
+        *
+        *
+     */
+
+    private static ConnectionProvider connectionProvider = ConnectionProvider.builder("custom")
+            .maxConnections(500)
+            .maxIdleTime(Duration.ofSeconds(50))
+            .maxLifeTime(Duration.ofSeconds(300))
+            .evictInBackground(Duration.ofSeconds(80))
             .build();
+    public static final WebClient WEB_CLIENT = WebClient.builder()
+            .clientConnector(new ReactorClientHttpConnector(
+                    HttpClient.create(connectionProvider)
+                            .followRedirect(false)
+            ))
+            .build();
+
+
+//    private static final WebClient WEB_CLIENT = WebClient.builder()
+//            .clientConnector(new ReactorClientHttpConnector(
+//                    HttpClient.create()
+//                            .followRedirect(false)
+//                            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+//                            .option(ChannelOption.SO_KEEPALIVE, true)
+//                            .option(EpollChannelOption.TCP_KEEPIDLE, 40)
+//                            .option(EpollChannelOption.TCP_KEEPINTVL, 20)
+//                            .option(EpollChannelOption.TCP_KEEPCNT, 8)
+//            ))
+//            .build();
+
 
     public static Mono<String> postRequest(String url, List<Map.Entry<String, String>> headers, String body) {
         return WEB_CLIENT.post()
@@ -54,16 +91,23 @@ public class ApplicationUtils {
     }
 
     public static Mono<String> getRequest(String url, List<Map.Entry<String, String>> headers) {
+        log.info("get request to: " + url);
+
         return WEB_CLIENT.get()
                 .uri(URI.create(url))
                 .headers(httpHeaders -> headers.forEach(entry -> httpHeaders.add(entry.getKey(), entry.getValue())))
                 .exchangeToMono(response -> {
                     if (response.statusCode().is3xxRedirection()) {
+                        log.info("redirecting to: " + Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
+
                         return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
                     } else {
+                        log.info("response body to mono...");
+
                         return response.bodyToMono(String.class);
                     }
-                });
+                })
+                .log();
     }
     public static Mono<String> getCleanBearerToken(String authorizationHeader) {
         return Mono.just(authorizationHeader)

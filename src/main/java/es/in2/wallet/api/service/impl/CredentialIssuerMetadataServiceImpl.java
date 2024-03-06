@@ -69,7 +69,7 @@ public class CredentialIssuerMetadataServiceImpl implements CredentialIssuerMeta
                         .credentialEndpoint(credentialIssuerMetadataOriginal.credentialEndpoint())
                         .credentialsSupported(credentialIssuerMetadataOriginal.credentialsSupported())
                         .deferredCredentialEndpoint(credentialIssuerMetadataOriginal.deferredCredentialEndpoint())
-                        .authorizationServer(appConfig.getAuthServerInternalDomain())
+                        .authorizationServer(appConfig.getAuthServerInternalUrl())
                         .build();
                 return Mono.just(credentialIssuerMetadataWithCredentialEndpointHardcoded);
             }

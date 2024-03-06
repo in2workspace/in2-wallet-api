@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -73,8 +75,9 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
             headers = List.of(
                     Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
         }
+        log.info("CredentialOfferServiceImpl - getCredentialOffer headers: {}", headers);
         return getRequest(credentialOfferUri, headers)
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching credentialOffer from the issuer. Reason: " + e.getMessage())));
+                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching credentialOffer from the issuer", e)));
     }
 
     private Mono<CredentialOffer> parseCredentialOfferResponse(String response) {

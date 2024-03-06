@@ -60,7 +60,7 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
     private Mono<AuthorisationServerMetadata> parseCredentialIssuerMetadataResponse(String response) {
         try {
             AuthorisationServerMetadata authorisationServerMetadata = objectMapper.readValue(response, AuthorisationServerMetadata.class);
-            if (authorisationServerMetadata.tokenEndpoint().startsWith(appConfig.getAuthServerExternalDomain())){
+            if (authorisationServerMetadata.tokenEndpoint().startsWith(appConfig.getAuthServerExternalUrl())){
                 AuthorisationServerMetadata authorisationServerMetadataWithTokenEndpointHardcoded = AuthorisationServerMetadata.builder()
                         .issuer(authorisationServerMetadata.issuer())
                         .authorizationEndpoint(authorisationServerMetadata.authorizationEndpoint())

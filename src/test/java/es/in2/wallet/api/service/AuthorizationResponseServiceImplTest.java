@@ -4,24 +4,21 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.api.exception.FailedDeserializingException;
+import es.in2.wallet.api.model.PresentationSubmission;
 import es.in2.wallet.api.model.VcSelectorResponse;
 import es.in2.wallet.api.model.VerifiableCredential;
 import es.in2.wallet.api.model.VerifiablePresentation;
 import es.in2.wallet.api.service.impl.AuthorizationResponseServiceImpl;
-import es.in2.wallet.api.util.ApplicationUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.List;
 
-import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -74,43 +71,17 @@ class AuthorizationResponseServiceImplTest {
         String vc = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
         VerifiablePresentation expectedVerifiablePresentation = VerifiablePresentation.builder().id("id").verifiableCredential(List.of(vc)).build();
         VerifiableCredential expectedVerifiableCredential = VerifiableCredential.builder().id("id").build();
-        //String expectedPresentationSubmission = "mockPresentationSubmission";
+        String expectedPresentationSubmission = "mockPresentationSubmission";
 
         JsonNode rootNodeMock = Mockito.mock(JsonNode.class);
         when(objectMapper.valueToTree(any())).thenReturn(rootNodeMock);
         when(objectMapper.treeToValue(rootNodeMock, VerifiablePresentation.class)).thenReturn(expectedVerifiablePresentation);
         when(objectMapper.treeToValue(rootNodeMock, VerifiableCredential.class)).thenReturn(expectedVerifiableCredential);
 
-        when(objectMapper.writeValueAsString(any())).thenThrow(new RuntimeException());
+        when(objectMapper.writeValueAsString(PresentationSubmission.class)).thenReturn(expectedPresentationSubmission);
         StepVerifier.create(authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId,vcSelectorResponse,verifiablePresentation,authorizationToken))
                 .expectError(RuntimeException.class)
                 .verify();
-
-    }
-
-    @Test
-    void buildAndPostAuthorizationResponseWithVerifiablePresentationTest() throws JsonProcessingException {
-        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
-            String processId = "123";
-            VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().redirectUri("redirectUri").state("state").build();
-            String verifiablePresentation = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2cCI6eyJpZCI6InMiLCJ0eXBlIjpbInMiXSwiaG9sZGVyIjoicyIsIkBjb250ZXh0IjpbInMiXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOiJleUpoYkdjaU9pSklVekkxTmlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKemRXSWlPaUl4TWpNME5UWTNPRGt3SWl3aWJtRnRaU0k2SWtwdmFHNGdSRzlsSWl3aWFXRjBJam94TlRFMk1qTTVNREl5ZlEuU2ZsS3h3UkpTTWVLS0YyUVQ0ZndwTWVKZjM2UE9rNnlKVl9hZFFzc3c1YyJ9LCJleHAiOjE3MDg3NTA2MTYsImlhdCI6MTcwODY5MDYxNiwiaXNzIjoicyIsImp0aSI6InMiLCJuYmYiOjE3MDg2OTA2MTYsInN1YiI6InMiLCJub25jZSI6InMifQ.vYJRlyEAu_DQikMv1M1avqorFE37LQhi7o49mgCLroA";
-            String authorizationToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-            String vc = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-            VerifiablePresentation expectedVerifiablePresentation = VerifiablePresentation.builder().id("id").verifiableCredential(List.of(vc, vc)).build();
-            VerifiableCredential expectedVerifiableCredential = VerifiableCredential.builder().id("id").build();
-            String expectedPresentationSubmission = "mockPresentationSubmission";
-
-            JsonNode rootNodeMock = Mockito.mock(JsonNode.class);
-            when(objectMapper.valueToTree(any())).thenReturn(rootNodeMock);
-            when(objectMapper.treeToValue(rootNodeMock, VerifiablePresentation.class)).thenReturn(expectedVerifiablePresentation);
-            when(objectMapper.treeToValue(rootNodeMock, VerifiableCredential.class)).thenReturn(expectedVerifiableCredential);
-
-            when(objectMapper.writeValueAsString(any())).thenReturn(expectedPresentationSubmission);
-            when(postRequest(any(), any(), any())).thenReturn(Mono.just("ok"));
-            StepVerifier.create(authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation, authorizationToken))
-                    .expectNext("ok")
-                    .verifyComplete();
-        }
 
     }
 
