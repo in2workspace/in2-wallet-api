@@ -151,6 +151,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * This process involves saving the DID, updating the entity, retrieving the updated entity, saving the VC, and finally updating the entity again with the VC information.
      */
     private Mono<Void> updateEntity(String processId, String userId, List<CredentialResponse> credentials, String entity, String did) {
+        log.info("ProcessId: {} - Updating User Entity", processId);
         return userDataService.saveDid(entity, did, "did:key")
                 .flatMap(updatedEntity ->
                         brokerService.updateEntity(processId, userId, updatedEntity)
@@ -174,6 +175,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * This involves creating the user, posting the entity, saving the DID to the entity, updating the entity with the DID, retrieving the updated entity, saving the VC, and performing a final update with the VC information.
      */
     private Mono<Void> createAndUpdateUser(String processId, String userId, List<CredentialResponse> credentials, String did) {
+        log.info("ProcessId: {} - Creating and Updating User Entity", processId);
         return userDataService.createUserEntity(userId)
                 .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
                 .then(brokerService.getEntityById(processId, userId))

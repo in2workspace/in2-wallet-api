@@ -44,7 +44,7 @@ class AuthorisationServerMetadataServiceImplTest {
             AuthorisationServerMetadata expectedAuthorizationServerMetadataWithTokenEndpointHardcodedTest = AuthorisationServerMetadata.builder().tokenEndpoint("https://example.com/example/token").build();
 
 
-            when(appConfig.getAuthServerExternalDomain()).thenReturn("https://example.com");
+            when(appConfig.getAuthServerExternalUrl()).thenReturn("https://example.com");
             when(appConfig.getAuthServerTokenEndpoint()).thenReturn("https://example.com/example/token");
             when(getRequest("example/.well-known/openid-configuration",headers)).thenReturn(Mono.just("response"));
             when(objectMapper.readValue("response", AuthorisationServerMetadata.class)).thenReturn(authorizationServerMetadata);
@@ -63,7 +63,7 @@ class AuthorisationServerMetadataServiceImplTest {
             List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
             AuthorisationServerMetadata authorizationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("https://ebsi.com/token").build();
 
-            when(appConfig.getAuthServerExternalDomain()).thenReturn("https://example.com");
+            when(appConfig.getAuthServerExternalUrl()).thenReturn("https://example.com");
             when(getRequest("example/.well-known/openid-configuration",headers)).thenReturn(Mono.just("response"));
             when(objectMapper.readValue("response",AuthorisationServerMetadata.class)).thenReturn(authorizationServerMetadata);
 

@@ -5,4 +5,8 @@ public class FailedCommunicationException extends Exception {
         super(message);
     }
 
+    public FailedCommunicationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

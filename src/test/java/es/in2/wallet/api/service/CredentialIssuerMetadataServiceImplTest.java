@@ -48,7 +48,7 @@ class CredentialIssuerMetadataServiceImplTest {
             ObjectMapper objectMapper2 = new ObjectMapper();
             JsonNode jsonNode = objectMapper2.readTree(json);
 
-            when(appConfig.getAuthServerInternalDomain()).thenReturn("https://example.com");
+            when(appConfig.getAuthServerInternalUrl()).thenReturn("https://example.com");
             when(getRequest("example/.well-known/openid-credential-issuer",headers)).thenReturn(Mono.just("response"));
             when(objectMapper.readTree("response")).thenReturn(jsonNode);
             when(objectMapper.treeToValue(jsonNode, CredentialIssuerMetadata.class)).thenReturn(credentialIssuerMetadataWithoutTheHardcodedEndpoint);

@@ -7,10 +7,12 @@ broker:
   external-url:
     scheme: "https"
     domain: "aca-wallet-scorpio-ms-uri"
+    #domain: "epu-dev-ca-01.thankfulsand-d95793a6.westeurope.azurecontainerapps.io"
     port: 443
   internal-url:
     scheme: "https"
     domain: "aca-wallet-scorpio-ms-uri"
+    #domain: "epu-dev-ca-01.thankfulsand-d95793a6.westeurope.azurecontainerapps.io"
     port: 443
   paths:
     entities: "/ngsi-ld/v1/entities"
@@ -41,18 +43,21 @@ auth-server:
   external-url:
     scheme: https
     domain: public-api-uri-for-iep-apps
+    #domain: "preproduccio-iep.dev.in2.es"
     port: 443
     path: "/cross-keycloak/realms/EAAProvider"
   #internalUrl-domain: https://epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io/realms/EAAProvider
   internal-url:
     scheme: https
     domain: aca-cross-keycloak-ms-uri
+    #domain: "epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io"
     port: 443
     path: "/realms/EAAProvider"
   #token-endpoint: https://epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token
   token-url:
     scheme: https
     domain: aca-cross-keycloak-ms-uri
+    #domain: "epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io"
     port: 443
     path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
 
