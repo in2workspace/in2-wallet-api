@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -69,9 +70,14 @@ class HashicorpAdapterTest {
     @Test
     void getSecretTestSuccess() {
         String key = "key";
-        KeyVaultSecret keyVaultSecret = KeyVaultSecret.builder().value("value").build();
+        KeyVaultSecret keyVaultSecret = KeyVaultSecret.builder().value(key).build();
+        Map<String, Object> data = new HashMap<>();
+        data.put("key", key);
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("data", data);
         VaultResponse vaultResponse = new VaultResponse();
-        vaultResponse.setData(Map.of("key", keyVaultSecret));
+        vaultResponse.setData(responseData);
         // Mock the write operation of ReactiveVaultOperations
         when(vaultOperations.read(any()))
                 .thenReturn(Mono.just(vaultResponse));
@@ -79,7 +85,8 @@ class HashicorpAdapterTest {
         // Test the saveSecret method
         StepVerifier.create(hashicorpAdapter.getSecret(key))
                 .expectNext(keyVaultSecret)
-                .expectComplete();
+                .expectComplete()
+                .verify();
     }
 
     @Test
