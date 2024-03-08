@@ -42,6 +42,7 @@ public class MessageUtils {
     public static final String VC_CWT = "cwt_vc";
     public static final String PROPERTY_TYPE = "Property";
     public static final String CREDENTIAL_SUBJECT = "credentialSubject";
+    public static final String EXPIRATION_DATE = "expirationDate";
     public static final String GLOBAL_STATE = "MTo3NzcwMjoyNDU1NTkwMjMzOjE3MDU5MTE3NDA=";
     public static final String AUTH_CODE_GRANT_TYPE = "authorization_code";
     public static final String CODEVERIFIERALLOWEDCHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
@@ -56,4 +57,6 @@ public class MessageUtils {
     public static final Pattern OPENID_CREDENTIAL_OFFER_PATTERN = Pattern.compile("openid-credential-offer://\\S*");
     public static final Pattern EBSI_CREDENTIAL_OFFER_PATTERN = Pattern.compile("\\S*(conformance.ebsi)\\S*");
     public static final Pattern OPENID_AUTHENTICATION_REQUEST_PATTERN = Pattern.compile("openid://\\S*");
+
+    public static final String ISO_8601_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ssX";
 }

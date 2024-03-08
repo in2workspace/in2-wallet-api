@@ -1,7 +1,7 @@
 package es.in2.wallet.api.facade.impl;
 
 import es.in2.wallet.api.facade.UserDataFacadeService;
-import es.in2.wallet.api.model.CredentialsBasicInfo;
+import es.in2.wallet.api.model.CredentialsBasicInfoWithExpirationDate;
 import es.in2.wallet.api.service.UserDataService;
 import es.in2.wallet.api.service.VaultService;
 import es.in2.wallet.broker.service.BrokerService;
@@ -29,7 +29,7 @@ public class UserDataFacadeServiceImpl implements UserDataFacadeService {
      * @param userId The unique identifier of the user whose VCs are to be retrieved.
      */
     @Override
-    public Mono<List<CredentialsBasicInfo>> getUserVCs(String processId, String userId) {
+    public Mono<List<CredentialsBasicInfoWithExpirationDate>> getUserVCs(String processId, String userId) {
         return brokerService.getEntityById(processId, userId)
                 .flatMap(optionalEntity -> optionalEntity
                         .map(userDataService::getUserVCsInJson)

@@ -19,7 +19,7 @@ public class AzureKeyVaultConfig {
     @Bean
     public SecretAsyncClient secretClient() {
         return new SecretClientBuilder()
-                .vaultUrl("https://epu-pre-kv-01.vault.azure.net/")
+                .vaultUrl(azureConfig.getKeyVaultUrl())
                 .credential(new DefaultAzureCredentialBuilder().build())
                 .buildAsyncClient();
     }
