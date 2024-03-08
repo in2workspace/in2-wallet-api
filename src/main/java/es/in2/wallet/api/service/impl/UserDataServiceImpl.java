@@ -311,8 +311,6 @@ public class UserDataServiceImpl implements UserDataService {
                                 );
 
                                 matchingVCs.add(dto);
-                                // Break the inner loop once a match is found to avoid duplicate entries.
-                                break;
                             }
                         }
                     }
