@@ -2,7 +2,8 @@ package es.in2.wallet.vault.adapter.azure;
 
 import com.azure.core.util.polling.PollerFlux;
 import com.azure.security.keyvault.secrets.SecretAsyncClient;
-import es.in2.wallet.vault.model.secret.KeyVaultSecret;
+import es.in2.wallet.infrastructure.vault.adapter.azure.AzureKeyVaultAdapter;
+import es.in2.wallet.infrastructure.vault.model.KeyVaultSecret;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

@@ -1,7 +1,8 @@
 package es.in2.wallet.api.service;
 
-import es.in2.wallet.api.config.CryptoConfig;
-import es.in2.wallet.api.service.impl.DidKeyGeneratorServiceImpl;
+import es.in2.wallet.infrastructure.core.config.CryptoConfig;
+import es.in2.wallet.domain.service.VaultService;
+import es.in2.wallet.domain.service.impl.DidKeyGeneratorServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

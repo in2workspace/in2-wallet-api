@@ -5,7 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import es.in2.wallet.api.model.*;
-import es.in2.wallet.api.service.impl.UserDataServiceImpl;
+import es.in2.wallet.domain.service.impl.UserDataServiceImpl;
+import es.in2.wallet.domain.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,7 +17,7 @@ import reactor.test.StepVerifier;
 import java.time.ZonedDateTime;
 import java.util.*;
 
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.domain.util.MessageUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
