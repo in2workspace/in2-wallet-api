@@ -1,9 +1,7 @@
 package es.in2.wallet.domain.exception.handler;
 
-import es.in2.wallet.api.exception.*;
 import es.in2.wallet.domain.exception.*;
 import es.in2.wallet.domain.model.GlobalErrorMessage;
-import es.in2.wallet.domain.model.exception.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;

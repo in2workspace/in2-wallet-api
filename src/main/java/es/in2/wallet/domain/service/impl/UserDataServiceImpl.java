@@ -1,6 +1,5 @@
 package es.in2.wallet.domain.service.impl;
 
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,9 +10,8 @@ import com.upokecenter.cbor.CBORObject;
 import es.in2.wallet.domain.exception.NoSuchDidException;
 import es.in2.wallet.domain.exception.NoSuchVerifiableCredentialException;
 import es.in2.wallet.domain.exception.ParseErrorException;
-import es.in2.wallet.api.model.*;
-import es.in2.wallet.domain.service.UserDataService;
 import es.in2.wallet.domain.model.*;
+import es.in2.wallet.domain.service.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.minvws.encoding.Base45;

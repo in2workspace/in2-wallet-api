@@ -1,7 +1,6 @@
 package es.in2.wallet.api.exception;
 
 import es.in2.wallet.domain.exception.*;
-import es.in2.wallet.domain.model.exception.*;
 import es.in2.wallet.domain.exception.handler.GlobalExceptionHandler;
 import es.in2.wallet.domain.model.GlobalErrorMessage;
 import org.junit.jupiter.api.BeforeEach;
