@@ -1,7 +1,7 @@
 package es.in2.wallet.api.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.config.properties.AuthServerProperties;
+import es.in2.wallet.api.config.AppConfig;
 import es.in2.wallet.api.exception.FailedCommunicationException;
 import es.in2.wallet.api.exception.FailedDeserializingException;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
@@ -24,7 +24,7 @@ import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
 @RequiredArgsConstructor
 public class AuthorisationServerMetadataServiceImpl implements AuthorisationServerMetadataService {
     private final ObjectMapper objectMapper;
-    private final AuthServerProperties authServerProperties;
+    private final AppConfig appConfig;
 
     @Override
     public Mono<AuthorisationServerMetadata> getAuthorizationServerMetadataFromCredentialIssuerMetadata(String processId, CredentialIssuerMetadata credentialIssuerMetadata) {
@@ -36,14 +36,14 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
                 .doOnNext(authorisationServerMetadata -> log.info("ProcessID: {} - AuthorisationServerMetadata: {}", processId, authorisationServerMetadata))
                 .onErrorResume(e -> {
                     log.error("ProcessID: {} - Error while processing Authorisation Server Metadata Response from the Auth Server: {}", processId, e.getMessage());
-                    return Mono.error(new RuntimeException("Error while processing Authorisation Server Metadata Response from the Auth Server"));
+                    return Mono.error(new RuntimeException("Error while processing Authorisation Server Metadata Response from the Auth Server. Reason: " + e.getMessage()));
                 });
     }
 
     private Mono<String> getAuthorizationServerMetadata(String authorizationServerURL) {
         List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
         return getRequest(authorizationServerURL, headers)
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching Authorisation Server Metadata from the Auth Server")));
+                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching Authorisation Server Metadata from the Auth Server. Reason: " + e.getMessage())));
     }
 
     /**
@@ -60,22 +60,20 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
     private Mono<AuthorisationServerMetadata> parseCredentialIssuerMetadataResponse(String response) {
         try {
             AuthorisationServerMetadata authorisationServerMetadata = objectMapper.readValue(response, AuthorisationServerMetadata.class);
-            if (authorisationServerMetadata.tokenEndpoint().startsWith(authServerProperties.domain())){
+            if (authorisationServerMetadata.tokenEndpoint().startsWith(appConfig.getAuthServerExternalUrl())){
                 AuthorisationServerMetadata authorisationServerMetadataWithTokenEndpointHardcoded = AuthorisationServerMetadata.builder()
                         .issuer(authorisationServerMetadata.issuer())
                         .authorizationEndpoint(authorisationServerMetadata.authorizationEndpoint())
-                        .tokenEndpoint(authServerProperties.tokenEndpoint())
+                        .tokenEndpoint(appConfig.getAuthServerTokenEndpoint())
                         .build();
                 return Mono.just(authorisationServerMetadataWithTokenEndpointHardcoded);
             }
 
-            else {
-                // deserialize Credential Issuer Metadata
-                return Mono.just(authorisationServerMetadata);
-            }
+            // deserialize Credential Issuer Metadata
+            return Mono.just(authorisationServerMetadata);
         }
         catch (Exception e) {
-            return Mono.error(new FailedDeserializingException("Error while deserializing Credential Issuer Metadata: " + e));
+            return Mono.error(new FailedDeserializingException("Error while deserializing Credential Issuer Metadata. Reason: " + e.getMessage()));
         }
     }
 }

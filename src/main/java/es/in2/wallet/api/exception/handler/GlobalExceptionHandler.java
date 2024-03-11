@@ -2,6 +2,7 @@ package es.in2.wallet.api.exception.handler;
 
 import es.in2.wallet.api.exception.*;
 import es.in2.wallet.api.model.GlobalErrorMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -11,12 +12,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import reactor.core.publisher.Mono;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
     @ExceptionHandler(FailedCommunicationException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     @ResponseBody
     public Mono<GlobalErrorMessage> failedCommunicationException(FailedCommunicationException ex, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
+        log.debug("failedCommunicationException", ex);
         return Mono.just(GlobalErrorMessage.builder()
                 .title("FailedCommunicationException")
                 .message(ex.getMessage())

@@ -9,7 +9,7 @@ plugins {
 }
 
 group = 'es.in2'
-version = '1.0.0'
+version = '1.1.0'
 
 java {
 	sourceCompatibility = '17'
@@ -42,7 +42,17 @@ sonar {
 						"src/main/java/es/in2/wallet/api/config/**, " +
 						"src/main/java/es/in2/wallet/api/model/**, " +
 						"src/main/java/es/in2/wallet/api/util/**, " +
-						"src/main/java/es/in2/wallet/api/ebsi/comformance/config/**"
+						"src/main/java/es/in2/wallet/api/ebsi/comformance/config/**, " +
+						"src/main/java/es/in2/wallet/broker/config/**, " +
+						"src/main/java/es/in2/wallet/broker/util/**, " +
+						"src/main/java/es/in2/wallet/configuration/adapter/azure/config/**, " +
+						"src/main/java/es/in2/wallet/configuration/model/**, " +
+						"src/main/java/es/in2/wallet/configuration/util/**, " +
+						"src/main/java/es/in2/wallet/vault/adapter/azure/config/**, " +
+						"src/main/java/es/in2/wallet/vault/adapter/hashicorp/config/**, " +
+						"src/main/java/es/in2/wallet/vault/adapter/hashicorp/model/**, " +
+						"src/main/java/es/in2/wallet/vault/util/**, " +
+						"src/main/java/es/in2/wallet/vault/model/**"
 	}
 }
 
@@ -57,15 +67,12 @@ repositories {
 	maven { url 'https://jitpack.io' }
 }
 
-ext {
-	set('springCloudVersion', "2023.0.0")
-}
-
 dependencies {
 	// Spring
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 //	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j:3.1.0'
 
 	// Base45 dependency
 	implementation "io.github.ehn-digital-green-development:base45:0.0.3"
@@ -90,14 +97,25 @@ dependencies {
 	implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j'
 
 	// Key Vault
-	implementation 'org.springframework.cloud:spring-cloud-starter-vault-config'
 	testImplementation 'org.springframework.data:spring-data-keyvalue:3.1.5'
+	implementation 'org.springframework.vault:spring-vault-core:3.1.1'
 
 	// Bounty Castle
 	implementation("org.bouncycastle:bcprov-jdk18on:1.76")
 	implementation("com.github.multiformats:java-multibase:v1.1.1")
 	implementation 'com.github.sthagen:erdtman-java-json-canonicalization:v1.1'
 
+	// CBOR
+	implementation("com.upokecenter:cbor:4.5.2")
+
+	// COSE
+	implementation("com.augustcellars.cose:cose-java:1.1.0")
+
+	// Compress
+	implementation("org.apache.commons:commons-compress:1.20")
+
+	// base 45
+	implementation("io.github.ehn-digital-green-development:base45:0.0.3")
 
 
 	// Azure
@@ -121,7 +139,7 @@ dependencies {
 	implementation 'io.micrometer:micrometer-tracing-bridge-brave'
 	implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
-	
+
 	// Metrics
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'io.micrometer:micrometer-tracing-bridge-brave'
@@ -138,12 +156,6 @@ dependencies {
 	testImplementation 'org.testcontainers:vault'
 	testImplementation 'com.squareup.okhttp3:mockwebserver:4.9.0'
 
-}
-
-dependencyManagement {
-	imports {
-		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-	}
 }
 
 tasks.named('compileJava') {
@@ -169,7 +181,11 @@ tasks.jacocoTestReport {
 					"src/main/java/es/in2/wallet/api/config/**",
 					"src/main/java/es/in2/wallet/api/model/**",
 					"src/main/java/es/in2/wallet/api/util/**",
-					"src/main/java/es/in2/wallet/api/ebsi/comformance/config/**"
+					"src/main/java/es/in2/wallet/api/ebsi/comformance/config/**" +
+					"src/main/java/es/in2/wallet/broker/config/properties/**",
+					"**/config/**",
+					"**/configuration/**",
+					"**/util/**"
 			])
 		}))
 	}

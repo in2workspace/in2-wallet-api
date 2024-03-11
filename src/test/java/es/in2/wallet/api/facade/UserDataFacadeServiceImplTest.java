@@ -4,10 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.api.facade.impl.UserDataFacadeServiceImpl;
-import es.in2.wallet.api.model.CredentialsBasicInfo;
+import es.in2.wallet.api.model.CredentialsBasicInfoWithExpirationDate;
 import es.in2.wallet.api.service.UserDataService;
+import es.in2.wallet.api.service.VaultService;
 import es.in2.wallet.broker.service.BrokerService;
-import es.in2.wallet.vault.service.VaultService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,10 +16,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,7 +49,7 @@ class UserDataFacadeServiceImplTest {
         ObjectMapper objectMapper2 = new ObjectMapper();
         JsonNode credentialSubject = objectMapper2.readTree(json);
 
-        List<CredentialsBasicInfo> expectedCredentials = List.of(new CredentialsBasicInfo("id1", List.of("type"), credentialSubject));
+        List<CredentialsBasicInfoWithExpirationDate> expectedCredentials = List.of(new CredentialsBasicInfoWithExpirationDate("id1", List.of("type"), credentialSubject, ZonedDateTime.now()));
 
         when(brokerService.getEntityById(processId, userId)).thenReturn(Mono.just(userEntity));
         when(userDataService.getUserVCsInJson(anyString())).thenReturn(Mono.just(expectedCredentials));

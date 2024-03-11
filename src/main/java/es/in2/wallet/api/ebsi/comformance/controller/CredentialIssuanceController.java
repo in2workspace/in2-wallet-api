@@ -1,7 +1,9 @@
 package es.in2.wallet.api.ebsi.comformance.controller;
 
+import es.in2.wallet.api.config.SwaggerConfig;
 import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialServiceFacade;
 import es.in2.wallet.api.ebsi.comformance.model.CredentialOfferContent;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -30,6 +32,9 @@ public class CredentialIssuanceController {
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(
+            tags = (SwaggerConfig.TAG_PUBLIC)
+    )
     public Mono<Void> requestVerifiableCredential(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
                                                                 @RequestBody CredentialOfferContent credentialOfferContent) {
         String processId = UUID.randomUUID().toString();

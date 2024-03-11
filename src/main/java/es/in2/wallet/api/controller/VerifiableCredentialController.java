@@ -1,8 +1,9 @@
 package es.in2.wallet.api.controller;
 
 
+import es.in2.wallet.api.config.SwaggerConfig;
 import es.in2.wallet.api.facade.UserDataFacadeService;
-import es.in2.wallet.api.model.CredentialsBasicInfo;
+import es.in2.wallet.api.model.CredentialsBasicInfoWithExpirationDate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -31,12 +32,12 @@ public class VerifiableCredentialController {
     @Operation(
             summary = "List Verifiable Credentials",
             description = "Retrieve a list of Verifiable Credentials",
-            tags = {"Verifiable Credential Management"}
+            tags = (SwaggerConfig.TAG_PUBLIC)
     )
     @ApiResponse(responseCode = "200", description = "Verifiable credentials retrieved successfully.")
     @ApiResponse(responseCode = "400", description = "Invalid request.")
     @ApiResponse(responseCode = "500", description = "Internal server error.")
-    public Mono<List<CredentialsBasicInfo>> getVerifiableCredentialList(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+    public Mono<List<CredentialsBasicInfoWithExpirationDate>> getVerifiableCredentialList(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
         log.debug("VerifiableCredentialController.getVerifiableCredential()");
 
         String processId = UUID.randomUUID().toString();
@@ -50,7 +51,7 @@ public class VerifiableCredentialController {
     @Operation(
             summary = "Delete Verifiable Credential",
             description = "Delete the verifiable credential from the context broker.",
-            tags = {"Verifiable Credential Management"}
+            tags = (SwaggerConfig.TAG_PUBLIC)
     )
     @ApiResponse(responseCode = "200", description = "Verifiable credential deleted successfully.")
     @ApiResponse(responseCode = "400", description = "Invalid request.")

@@ -2,7 +2,7 @@ package es.in2.wallet.api.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.config.properties.AuthServerProperties;
+import es.in2.wallet.api.config.AppConfig;
 import es.in2.wallet.api.exception.FailedCommunicationException;
 import es.in2.wallet.api.exception.FailedDeserializingException;
 import es.in2.wallet.api.model.CredentialIssuerMetadata;
@@ -26,7 +26,7 @@ import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
 public class CredentialIssuerMetadataServiceImpl implements CredentialIssuerMetadataService {
 
     private final ObjectMapper objectMapper;
-    private final AuthServerProperties authServerProperties;
+    private final AppConfig appConfig;
 
     @Override
     public Mono<CredentialIssuerMetadata> getCredentialIssuerMetadataFromCredentialOffer(String processId, CredentialOffer credentialOffer) {
@@ -69,7 +69,7 @@ public class CredentialIssuerMetadataServiceImpl implements CredentialIssuerMeta
                         .credentialEndpoint(credentialIssuerMetadataOriginal.credentialEndpoint())
                         .credentialsSupported(credentialIssuerMetadataOriginal.credentialsSupported())
                         .deferredCredentialEndpoint(credentialIssuerMetadataOriginal.deferredCredentialEndpoint())
-                        .authorizationServer(authServerProperties.domain())
+                        .authorizationServer(appConfig.getAuthServerInternalUrl())
                         .build();
                 return Mono.just(credentialIssuerMetadataWithCredentialEndpointHardcoded);
             }

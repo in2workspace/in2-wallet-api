@@ -8,7 +8,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class WebSocketSessionManager {
+public class
+
+
+
+WebSocketSessionManager {
 
     private final Map<String, WebSocketSession> userSessions = new ConcurrentHashMap<>();
 

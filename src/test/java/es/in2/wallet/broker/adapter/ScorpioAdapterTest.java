@@ -1,12 +1,8 @@
 package es.in2.wallet.broker.adapter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.exception.JsonReadingException;
-import es.in2.wallet.broker.config.properties.BrokerPathProperties;
-import es.in2.wallet.broker.config.properties.BrokerProperties;
+import es.in2.wallet.broker.config.properties.BrokerConfig;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -30,16 +26,13 @@ import static es.in2.wallet.api.util.MessageUtils.ATTRIBUTES;
 import static es.in2.wallet.api.util.MessageUtils.ENTITY_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ScorpioAdapterTest {
 
     @Mock
-    private BrokerProperties brokerProperties;
-    @Mock
-    private BrokerPathProperties brokerPathProperties;
+    private BrokerConfig brokerConfig;
     @Mock
     private ObjectMapper objectMapper;
 
@@ -52,15 +45,15 @@ class ScorpioAdapterTest {
     @BeforeEach
     void setUp() throws IOException, NoSuchFieldException, IllegalAccessException {
         // Mock the behavior of broker properties to return predefined paths
-        when(brokerPathProperties.entities()).thenReturn("/entities");
-        when(brokerProperties.paths()).thenReturn(brokerPathProperties);
+        when(brokerConfig.getPathEntities()).thenReturn("/entities");
+        when(brokerConfig.getExternalUrl()).thenReturn("/external");
 
         // Initialize and start MockWebServer
         mockWebServer = new MockWebServer();
         mockWebServer.start();
 
         // Initialize OrionLdAdapter with mocked properties
-        scorpioAdapter = new ScorpioAdapter(objectMapper,brokerProperties);
+        scorpioAdapter = new ScorpioAdapter(objectMapper, brokerConfig);
 
         // Create a WebClient that points to the MockWebServer
         WebClient webClient = WebClient.builder()
@@ -97,7 +90,7 @@ class ScorpioAdapterTest {
 
         // Verify the POST request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/entities", recordedRequest.getPath());
+        assertEquals("/external/entities", recordedRequest.getPath());
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
@@ -122,7 +115,7 @@ class ScorpioAdapterTest {
 
         // Verify the POST request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/entities", recordedRequest.getPath());
+        assertEquals("/external/entities", recordedRequest.getPath());
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals(MediaType.valueOf("application/ld+json").toString(), recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
@@ -149,7 +142,7 @@ class ScorpioAdapterTest {
 
         // Verify the GET request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/entities" + ENTITY_PREFIX + userId, recordedRequest.getPath());
+        assertEquals("/external/entities" + ENTITY_PREFIX + userId, recordedRequest.getPath());
         assertEquals("GET", recordedRequest.getMethod());
     }
 
@@ -174,7 +167,7 @@ class ScorpioAdapterTest {
 
         // Verify the PATCH request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/entities" + ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
+        assertEquals("/external/entities" + ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
         assertEquals("PATCH", recordedRequest.getMethod());
         assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
@@ -201,7 +194,7 @@ class ScorpioAdapterTest {
 
         // Verify the PATCH request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/entities" + ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
+        assertEquals("/external/entities" + ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
         assertEquals("PATCH", recordedRequest.getMethod());
         assertEquals(MediaType.valueOf("application/ld+json").toString(), recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
@@ -221,6 +214,6 @@ class ScorpioAdapterTest {
 
         // Verify the GET request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/entities" + ENTITY_PREFIX + userId, recordedRequest.getPath());
+        assertEquals("/external/entities" + ENTITY_PREFIX + userId, recordedRequest.getPath());
     }
 }

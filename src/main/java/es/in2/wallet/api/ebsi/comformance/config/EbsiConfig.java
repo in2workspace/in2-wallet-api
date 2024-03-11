@@ -3,7 +3,7 @@ package es.in2.wallet.api.ebsi.comformance.config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.ebsi.comformance.config.properties.IdentityProviderProperties;
+import es.in2.wallet.api.config.AppConfig;
 import es.in2.wallet.api.service.DidKeyGeneratorService;
 import es.in2.wallet.api.service.UserDataService;
 import es.in2.wallet.api.util.ApplicationUtils;
@@ -31,14 +31,14 @@ import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM;
 public class EbsiConfig
 {
     private final ObjectMapper objectMapper;
-    private final IdentityProviderProperties identityProviderProperties;
+    private final AppConfig appConfig;
     private final DidKeyGeneratorService didKeyGeneratorService;
     private final BrokerService brokerService;
     private final UserDataService userDataService;
 
 
     private String didForEbsi;
-    @PostConstruct
+    //@PostConstruct
     @Tag(name = "EbsiConfig", description = "Generate Did for ebsi purposes")
     public void init(){
         generateEbsiDid().subscribe(did -> this.didForEbsi = did);
@@ -53,13 +53,13 @@ public class EbsiConfig
         headers.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
 
         String body = "grant_type=" + URLEncoder.encode("password", StandardCharsets.UTF_8) +
-                "&username=" + URLEncoder.encode(identityProviderProperties.username(), StandardCharsets.UTF_8) +
-                "&password=" + URLEncoder.encode(identityProviderProperties.password(), StandardCharsets.UTF_8) +
-                "&client_id=" + URLEncoder.encode(identityProviderProperties.clientId(), StandardCharsets.UTF_8) +
-                "&client_secret=" + URLEncoder.encode(identityProviderProperties.clientSecret(), StandardCharsets.UTF_8);
+                "&username=" + URLEncoder.encode(appConfig.getIdentityProviderUsername(), StandardCharsets.UTF_8) +
+                "&password=" + URLEncoder.encode(appConfig.getIdentityProviderPassword(), StandardCharsets.UTF_8) +
+                "&client_id=" + URLEncoder.encode(appConfig.getIdentityProviderClientId(), StandardCharsets.UTF_8) +
+                "&client_secret=" + URLEncoder.encode(appConfig.getIdentityProviderClientSecret(), StandardCharsets.UTF_8);
 
         return Mono.delay(Duration.ofSeconds(30))
-                .then(postRequest(identityProviderProperties.url(),headers,body))
+                .then(postRequest(appConfig.getIdentityProviderUrl(),headers,body))
                 .flatMap(response -> {
                     log.debug(response);
                     Map<String, Object> jsonObject;

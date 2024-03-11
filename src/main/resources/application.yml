@@ -4,26 +4,14 @@ spring:
     name: "wallet-server"
   main:
     web-application-type: reactive
-  cloud:
-    vault:
-      host: localhost
-      port: 8201
-      authentication: token
-      token: hvs.e2uxu4RA8jZfgvraL6MVS8XN
-      scheme: http
-      kv:
-        enabled: true
-    azure:
-      keyvault:
-        secret:
-          endpoint: https://example
+
 
 # Spring Logging Configuration
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
-    es.in2.wallet: INFO
+    es.in2.wallet: DEBUG
 
 # Spring Management Configuration - Actuator
 management:
@@ -43,12 +31,16 @@ management:
     health:
       enabled: true
       show-details: always
+      vault:
+        enabled: false
     loggers:
       enabled: true
     metrics:
       enabled: true
     prometheus:
       enabled: true
+    tracing:
+      enabled: false
 
 # SpringDoc Configuration - OpenAPI 3.0 Documentation & Swagger UI
 springdoc:
@@ -61,7 +53,7 @@ springdoc:
 
 # Server Configuration
 server:
-  port: 8080
+  port: 8081
 
 # Context Broker Configuration
 broker:
@@ -71,20 +63,53 @@ broker:
   paths:
     entities: "/ngsi-ld/v1/entities"
 
+# Configuration providers
+app:
+  config-source:
+    name: yaml # azure yaml
+
+# Vault providers
 vault:
   provider:
-    name: hashicorp #hashicorp #azure
+    name: azure # azure hashicorp
+
+# Azure Configuration
+azure:
+  # App Configuration
+  app:
+    config:
+      endpoint: ${APP_CONFIG_ENDPOINT}
+      label:
+        global: service-discovery
+  # KeyVault Configuration
+  keyvault:
+    #endpoint: key-vault-uri
+    endpoint: https://epu-dev-kv-01.vault.azure.net/
+
+# KeyVault Configuration Hashicorp
+hashicorp:
+  vault:
+    path: /kv # Example for yml configuration
+    #path: azure-kv-key # Example for azure configuration
+    host: localhost
+    port: 8200
+    scheme: http
+    token: hvs.48sBkFvHj3xK9c9s8xRdZws9
 
 auth-server:
-  domain: https://issuerkeycloak.demo.in2.es/realms/EAAProvider
-  token-endpoint: https://issuerkeycloak.demo.in2.es/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token
+  external-domain: http://localhost:8080/realms/EAAProvider
+  internal-domain: http://localhost:8080/realms/EAAProvider
+  token-endpoint: http://localhost:8080/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token
 
 identity-provider:
-  url: http://localhost:9099/realms/wallet/protocol/openid-connect/token
+  url: http://localhost:8080/realms/wallet/protocol/openid-connect/token
   client-secret: fV51P8jFBo8VnFKMMuP3imw3H3i5mNck
   client-id: user-registry-client
   username: adminWallet
   password: adminPass
 
 wallet-wda:
-  url: http://localhost:4200
+  urls:
+    - scheme: http
+      domain: localhost
+      port: 4200

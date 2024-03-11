@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static es.in2.wallet.api.util.MessageUtils.*;
@@ -247,7 +248,7 @@ public class UserDataServiceImpl implements UserDataService {
      * @param userEntity The user entity whose VCs are to be retrieved.
      */
     @Override
-    public Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String userEntity) {
+    public Mono<List<CredentialsBasicInfoWithExpirationDate>> getUserVCsInJson(String userEntity) {
         return serializeUserEntity(userEntity)
                 .flatMapMany(user -> Flux.fromIterable(user.vcs().value()))
                 .filter(vcAttribute -> VC_JSON.equals(vcAttribute.type()))
@@ -256,10 +257,11 @@ public class UserDataServiceImpl implements UserDataService {
                     JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
 
                     return getVcTypeListFromVcJson(jsonNode)
-                            .map(vcTypeList -> new CredentialsBasicInfo(
+                            .map(vcTypeList -> new CredentialsBasicInfoWithExpirationDate(
                                     item.id(),
                                     vcTypeList,
-                                    jsonNode.get(CREDENTIAL_SUBJECT)
+                                    jsonNode.get(CREDENTIAL_SUBJECT),
+                                    ZonedDateTime.parse(jsonNode.get(EXPIRATION_DATE).asText())
                             ));
                 })
                 .collectList()
@@ -309,8 +311,6 @@ public class UserDataServiceImpl implements UserDataService {
                                 );
 
                                 matchingVCs.add(dto);
-                                // Break the inner loop once a match is found to avoid duplicate entries.
-                                break;
                             }
                         }
                     }

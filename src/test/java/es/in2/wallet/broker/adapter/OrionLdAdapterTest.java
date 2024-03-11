@@ -1,7 +1,6 @@
 package es.in2.wallet.broker.adapter;
 
-import es.in2.wallet.broker.config.properties.BrokerPathProperties;
-import es.in2.wallet.broker.config.properties.BrokerProperties;
+import es.in2.wallet.broker.config.properties.BrokerConfig;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -30,9 +29,7 @@ import static org.mockito.Mockito.when;
 class OrionLdAdapterTest {
 
     @Mock
-    private BrokerProperties brokerProperties;
-    @Mock
-    private BrokerPathProperties brokerPathProperties;
+    private BrokerConfig brokerConfig;
 
     @Mock
     private MockWebServer mockWebServer;
@@ -43,15 +40,15 @@ class OrionLdAdapterTest {
     @BeforeEach
     void setUp() throws IOException, NoSuchFieldException, IllegalAccessException {
         // Mock the behavior of broker properties to return predefined paths
-        when(brokerPathProperties.entities()).thenReturn("/entities");
-        when(brokerProperties.paths()).thenReturn(brokerPathProperties);
+        when(brokerConfig.getPathEntities()).thenReturn("/entities");
+        when(brokerConfig.getExternalUrl()).thenReturn("/external");
 
         // Initialize and start MockWebServer
         mockWebServer = new MockWebServer();
         mockWebServer.start();
 
         // Initialize OrionLdAdapter with mocked properties
-        orionLdAdapter = new OrionLdAdapter(brokerProperties);
+        orionLdAdapter = new OrionLdAdapter(brokerConfig);
 
         // Create a WebClient that points to the MockWebServer
         WebClient webClient = WebClient.builder()
@@ -85,7 +82,7 @@ class OrionLdAdapterTest {
 
         // Verify the POST request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/entities", recordedRequest.getPath());
+        assertEquals("/external/entities", recordedRequest.getPath());
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
@@ -112,7 +109,7 @@ class OrionLdAdapterTest {
 
         // Verify the GET request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/entities" + ENTITY_PREFIX + userId, recordedRequest.getPath());
+        assertEquals("/external/entities" + ENTITY_PREFIX + userId, recordedRequest.getPath());
         assertEquals("GET", recordedRequest.getMethod());
     }
 
@@ -132,7 +129,7 @@ class OrionLdAdapterTest {
 
         // Verify the PATCH request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/entities" + ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
+        assertEquals("/external/entities" + ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
         assertEquals("PATCH", recordedRequest.getMethod());
         assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent

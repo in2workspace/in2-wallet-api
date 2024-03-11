@@ -20,3 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structural Patterns, implementation of the Facade pattern.
 - Factory and Adapter Patterns: Current use of the Factory pattern combined with the Adapter pattern, enhancing the flexibility and reusability of object creation and interaction within the system.
 - Type Interpretation in Presentation Definition Filters: Added the capability to interpret the type of Verifiable Credential in Presentation Definition filters, allowing for more precise selection and verification of the credentials presented by the user. This enhancement facilitates adaptation to various use cases where verifying the specific type of the user's verifiable credential is required.
+
+## [v1.1.0]() - 2024-3-04
+### Added
+- Support Verifiable Credentials in cwt format
+- Introduced the authentication process for Verifiable Presentations flow [OpenID.VP] combined with the Self-Issued OP v2 specification [OpenID.SIOP2]
+- Introduced the Verifiable Presentation flow for CWT (Cbor web token) format
+- Introduced the abstraction of the configuration and the vault

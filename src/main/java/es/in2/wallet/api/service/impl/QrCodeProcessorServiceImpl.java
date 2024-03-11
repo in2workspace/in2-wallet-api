@@ -2,6 +2,7 @@ package es.in2.wallet.api.service.impl;
 
 import es.in2.wallet.api.ebsi.comformance.facade.EbsiCredentialServiceFacade;
 import es.in2.wallet.api.exception.NoSuchQrContentException;
+import es.in2.wallet.api.facade.AttestationExchangeServiceFacade;
 import es.in2.wallet.api.facade.CredentialIssuanceServiceFacade;
 import es.in2.wallet.api.model.QrType;
 import es.in2.wallet.api.service.QrCodeProcessorService;
@@ -20,6 +21,7 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
 
     private final CredentialIssuanceServiceFacade credentialIssuanceServiceFacade;
     private final EbsiCredentialServiceFacade ebsiCredentialServiceFacade;
+    private final AttestationExchangeServiceFacade attestationExchangeServiceFacade;
 
     @Override
     public Mono<Object> processQrContent(String processId, String authorizationToken, String qrContent) {
@@ -38,6 +40,12 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
                             return ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)
                                     .doOnSuccess(credential -> log.info("ProcessID: {} - Credential Issued: {}", processId, credential))
                                     .doOnError(e -> log.error("ProcessID: {} - Error while issuing credential: {}", processId, e.getMessage()));
+                        }
+                        case VC_LOGIN_REQUEST: {
+                            log.info("ProcessID: {} - Processing a Verifiable Credential Login Request", processId);
+                            return attestationExchangeServiceFacade.getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, qrContent)
+                                    .doOnSuccess(credential -> log.info("ProcessID: {} - Attestation Exchange", processId))
+                                    .doOnError(e -> log.error("ProcessID: {} - Error while processing Attestation Exchange: {}", processId, e.getMessage()));
                         }
                         case OPENID_AUTHENTICATION_REQUEST: {
                             log.info("ProcessID: {} - Processing an Authentication Request", processId);

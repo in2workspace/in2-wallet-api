@@ -42,7 +42,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
     @Override
     public Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent) {
         // get Credential Offer
-        return credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)
+        return credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId, qrContent, authorizationToken)
                 //get Issuer Server Metadata
                 .flatMap(credentialOffer -> credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId, credentialOffer)
                         //get Authorisation Server Metadata
@@ -67,6 +67,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * 5. Processes the user entity based on the obtained credential and DID.
      */
     private Mono<Void> getCredentialWithPreAuthorizedCode(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
+        log.info("ProcessId: {} - Getting Credential with Pre-Authorized Code", processId);
         return generateDid().flatMap(did ->
                 getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
                         .flatMap(tokenResponse -> getCredentialRecursive(
@@ -116,7 +117,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * The method returns a map containing key pair details, including the DID.
      */
     private Mono<String> generateDid() {
-        return didKeyGeneratorService.generateDidKeyJwkJcsPub();
+        return didKeyGeneratorService.generateDidKey();
     }
 
     /**
@@ -134,6 +135,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * If not, a new user entity is created and then updated with the credential.
      */
     private Mono<Void> processUserEntity(String processId, String authorizationToken, List<CredentialResponse> credentials, String did) {
+        log.info("ProcessId: {} - Processing User Entity", processId);
         return getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
@@ -149,6 +151,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * This process involves saving the DID, updating the entity, retrieving the updated entity, saving the VC, and finally updating the entity again with the VC information.
      */
     private Mono<Void> updateEntity(String processId, String userId, List<CredentialResponse> credentials, String entity, String did) {
+        log.info("ProcessId: {} - Updating User Entity", processId);
         return userDataService.saveDid(entity, did, "did:key")
                 .flatMap(updatedEntity ->
                         brokerService.updateEntity(processId, userId, updatedEntity)
@@ -172,6 +175,7 @@ public class CredentialIssuanceServiceFacadeImpl implements CredentialIssuanceSe
      * This involves creating the user, posting the entity, saving the DID to the entity, updating the entity with the DID, retrieving the updated entity, saving the VC, and performing a final update with the VC information.
      */
     private Mono<Void> createAndUpdateUser(String processId, String userId, List<CredentialResponse> credentials, String did) {
+        log.info("ProcessId: {} - Creating and Updating User Entity", processId);
         return userDataService.createUserEntity(userId)
                 .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
                 .then(brokerService.getEntityById(processId, userId))

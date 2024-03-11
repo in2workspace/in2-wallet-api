@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.test.StepVerifier;
 
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static es.in2.wallet.api.util.MessageUtils.*;
@@ -319,7 +320,8 @@ class UserDataServiceImplTest {
         String userEntityString = "userEntityJsonString";
         LinkedHashMap<String, Object> vcValue = new LinkedHashMap<>();
         vcValue.put("type", List.of("VerifiableCredential", "SpecificCredentialType"));
-        vcValue.put("credentialSubject", new LinkedHashMap<>(Map.of("id", "subjectId")));
+        vcValue.put(CREDENTIAL_SUBJECT, new LinkedHashMap<>(Map.of("id", "subjectId")));
+        vcValue.put(EXPIRATION_DATE, "2024-04-07T09:57:59Z");
 
         VCAttribute vcAttribute = new VCAttribute("vcId", VC_JSON, vcValue);
 
@@ -335,12 +337,13 @@ class UserDataServiceImplTest {
                 .thenReturn(new ObjectMapper().valueToTree(vcValue));
 
         StepVerifier.create(userDataServiceImpl.getUserVCsInJson(userEntityString))
-                .assertNext(credentialsBasicInfos -> {
-                    assertEquals(1, credentialsBasicInfos.size());
-                    CredentialsBasicInfo credentialsInfo = credentialsBasicInfos.get(0);
+                .assertNext(credentialsBasicInfoWithExpiredDate -> {
+                    assertEquals(1, credentialsBasicInfoWithExpiredDate.size());
+                    CredentialsBasicInfoWithExpirationDate credentialsInfo = credentialsBasicInfoWithExpiredDate.get(0);
                     assertEquals("vcId", credentialsInfo.id());
                     assertEquals(List.of("VerifiableCredential", "SpecificCredentialType"), credentialsInfo.vcType());
                     assertEquals("subjectId", credentialsInfo.credentialSubject().get("id").asText());
+                    assertEquals(ZonedDateTime.parse("2024-04-07T09:57:59Z"), credentialsInfo.expirationDate());
                 })
                 .verifyComplete();
     }

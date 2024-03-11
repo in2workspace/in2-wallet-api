@@ -2,7 +2,7 @@ package es.in2.wallet.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.config.properties.AuthServerProperties;
+import es.in2.wallet.api.config.AppConfig;
 import es.in2.wallet.api.model.AuthorisationServerMetadata;
 import es.in2.wallet.api.model.CredentialIssuerMetadata;
 import es.in2.wallet.api.service.impl.AuthorisationServerMetadataServiceImpl;
@@ -30,7 +30,7 @@ class AuthorisationServerMetadataServiceImplTest {
     @Mock
     private ObjectMapper objectMapper;
     @Mock
-    private AuthServerProperties authServerProperties;
+    private AppConfig appConfig;
     @InjectMocks
     private AuthorisationServerMetadataServiceImpl authorisationServerMetadataService;
 
@@ -44,8 +44,8 @@ class AuthorisationServerMetadataServiceImplTest {
             AuthorisationServerMetadata expectedAuthorizationServerMetadataWithTokenEndpointHardcodedTest = AuthorisationServerMetadata.builder().tokenEndpoint("https://example.com/example/token").build();
 
 
-            when(authServerProperties.domain()).thenReturn("https://example.com");
-            when(authServerProperties.tokenEndpoint()).thenReturn("https://example.com/example/token");
+            when(appConfig.getAuthServerExternalUrl()).thenReturn("https://example.com");
+            when(appConfig.getAuthServerTokenEndpoint()).thenReturn("https://example.com/example/token");
             when(getRequest("example/.well-known/openid-configuration",headers)).thenReturn(Mono.just("response"));
             when(objectMapper.readValue("response", AuthorisationServerMetadata.class)).thenReturn(authorizationServerMetadata);
 
@@ -63,7 +63,7 @@ class AuthorisationServerMetadataServiceImplTest {
             List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
             AuthorisationServerMetadata authorizationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("https://ebsi.com/token").build();
 
-            when(authServerProperties.domain()).thenReturn("https://example.com");
+            when(appConfig.getAuthServerExternalUrl()).thenReturn("https://example.com");
             when(getRequest("example/.well-known/openid-configuration",headers)).thenReturn(Mono.just("response"));
             when(objectMapper.readValue("response",AuthorisationServerMetadata.class)).thenReturn(authorizationServerMetadata);
 

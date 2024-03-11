@@ -7,10 +7,7 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.api.ebsi.comformance.service.VpTokenService;
 import es.in2.wallet.api.exception.FailedCommunicationException;
 import es.in2.wallet.api.exception.FailedSerializingException;
-import es.in2.wallet.api.model.AuthorisationServerMetadata;
-import es.in2.wallet.api.model.PresentationDefinition;
-import es.in2.wallet.api.model.PresentationSubmission;
-import es.in2.wallet.api.model.VcSelectorResponse;
+import es.in2.wallet.api.model.*;
 import es.in2.wallet.api.service.PresentationService;
 import es.in2.wallet.api.service.UserDataService;
 import es.in2.wallet.api.util.ApplicationUtils;
@@ -248,17 +245,17 @@ public class VpTokenServiceImpl implements VpTokenService {
      * @param presentationDefinitionId The ID of the presentation definition that this submission relates to.
      */
     private Mono<PresentationSubmission> buildPresentationSubmission(List<String> ids, String presentationDefinitionId) {
-        List<PresentationSubmission.DescriptorMap> descriptorMaps = new ArrayList<>();
+        List<DescriptorMap> descriptorMaps = new ArrayList<>();
 
         for (int i = 0; i < ids.size(); i++) {
             String id = ids.get(i);
-            PresentationSubmission.DescriptorMap nestedDescriptorMap = PresentationSubmission.DescriptorMap.builder()
+            DescriptorMap nestedDescriptorMap = DescriptorMap.builder()
                     .id(id)
                     .format(JWT_VC)
                     .path("$.vp.verifiableCredential[" + i + "]")
                     .pathNested(null).build();
 
-            PresentationSubmission.DescriptorMap descriptorMap = PresentationSubmission.DescriptorMap.builder()
+            DescriptorMap descriptorMap = DescriptorMap.builder()
                     .id(id)
                     .format(JWT_VP)
                     .path("$")

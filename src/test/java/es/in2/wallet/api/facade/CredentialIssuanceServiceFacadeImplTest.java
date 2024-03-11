@@ -91,10 +91,10 @@ class CredentialIssuanceServiceFacadeImplTest {
             String jwtProof = "jwt";
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
-            when(didKeyGeneratorService.generateDidKeyJwkJcsPub()).thenReturn(Mono.just(did));
+            when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(),credentialIssuerMetadata.credentialIssuer(),did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode,did,"proof")).thenReturn(Mono.just(jwtProof));
@@ -130,10 +130,10 @@ class CredentialIssuanceServiceFacadeImplTest {
             String jwtProof = "jwt";
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
-            when(didKeyGeneratorService.generateDidKeyJwkJcsPub()).thenReturn(Mono.just(did));
+            when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(),credentialIssuerMetadata.credentialIssuer(),did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode,did,"proof")).thenReturn(Mono.just(jwtProof));
@@ -175,10 +175,10 @@ class CredentialIssuanceServiceFacadeImplTest {
             mockedMap.put("code","123");
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
-            when(didKeyGeneratorService.generateDidKeyJwkJcsPub()).thenReturn(Mono.just(did));
+            when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
             when(authorisationRequestService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer,authorisationServerMetadata,credentialIssuerMetadata,did)).thenReturn(Mono.just(Tuples.of("jwt", "codeVerifier")));
             when(extractResponseType("jwt")).thenReturn(Mono.just("id_token"));
             when(idTokenService.getIdTokenResponse(processId,did,authorisationServerMetadata,"jwt")).thenReturn(Mono.just(mockedMap));
@@ -219,10 +219,10 @@ class CredentialIssuanceServiceFacadeImplTest {
             mockedMap.put("code","123");
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(processId, qrContent, authorizationToken)).thenReturn(Mono.just(credentialOffer));
             when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
-            when(didKeyGeneratorService.generateDidKeyJwkJcsPub()).thenReturn(Mono.just(did));
+            when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
             when(authorisationRequestService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer,authorisationServerMetadata,credentialIssuerMetadata,did)).thenReturn(Mono.just(Tuples.of("jwt", "codeVerifier")));
             when(extractResponseType("jwt")).thenReturn(Mono.just("vp_token"));
             when(vpTokenService.getVpRequest(processId,authorizationToken,authorisationServerMetadata,"jwt")).thenReturn(Mono.just(mockedMap));
