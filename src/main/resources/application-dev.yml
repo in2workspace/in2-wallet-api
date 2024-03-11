@@ -62,7 +62,13 @@ auth-server:
     path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
 
 wallet-wda:
-  url: https://walletidp.dev.in2.es
+  urls:
+    - scheme: https
+      domain: wallet-wda-custom-domain-uri
+      port: 443
+    - scheme: http
+      domain: localhost
+      port: 4200
 
 management:
   health:

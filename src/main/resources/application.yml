@@ -109,4 +109,7 @@ identity-provider:
   password: adminPass
 
 wallet-wda:
-  url: http://localhost:4200
+  urls:
+    - scheme: http
+      domain: localhost
+      port: 4200

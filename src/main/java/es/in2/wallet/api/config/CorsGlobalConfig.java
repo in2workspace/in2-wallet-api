@@ -17,7 +17,7 @@ public class CorsGlobalConfig implements WebFluxConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry corsRegistry) {
         corsRegistry.addMapping(GLOBAL_ENDPOINTS_API)
-                .allowedOrigins(appConfig.getWalletDrivingUrl(), "http://localhost:4200")
+                .allowedOrigins(appConfig.getWalletDrivingUrls().toArray(String[]::new))
                 .allowedMethods(ALLOWED_METHODS)
                 .maxAge(3600);
     }

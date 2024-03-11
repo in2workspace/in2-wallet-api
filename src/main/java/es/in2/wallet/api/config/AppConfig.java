@@ -9,6 +9,8 @@ import es.in2.wallet.configuration.util.ConfigAdapterFactory;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 @Configuration
 public class AppConfig {
     private final GenericConfigAdapter genericConfigAdapter;
@@ -40,25 +42,24 @@ public class AppConfig {
         this.identityProviderProperties = identityProviderProperties;
     }
 
-    public String getWalletDrivingUrl() {
-        //TODO: Change to get from config when azure app configuration variable is created
-        return walletDrivingApplicationProperties.url();
+    public List<String> getWalletDrivingUrls() {
+        return walletDrivingApplicationProperties.urls().stream()
+                .map(urlProperties -> {
+                    String domain = "localhost".equalsIgnoreCase(urlProperties.domain()) ?
+                            urlProperties.domain() :
+                            genericConfigAdapter.getConfiguration(urlProperties.domain());
+                    return formatUrl(urlProperties.scheme(), domain, urlProperties.port());
+                })
+                .toList();
     }
 
     public String getAuthServerInternalUrl() {
         return authServerInternalUrl;
     }
 
-    private String initAuthServerInternalUrl() {
-        if (authServerProperties.internalUrl().port() == 443) {
-            return String.format("%s://%s%s",
-                    authServerProperties.internalUrl().scheme(),
-                    genericConfigAdapter.getConfiguration(authServerProperties.internalUrl().domain()),
-                    authServerProperties.internalUrl().path());
-        }
 
-        return  String.format("%s://%s:%d%s",
-                authServerProperties.internalUrl().scheme(),
+    private String initAuthServerInternalUrl() {
+        return formatUrl(authServerProperties.internalUrl().scheme(),
                 genericConfigAdapter.getConfiguration(authServerProperties.internalUrl().domain()),
                 authServerProperties.internalUrl().port(),
                 authServerProperties.internalUrl().path());
@@ -69,15 +70,7 @@ public class AppConfig {
     }
 
     private String initAuthServerExternalUrl() {
-        if (authServerProperties.externalUrl().port() == 443) {
-            return String.format("%s://%s%s",
-                    authServerProperties.externalUrl().scheme(),
-                    genericConfigAdapter.getConfiguration(authServerProperties.externalUrl().domain()),
-                    authServerProperties.externalUrl().path());
-        }
-
-        return  String.format("%s://%s:%d%s",
-                authServerProperties.externalUrl().scheme(),
+        return formatUrl(authServerProperties.externalUrl().scheme(),
                 genericConfigAdapter.getConfiguration(authServerProperties.externalUrl().domain()),
                 authServerProperties.externalUrl().port(),
                 authServerProperties.externalUrl().path());
@@ -88,15 +81,7 @@ public class AppConfig {
     }
 
     private String initAuthServerTokenEndpoint() {
-        if (authServerProperties.tokenUrl().port() == 443) {
-            return String.format("%s://%s%s",
-                    authServerProperties.tokenUrl().scheme(),
-                    genericConfigAdapter.getConfiguration(authServerProperties.tokenUrl().domain()),
-                    authServerProperties.tokenUrl().path());
-        }
-
-        return String.format("%s://%s:%d%s",
-                authServerProperties.tokenUrl().scheme(),
+        return formatUrl(authServerProperties.tokenUrl().scheme(),
                 genericConfigAdapter.getConfiguration(authServerProperties.tokenUrl().domain()),
                 authServerProperties.tokenUrl().port(),
                 authServerProperties.tokenUrl().path());
@@ -125,5 +110,21 @@ public class AppConfig {
     public String getIdentityProviderClientSecret() {
         //TODO: Change to get from config when azure app configuration variable is created
         return identityProviderProperties.clientSecret();
+    }
+
+    private String formatUrl(String scheme, String domain, int port) {
+        if (port == 443) {
+            return String.format("%s://%s", scheme, domain);
+        }
+
+        return String.format("%s://%s:%d", scheme, domain, port);
+    }
+
+    private String formatUrl(String scheme, String domain, int port, String path) {
+        if (port == 443) {
+            return String.format("%s://%s%s", scheme, domain, path);
+        }
+
+        return String.format("%s://%s:%d%s", scheme, domain, port, path);
     }
 }
