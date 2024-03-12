@@ -6,11 +6,11 @@ broker:
   external-url:
     scheme: "https"
     domain: "your-app-domain"
-    port: "443"
+    port: 443
   internal-url:
     scheme: "https"
     domain: "your-app-domain"
-    port: "443"
+    port: 443
   paths:
     entities: "/ngsi-ld/v1/entities"
 
@@ -33,17 +33,17 @@ auth-server:
   external-url:
     scheme: "https"
     domain: "your-app-domain"
-    port: "443"
+    port: 443
     path: "your-path"
   internal-url:
     scheme: "https"
     domain: "your-app-domain"
-    port: "443"
+    port: 443
     path: "your-path"
   token-url:
     scheme: "https"
     domain: "your-app-domain"
-    port: "443"
+    port: 443
     path: "your-path"
 
 wallet-wda:
