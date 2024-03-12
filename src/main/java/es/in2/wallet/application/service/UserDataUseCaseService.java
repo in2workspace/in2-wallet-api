@@ -5,7 +5,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-public interface UserDataService {
+public interface UserDataUseCaseService {
     public Mono<List<CredentialsBasicInfoWithExpirationDate>> getUserVCs(String processId, String userId);
     Mono<Void> deleteVerifiableCredentialById(String processId,String credentialId, String userId);
 }

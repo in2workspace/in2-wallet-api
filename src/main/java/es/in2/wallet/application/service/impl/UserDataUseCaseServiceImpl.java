@@ -1,6 +1,6 @@
 package es.in2.wallet.application.service.impl;
 
-import es.in2.wallet.application.service.UserDataService;
+import es.in2.wallet.application.service.UserDataUseCaseService;
 import es.in2.wallet.domain.model.CredentialsBasicInfoWithExpirationDate;
 import es.in2.wallet.application.port.VaultService;
 import es.in2.wallet.application.port.BrokerService;
@@ -15,7 +15,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserDataServiceImpl implements UserDataService {
+public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
 
     private final BrokerService brokerService;
     private final es.in2.wallet.domain.service.UserDataService userDataService;

@@ -24,7 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UserDataServiceImplTest {
+class UserDataUseCaseServiceImplTest {
 
     @Mock
     private ObjectMapper objectMapper;
