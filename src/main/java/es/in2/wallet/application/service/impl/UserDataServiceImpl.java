@@ -2,7 +2,7 @@ package es.in2.wallet.application.service.impl;
 
 import es.in2.wallet.application.service.UserDataService;
 import es.in2.wallet.domain.model.CredentialsBasicInfoWithExpirationDate;
-import es.in2.wallet.domain.service.VaultService;
+import es.in2.wallet.application.port.VaultService;
 import es.in2.wallet.application.port.BrokerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

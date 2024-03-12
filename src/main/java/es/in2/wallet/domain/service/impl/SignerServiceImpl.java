@@ -12,7 +12,7 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.JWTSType;
 import es.in2.wallet.domain.service.SignerService;
-import es.in2.wallet.domain.service.VaultService;
+import es.in2.wallet.application.port.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;

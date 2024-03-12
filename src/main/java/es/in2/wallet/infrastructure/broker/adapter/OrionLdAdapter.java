@@ -33,7 +33,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<Void> postEntity(String processId, String requestBody) {
         return webClient.post()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getPathEntities())
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath())
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
@@ -44,7 +44,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<Optional<String>> getEntityById(String processId, String userId) {
         return webClient.get()
-                .uri( brokerConfig.getExternalUrl() + brokerConfig.getPathEntities() + ENTITY_PREFIX + userId)
+                .uri( brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .onStatus(status -> status != null && status.is4xxClientError(), response -> response.createException().flatMap(Mono::error))
@@ -59,7 +59,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<Void> updateEntity(String processId, String userId, String requestBody) {
         return webClient.patch()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getPathEntities() + ENTITY_PREFIX + userId + ATTRIBUTES)
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + ENTITY_PREFIX + userId + ATTRIBUTES)
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)

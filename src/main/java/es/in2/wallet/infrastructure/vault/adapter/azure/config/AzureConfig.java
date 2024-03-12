@@ -1,7 +1,7 @@
 package es.in2.wallet.infrastructure.vault.adapter.azure.config;
 
-import es.in2.wallet.infrastructure.config.service.GenericConfigAdapter;
-import es.in2.wallet.infrastructure.config.util.ConfigAdapterFactory;
+import es.in2.wallet.infrastructure.appconfiguration.service.GenericConfigAdapter;
+import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import es.in2.wallet.infrastructure.vault.adapter.azure.config.properties.AzureKeyVaultProperties;
 import es.in2.wallet.infrastructure.vault.model.VaultProviderEnum;
 import es.in2.wallet.infrastructure.vault.util.VaultProviderAnnotation;

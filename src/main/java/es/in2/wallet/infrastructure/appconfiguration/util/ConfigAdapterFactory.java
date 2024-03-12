@@ -1,7 +1,7 @@
-package es.in2.wallet.infrastructure.config.util;
+package es.in2.wallet.infrastructure.appconfiguration.util;
 
-import es.in2.wallet.infrastructure.config.exception.ConfigAdapterFactoryException;
-import es.in2.wallet.infrastructure.config.service.GenericConfigAdapter;
+import es.in2.wallet.infrastructure.appconfiguration.exception.ConfigAdapterFactoryException;
+import es.in2.wallet.infrastructure.appconfiguration.service.GenericConfigAdapter;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

@@ -1,7 +1,6 @@
 package es.in2.wallet.application.service.impl;
 
-import es.in2.wallet.domain.service.EbsiAuthorisationRequestService;
-import es.in2.wallet.domain.service.EbsiAuthorisationResponseService;
+import es.in2.wallet.domain.service.EbsiAuthorisationService;
 import es.in2.wallet.domain.service.EbsiIdTokenService;
 import es.in2.wallet.domain.service.EbsiVpTokenService;
 import es.in2.wallet.application.service.CredentialIssuanceService;
@@ -36,8 +35,7 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
     private final UserDataService userDataService;
     private final EbsiIdTokenService ebsiIdTokenService;
     private final EbsiVpTokenService ebsiVpTokenService;
-    private final EbsiAuthorisationRequestService ebsiAuthorisationRequestService;
-    private final EbsiAuthorisationResponseService ebsiAuthorisationResponseService;
+    private final EbsiAuthorisationService ebsiAuthorisationService;
 
     @Override
     public Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent) {
@@ -84,7 +82,7 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
      */
     private Mono<Void> getCredentialWithAuthorizedCode(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
         return generateDid()
-                .flatMap(did -> ebsiAuthorisationRequestService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did)
+                .flatMap(did -> ebsiAuthorisationService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did)
                         .flatMap(tuple -> extractResponseType(tuple.getT1())
                                 .flatMap(responseType -> {
                                     if ("id_token".equals(responseType)) {
@@ -95,7 +93,7 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
                                         return Mono.error(new RuntimeException("Not known response_type."));
                                     }
                                 })
-                                .flatMap(params -> ebsiAuthorisationResponseService.sendTokenRequest(tuple.getT2(), did, authorisationServerMetadata, params)))
+                                .flatMap(params -> ebsiAuthorisationService.sendTokenRequest(tuple.getT2(), did, authorisationServerMetadata, params)))
                         // get Credentials
                         .flatMap(tokenResponse -> getCredentialRecursive(
                                  tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), new ArrayList<>(), 0

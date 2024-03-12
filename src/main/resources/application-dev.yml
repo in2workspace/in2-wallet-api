@@ -1,78 +1,56 @@
 server:
   port: 8088
 
-# Context Broker Configuration
 broker:
-  provider: "scorpio"
+  provider: scorpio
   external-url:
     scheme: "https"
-    domain: "aca-wallet-scorpio-ms-uri"
-    #domain: "epu-dev-ca-01.thankfulsand-d95793a6.westeurope.azurecontainerapps.io"
-    port: 443
+    domain: "your-app-domain"
+    port: "443"
   internal-url:
     scheme: "https"
-    domain: "aca-wallet-scorpio-ms-uri"
-    #domain: "epu-dev-ca-01.thankfulsand-d95793a6.westeurope.azurecontainerapps.io"
-    port: 443
+    domain: "your-app-domain"
+    port: "443"
   paths:
     entities: "/ngsi-ld/v1/entities"
 
-# Configuration providers
 app:
   config-source:
-    name: azure # azure yaml
+    name: azure
 
-# Vault providers
 vault:
   provider:
-    name: azure # azure hashicorp
+    name: azure
 
-# Azure Configuration
 azure:
-  # App Configuration
   app:
-      label:
-        global: service-discovery
-  # KeyVault Configuration
+    label:
+      global: service-discovery
   keyvault:
-    endpoint: key-vault-uri
-    #endpoint: https://epu-dev-kv-01.vault.azure.net/
+    endpoint: "your-endpoint"
 
 auth-server:
-  #externalUrl-domain: https://preproduccio-iep.dev.in2.es/cross-keycloak
   external-url:
-    scheme: https
-    domain: public-api-uri-for-iep-apps
-    #domain: "preproduccio-iep.dev.in2.es"
-    port: 443
-    path: "/cross-keycloak/realms/EAAProvider"
-  #internalUrl-domain: https://epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io/realms/EAAProvider
+    scheme: "https"
+    domain: "your-app-domain"
+    port: "443"
+    path: "your-path"
   internal-url:
-    scheme: https
-    domain: aca-cross-keycloak-ms-uri
-    #domain: "epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io"
-    port: 443
-    path: "/realms/EAAProvider"
-  #token-endpoint: https://epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token
+    scheme: "https"
+    domain: "your-app-domain"
+    port: "443"
+    path: "your-path"
   token-url:
-    scheme: https
-    domain: aca-cross-keycloak-ms-uri
-    #domain: "epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io"
-    port: 443
-    path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
+    scheme: "https"
+    domain: "your-app-domain"
+    port: "443"
+    path: "your-path"
 
 wallet-wda:
   urls:
     - scheme: https
-      domain: wallet-wda-custom-domain-uri
+      domain: "your-wda-domain"
       port: 443
     - scheme: http
       domain: localhost
       port: 4200
-
-management:
-  health:
-    vault:
-      enabled: false
-  tracing:
-    enabled: false

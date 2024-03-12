@@ -2,7 +2,7 @@ package es.in2.wallet.domain.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.infrastructure.core.config.AppConfig;
+import es.in2.wallet.application.port.AppConfig;
 import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.CredentialIssuerMetadata;
@@ -55,7 +55,7 @@ public class CredentialIssuerMetadataServiceImpl implements CredentialIssuerMeta
      *
      * @param response The response String to be parsed.
      * @return An instance of Mono<CredentialIssuerMetadata>.
-     * @deprecated (since = "1.0.0", forRemoval = true) This implementation is temporary and should be replaced in future versions.
+     * @deprecated (since = " 1.0.0 ", forRemoval = true) This implementation is temporary and should be replaced in future versions.
      */
     @Deprecated(since = "1.0.0", forRemoval = true)
     private Mono<CredentialIssuerMetadata> parseCredentialIssuerMetadataResponse(String response) {
@@ -71,8 +71,7 @@ public class CredentialIssuerMetadataServiceImpl implements CredentialIssuerMeta
                         .authorizationServer(appConfig.getAuthServerInternalUrl())
                         .build();
                 return Mono.just(credentialIssuerMetadataWithCredentialEndpointHardcoded);
-            }
-            else {
+            } else {
                 // deserialize Credential Issuer Metadata
                 return Mono.just(objectMapper.readValue(response, CredentialIssuerMetadata.class));
             }

@@ -1,25 +1,24 @@
-package es.in2.wallet.infrastructure.core.config;
+package es.in2.wallet.infrastructure.appconfiguration.service;
 
 
+import es.in2.wallet.application.port.AppConfig;
 import es.in2.wallet.infrastructure.core.config.properties.AuthServerProperties;
 import es.in2.wallet.infrastructure.core.config.properties.WalletDrivingApplicationProperties;
-import es.in2.wallet.infrastructure.ebsi.config.properties.IdentityProviderProperties;
-import es.in2.wallet.infrastructure.config.service.GenericConfigAdapter;
-import es.in2.wallet.infrastructure.config.util.ConfigAdapterFactory;
+import es.in2.wallet.infrastructure.ebsi.config.properties.EbsiProperties;
+import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
 @Configuration
-public class AppConfig {
+public class AppConfigImpl implements AppConfig {
+
     private final GenericConfigAdapter genericConfigAdapter;
     private final AuthServerProperties authServerProperties;
     private final WalletDrivingApplicationProperties walletDrivingApplicationProperties;
-    private final IdentityProviderProperties identityProviderProperties;
+    private final EbsiProperties ebsiProperties;
 
-
-    // Variable for caching the configuration
     private String authServerInternalUrl;
     private String authServerExternalUrl;
     private String authServerTokenEndpoint;
@@ -31,17 +30,17 @@ public class AppConfig {
         authServerTokenEndpoint = initAuthServerTokenEndpoint();
     }
 
-
-    public AppConfig(ConfigAdapterFactory configAdapterFactory,
-                     AuthServerProperties authServerProperties,
-                     WalletDrivingApplicationProperties walletDrivingApplicationProperties,
-                     IdentityProviderProperties identityProviderProperties) {
+    public AppConfigImpl(ConfigAdapterFactory configAdapterFactory,
+                         AuthServerProperties authServerProperties,
+                         WalletDrivingApplicationProperties walletDrivingApplicationProperties,
+                         EbsiProperties ebsiProperties) {
         this.genericConfigAdapter = configAdapterFactory.getAdapter();
         this.authServerProperties = authServerProperties;
         this.walletDrivingApplicationProperties = walletDrivingApplicationProperties;
-        this.identityProviderProperties = identityProviderProperties;
+        this.ebsiProperties = ebsiProperties;
     }
 
+    @Override
     public List<String> getWalletDrivingUrls() {
         return walletDrivingApplicationProperties.urls().stream()
                 .map(urlProperties -> {
@@ -53,6 +52,7 @@ public class AppConfig {
                 .toList();
     }
 
+    @Override
     public String getAuthServerInternalUrl() {
         return authServerInternalUrl;
     }
@@ -65,6 +65,7 @@ public class AppConfig {
                 authServerProperties.internalUrl().path());
     }
 
+    @Override
     public String getAuthServerExternalUrl() {
         return authServerExternalUrl;
     }
@@ -76,6 +77,7 @@ public class AppConfig {
                 authServerProperties.externalUrl().path());
     }
 
+    @Override
     public String getAuthServerTokenEndpoint() {
         return authServerTokenEndpoint;
     }
@@ -87,36 +89,35 @@ public class AppConfig {
                 authServerProperties.tokenUrl().path());
     }
 
+    @Override
     public String getIdentityProviderUrl() {
-        //TODO: Change to get from config when azure app configuration variable is created
-        return identityProviderProperties.url();
+        return ebsiProperties.url();
     }
 
+    @Override
     public String getIdentityProviderUsername() {
-        //TODO: Change to get from config when azure app configuration variable is created
-        return identityProviderProperties.username();
+        return ebsiProperties.username();
     }
 
+    @Override
     public String getIdentityProviderPassword() {
-        //TODO: Change to get from config when azure app configuration variable is created
-        return identityProviderProperties.password();
+        return ebsiProperties.password();
     }
 
+    @Override
     public String getIdentityProviderClientId() {
-        //TODO: Change to get from config when azure app configuration variable is created
-        return identityProviderProperties.clientId();
+        return ebsiProperties.clientId();
     }
 
+    @Override
     public String getIdentityProviderClientSecret() {
-        //TODO: Change to get from config when azure app configuration variable is created
-        return identityProviderProperties.clientSecret();
+        return ebsiProperties.clientSecret();
     }
 
     private String formatUrl(String scheme, String domain, int port) {
         if (port == 443) {
             return String.format("%s://%s", scheme, domain);
         }
-
         return String.format("%s://%s:%d", scheme, domain, port);
     }
 
@@ -124,7 +125,7 @@ public class AppConfig {
         if (port == 443) {
             return String.format("%s://%s%s", scheme, domain, path);
         }
-
         return String.format("%s://%s:%d%s", scheme, domain, port, path);
     }
+
 }

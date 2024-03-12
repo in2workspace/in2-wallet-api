@@ -1,6 +1,6 @@
-package es.in2.wallet.infrastructure.config.util;
+package es.in2.wallet.infrastructure.appconfiguration.util;
 
-import es.in2.wallet.infrastructure.config.model.ConfigProviderName;
+import es.in2.wallet.infrastructure.appconfiguration.model.ConfigProviderName;
 import org.springframework.context.annotation.Conditional;
 
 import java.lang.annotation.ElementType;

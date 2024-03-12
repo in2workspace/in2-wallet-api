@@ -39,7 +39,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     public Mono<Void> postEntity(String processId, String requestBody) {
         MediaType mediaType = getContentTypeAndAcceptMediaType(requestBody);
         return webClient.post()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getPathEntities())
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath())
                 .accept(mediaType)
                 .contentType(mediaType)
                 .bodyValue(requestBody)
@@ -53,7 +53,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     @Override
     public Mono<Optional<String>> getEntityById(String processId, String userId) {
         return webClient.get()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getPathEntities() + ENTITY_PREFIX + userId)
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .onStatus(status -> status != null && status.is4xxClientError(), response -> response.createException().flatMap(Mono::error))
@@ -71,7 +71,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     public Mono<Void> updateEntity(String processId, String userId, String requestBody) {
         MediaType mediaType = getContentTypeAndAcceptMediaType(requestBody);
         return webClient.patch()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getPathEntities() + ENTITY_PREFIX + userId + ATTRIBUTES)
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + ENTITY_PREFIX + userId + ATTRIBUTES)
                 .accept(mediaType)
                 .contentType(mediaType)
                 .bodyValue(requestBody)

@@ -3,11 +3,11 @@ package es.in2.wallet.infrastructure.ebsi.config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import es.in2.wallet.application.port.AppConfig;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.domain.service.DidKeyGeneratorService;
 import es.in2.wallet.domain.service.UserDataService;
 import es.in2.wallet.domain.util.ApplicationUtils;
-import es.in2.wallet.infrastructure.core.config.AppConfig;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,10 +37,9 @@ public class EbsiConfig {
 
     private String didForEbsi;
 
-    // fixme: no se está utilizando el init?
     //@PostConstruct
     @Tag(name = "EbsiConfig", description = "Generate Did for ebsi purposes")
-    public void init(){
+    public void init() {
         generateEbsiDid().subscribe(did -> this.didForEbsi = did);
     }
 
@@ -61,12 +60,13 @@ public class EbsiConfig {
                 "&client_secret=" + URLEncoder.encode(appConfig.getIdentityProviderClientSecret(), StandardCharsets.UTF_8);
 
         return Mono.delay(Duration.ofSeconds(30))
-                .then(postRequest(appConfig.getIdentityProviderUrl(),headers,body))
+                .then(postRequest(appConfig.getIdentityProviderUrl(), headers, body))
                 .flatMap(response -> {
                     log.debug(response);
                     Map<String, Object> jsonObject;
                     try {
-                        jsonObject = objectMapper.readValue(response, new TypeReference<>() {});
+                        jsonObject = objectMapper.readValue(response, new TypeReference<>() {
+                        });
                     } catch (JsonProcessingException e) {
                         return Mono.error(new RuntimeException(e));
                     }
@@ -90,7 +90,7 @@ public class EbsiConfig {
                             log.error("Error while processing did generation: {}", e.getMessage());
 
                             return Mono.error(new RuntimeException("The user already exist"));
-                }
+                        }
                 );
 
 
@@ -102,22 +102,22 @@ public class EbsiConfig {
 
     private Mono<Void> createAndUpdateUser(String processId, String userId, String did) {
         return userDataService.createUserEntity(userId)
-                        .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
-                        .then(brokerService.getEntityById(processId, userId))
-                        .flatMap(optionalEntity ->
-                                optionalEntity.map(entity ->
-                                                userDataService.saveDid(entity, did, "did:key")
-                                                        .flatMap(didUpdatedEntity -> brokerService.updateEntity(processId, userId, didUpdatedEntity))
-                                        )
-                                        .orElseGet(() -> Mono.error(new RuntimeException("Entity not found after creation."))
-                                        ));
+                .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
+                .then(brokerService.getEntityById(processId, userId))
+                .flatMap(optionalEntity ->
+                        optionalEntity.map(entity ->
+                                        userDataService.saveDid(entity, did, "did:key")
+                                                .flatMap(didUpdatedEntity -> brokerService.updateEntity(processId, userId, didUpdatedEntity))
+                                )
+                                .orElseGet(() -> Mono.error(new RuntimeException("Entity not found after creation."))
+                                ));
     }
 
     private Mono<String> getDidForUserAlreadyCreated(String processId, String userId) {
-        return  brokerService.getEntityById(processId, userId)
+        return brokerService.getEntityById(processId, userId)
                 .flatMap(optionalEntity ->
                         optionalEntity.map(userDataService::getDidsByUserEntity)
-                                        .orElseGet(() -> Mono.error(new RuntimeException("Entity not found after creation."))))
+                                .orElseGet(() -> Mono.error(new RuntimeException("Entity not found after creation."))))
                 .flatMapIterable(dids -> dids)
                 .next();
     }

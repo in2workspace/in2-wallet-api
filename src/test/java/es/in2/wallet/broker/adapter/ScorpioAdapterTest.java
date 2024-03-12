@@ -46,7 +46,7 @@ class ScorpioAdapterTest {
     @BeforeEach
     void setUp() throws IOException, NoSuchFieldException, IllegalAccessException {
         // Mock the behavior of broker properties to return predefined paths
-        when(brokerConfig.getPathEntities()).thenReturn("/entities");
+        when(brokerConfig.getEntitiesPath()).thenReturn("/entities");
         when(brokerConfig.getExternalUrl()).thenReturn("/external");
 
         // Initialize and start MockWebServer

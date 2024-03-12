@@ -18,10 +18,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
 
+@Slf4j
 @Getter
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class PinRequestWebSocketHandler implements WebSocketHandler {
 
     private final ObjectMapper objectMapper;
@@ -38,7 +38,6 @@ public class PinRequestWebSocketHandler implements WebSocketHandler {
                         // Deserialize the incoming message to a ClientMessage object
                         ClientMessage clientMessage = objectMapper.readValue(message.getPayloadAsText(), ClientMessage.class);
                         String sessionId = session.getId();
-
                         // Case for handling JWT user token for session linkage
                         if (clientMessage.id() != null) {
                             return getUserIdFromToken(clientMessage.id())
@@ -70,7 +69,6 @@ public class PinRequestWebSocketHandler implements WebSocketHandler {
                             }
                             return Mono.just(message.getPayloadAsText());
                         }
-
                         log.debug(message.getPayloadAsText());
                         return Mono.just(message.getPayloadAsText());
                     } catch (Exception e) {
@@ -103,7 +101,6 @@ public class PinRequestWebSocketHandler implements WebSocketHandler {
     private void cleanUpResources(WebSocketSession session) {
         String sessionId = session.getId();
         String userId = sessionToUserIdMap.get(sessionId);
-
         // If a user ID is associated with the session, clean up resources
         if (userId != null) {
             // Remove the user's PIN sink
@@ -113,4 +110,5 @@ public class PinRequestWebSocketHandler implements WebSocketHandler {
             log.debug("Cleaned up resources for session: " + sessionId + " and user: " + userId);
         }
     }
+
 }

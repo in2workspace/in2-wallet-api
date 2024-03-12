@@ -3,7 +3,7 @@ package es.in2.wallet.api.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.infrastructure.core.config.AppConfig;
+import es.in2.wallet.application.port.AppConfig;
 import es.in2.wallet.domain.model.CredentialIssuerMetadata;
 import es.in2.wallet.domain.model.CredentialOffer;
 import es.in2.wallet.domain.service.impl.CredentialIssuerMetadataServiceImpl;
@@ -49,16 +49,17 @@ class CredentialIssuerMetadataServiceImplTest {
             JsonNode jsonNode = objectMapper2.readTree(json);
 
             when(appConfig.getAuthServerInternalUrl()).thenReturn("https://example.com");
-            when(getRequest("example/.well-known/openid-credential-issuer",headers)).thenReturn(Mono.just("response"));
+            when(getRequest("example/.well-known/openid-credential-issuer", headers)).thenReturn(Mono.just("response"));
             when(objectMapper.readTree("response")).thenReturn(jsonNode);
             when(objectMapper.treeToValue(jsonNode, CredentialIssuerMetadata.class)).thenReturn(credentialIssuerMetadataWithoutTheHardcodedEndpoint);
 
-            StepVerifier.create(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer))
+            StepVerifier.create(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId, credentialOffer))
                     .expectNext(expectedCredentialIssuerMetadata)
                     .verifyComplete();
 
         }
     }
+
     @Test
     void getCredentialIssuerMetadataFromCredentialOfferWithoutCredentialEndpointHardcodedTest() throws JsonProcessingException {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
@@ -71,25 +72,26 @@ class CredentialIssuerMetadataServiceImplTest {
             ObjectMapper objectMapper2 = new ObjectMapper();
             JsonNode jsonNode = objectMapper2.readTree(json);
 
-            when(getRequest("example/.well-known/openid-credential-issuer",headers)).thenReturn(Mono.just("response"));
+            when(getRequest("example/.well-known/openid-credential-issuer", headers)).thenReturn(Mono.just("response"));
             when(objectMapper.readTree("response")).thenReturn(jsonNode);
             when(objectMapper.readValue("response", CredentialIssuerMetadata.class)).thenReturn(expectedCredentialIssuerMetadata);
 
-            StepVerifier.create(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer))
+            StepVerifier.create(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId, credentialOffer))
                     .expectNext(expectedCredentialIssuerMetadata)
                     .verifyComplete();
 
         }
     }
+
     @Test
-    void getCredentialIssuerMetadataError(){
+    void getCredentialIssuerMetadataError() {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             CredentialOffer credentialOffer = CredentialOffer.builder().credentialIssuer("example").build();
             List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
 
-            when(getRequest("example/.well-known/openid-credential-issuer",headers)).thenReturn(Mono.error(new RuntimeException()));
-            StepVerifier.create(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer))
+            when(getRequest("example/.well-known/openid-credential-issuer", headers)).thenReturn(Mono.error(new RuntimeException()));
+            StepVerifier.create(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId, credentialOffer))
                     .expectError(RuntimeException.class)
                     .verify();
         }
@@ -102,10 +104,11 @@ class CredentialIssuerMetadataServiceImplTest {
             CredentialOffer credentialOffer = CredentialOffer.builder().credentialIssuer("example").build();
             List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
 
-            when(getRequest("example/.well-known/openid-credential-issuer",headers)).thenReturn(Mono.just("response"));
-            when(objectMapper.readTree("response")).thenThrow(new JsonProcessingException("Deserialization error"){});
+            when(getRequest("example/.well-known/openid-credential-issuer", headers)).thenReturn(Mono.just("response"));
+            when(objectMapper.readTree("response")).thenThrow(new JsonProcessingException("Deserialization error") {
+            });
 
-            StepVerifier.create(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId,credentialOffer))
+            StepVerifier.create(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId, credentialOffer))
                     .expectError(RuntimeException.class)
                     .verify();
         }

@@ -3,7 +3,8 @@ package es.in2.wallet.api.ebsi.comformance.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.domain.service.impl.EbsiAuthorisationRequestServiceImpl;
+import es.in2.wallet.domain.model.TokenResponse;
+import es.in2.wallet.domain.service.impl.EbsiAuthorisationServiceImpl;
 import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
 import es.in2.wallet.domain.model.CredentialIssuerMetadata;
@@ -24,19 +25,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.extractAllQueryParams;
-import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
+import static es.in2.wallet.domain.util.ApplicationUtils.*;
+import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
+import static es.in2.wallet.domain.util.MessageUtils.GLOBAL_STATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class EbsiAuthorisationRequestServiceImplTest {
+class EbsiAuthorisationServiceImplTest {
     @Mock
     private ObjectMapper objectMapper;
     @InjectMocks
-    private EbsiAuthorisationRequestServiceImpl authorisationRequestService;
+    private EbsiAuthorisationServiceImpl ebsiAuthorisationService;
 
     @Test
     void getRequestWithOurGeneratedCodeVerifierTest() throws JsonProcessingException {
@@ -61,7 +63,7 @@ class EbsiAuthorisationRequestServiceImplTest {
             map.put("request","jwt");
             when(extractAllQueryParams("redirect response")).thenReturn(Mono.just(map));
 
-            StepVerifier.create(authorisationRequestService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did))
+            StepVerifier.create(ebsiAuthorisationService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did))
                     .assertNext(tuple -> {
                         assertEquals("jwt", tuple.getT1());
 
@@ -92,7 +94,7 @@ class EbsiAuthorisationRequestServiceImplTest {
 
             when(getRequest(anyString(), eq(headers))).thenReturn(Mono.error(new RuntimeException("Error during request")));
 
-            StepVerifier.create(authorisationRequestService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did))
+            StepVerifier.create(ebsiAuthorisationService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did))
                     .expectError(FailedCommunicationException.class)
                     .verify();
         }
@@ -121,11 +123,52 @@ class EbsiAuthorisationRequestServiceImplTest {
             map.put("not known property","example");
             when(extractAllQueryParams("redirect response")).thenReturn(Mono.just(map));
 
-            StepVerifier.create(authorisationRequestService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did))
+            StepVerifier.create(ebsiAuthorisationService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did))
                     .expectError(IllegalArgumentException.class)
                     .verify();
 
 
+        }
+    }
+
+    @Test
+    void sendTokenRequest_SuccessfulFlow() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
+            // Setup
+            String codeVerifier = "codeVerifier";
+            String did = "did:key:example";
+            AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("https://example/token").build();
+            Map<String, String> params = Map.of("state", GLOBAL_STATE, "code", "authCode");
+
+            TokenResponse expectedTokenResponse = TokenResponse.builder().accessToken("token").build();
+            when(objectMapper.readValue(anyString(), eq(TokenResponse.class))).thenReturn(expectedTokenResponse);
+
+            // Mock postRequest to simulate successful token response
+            when(postRequest(eq(authorisationServerMetadata.tokenEndpoint()), anyList(), anyString())).thenReturn(Mono.just("token response"));
+
+            // Execute & Verify
+            StepVerifier.create(ebsiAuthorisationService.sendTokenRequest(codeVerifier, did, authorisationServerMetadata, params))
+                    .expectNext(expectedTokenResponse)
+                    .verifyComplete();
+        }
+    }
+    @Test
+    void sendTokenRequest_FailedCommunicationException() {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
+            // Setup
+            String codeVerifier = "codeVerifier";
+            String did = "did:key:example";
+            AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("https://example/token").build();
+            Map<String, String> params = Map.of("state", GLOBAL_STATE, "code", "authCode");
+
+            // Mock postRequest to simulate a failure in communication
+            when(postRequest(eq(authorisationServerMetadata.tokenEndpoint()), anyList(), anyString()))
+                    .thenReturn(Mono.error(new RuntimeException("Error during request")));
+
+            // Execute & Verify
+            StepVerifier.create(ebsiAuthorisationService.sendTokenRequest(codeVerifier, did, authorisationServerMetadata, params))
+                    .expectError(FailedCommunicationException.class)
+                    .verify();
         }
     }
 }

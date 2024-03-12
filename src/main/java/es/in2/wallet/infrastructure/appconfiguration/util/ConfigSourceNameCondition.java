@@ -1,4 +1,4 @@
-package es.in2.wallet.infrastructure.config.util;
+package es.in2.wallet.infrastructure.appconfiguration.util;
 
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;

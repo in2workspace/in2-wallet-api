@@ -1,4 +1,4 @@
-package es.in2.wallet.infrastructure.config.model;
+package es.in2.wallet.infrastructure.appconfiguration.model;
 
 public enum ConfigProviderName {
     AZURE("azure"),
@@ -14,4 +14,5 @@ public enum ConfigProviderName {
     public String toString() {
         return providerName;
     }
+
 }

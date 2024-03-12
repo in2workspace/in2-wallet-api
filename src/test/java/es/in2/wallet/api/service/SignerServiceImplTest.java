@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.domain.exception.ParseErrorException;
-import es.in2.wallet.domain.service.VaultService;
+import es.in2.wallet.application.port.VaultService;
 import es.in2.wallet.domain.service.impl.SignerServiceImpl;
 import es.in2.wallet.infrastructure.vault.model.KeyVaultSecret;
 import org.junit.jupiter.api.extension.ExtendWith;

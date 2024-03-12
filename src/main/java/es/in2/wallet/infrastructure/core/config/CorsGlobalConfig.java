@@ -1,5 +1,6 @@
 package es.in2.wallet.infrastructure.core.config;
 
+import es.in2.wallet.application.port.AppConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.config.CorsRegistry;
@@ -13,7 +14,9 @@ import static es.in2.wallet.domain.util.MessageUtils.GLOBAL_ENDPOINTS_API;
 @EnableWebFlux
 @RequiredArgsConstructor
 public class CorsGlobalConfig implements WebFluxConfigurer {
+
     private final AppConfig appConfig;
+
     @Override
     public void addCorsMappings(CorsRegistry corsRegistry) {
         corsRegistry.addMapping(GLOBAL_ENDPOINTS_API)
@@ -21,4 +24,5 @@ public class CorsGlobalConfig implements WebFluxConfigurer {
                 .allowedMethods(ALLOWED_METHODS)
                 .maxAge(3600);
     }
+
 }

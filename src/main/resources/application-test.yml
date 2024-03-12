@@ -41,11 +41,10 @@ azure:
 auth-server:
   #externalUrl-domain: https://preproduccio-iep.dev.in2.es/cross-keycloak
   external-url:
-    scheme: https
-    domain: public-api-uri-for-iep-apps
-    #domain: "preproduccio-iep.dev.in2.es"
-    port: 443
-    path: "/cross-keycloak/realms/EAAProvider"
+    scheme:
+    domain:
+    port:
+    path:
   #internalUrl-domain: https://epu-dev-ca-14.thankfulsand-d95793a6.westeurope.azurecontainerapps.io/realms/EAAProvider
   internal-url:
     scheme: https

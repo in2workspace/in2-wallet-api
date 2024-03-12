@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.service.impl.UserDataServiceImpl;
 import es.in2.wallet.domain.model.CredentialsBasicInfoWithExpirationDate;
 import es.in2.wallet.domain.service.UserDataService;
-import es.in2.wallet.domain.service.VaultService;
+import es.in2.wallet.application.port.VaultService;
 import es.in2.wallet.application.port.BrokerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

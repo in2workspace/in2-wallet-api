@@ -1,7 +1,7 @@
 package es.in2.wallet.domain.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.infrastructure.core.config.AppConfig;
+import es.in2.wallet.application.port.AppConfig;
 import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
@@ -54,13 +54,13 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
      *
      * @param response The response String to be parsed.
      * @return An instance of Mono<AuthorisationServerMetadata>.
-     * @deprecated (since = "1.0.0", forRemoval = true) This implementation is temporary and should be replaced in future versions.
+     * @deprecated (since = " 1.0.0 ", forRemoval = true) This implementation is temporary and should be replaced in future versions.
      */
     @Deprecated(since = ".0.0", forRemoval = true)
     private Mono<AuthorisationServerMetadata> parseCredentialIssuerMetadataResponse(String response) {
         try {
             AuthorisationServerMetadata authorisationServerMetadata = objectMapper.readValue(response, AuthorisationServerMetadata.class);
-            if (authorisationServerMetadata.tokenEndpoint().startsWith(appConfig.getAuthServerExternalUrl())){
+            if (authorisationServerMetadata.tokenEndpoint().startsWith(appConfig.getAuthServerExternalUrl())) {
                 AuthorisationServerMetadata authorisationServerMetadataWithTokenEndpointHardcoded = AuthorisationServerMetadata.builder()
                         .issuer(authorisationServerMetadata.issuer())
                         .authorizationEndpoint(authorisationServerMetadata.authorizationEndpoint())
@@ -71,8 +71,7 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
 
             // deserialize Credential Issuer Metadata
             return Mono.just(authorisationServerMetadata);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return Mono.error(new FailedDeserializingException("Error while deserializing Credential Issuer Metadata. Reason: " + e.getMessage()));
         }
     }

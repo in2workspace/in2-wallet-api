@@ -57,4 +57,5 @@ public class SwaggerConfig {
             openApi.getPaths().entrySet().removeIf(entry -> entry.getValue().readOperationsMap().isEmpty());
         };
     }
+
 }

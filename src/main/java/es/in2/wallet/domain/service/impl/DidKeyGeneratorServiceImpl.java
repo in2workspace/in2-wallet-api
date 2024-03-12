@@ -7,7 +7,7 @@ import es.in2.wallet.domain.exception.KeyPairGenerationError;
 import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.UVarInt;
 import es.in2.wallet.domain.service.DidKeyGeneratorService;
-import es.in2.wallet.domain.service.VaultService;
+import es.in2.wallet.application.port.VaultService;
 import es.in2.wallet.infrastructure.vault.model.KeyVaultSecret;
 import io.ipfs.multibase.Base58;
 import lombok.RequiredArgsConstructor;
