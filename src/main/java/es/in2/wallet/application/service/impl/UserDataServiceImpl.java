@@ -13,7 +13,7 @@ import java.util.List;
 
 
 @Slf4j
-@Service
+@Service("applicationService")
 @RequiredArgsConstructor
 public class UserDataServiceImpl implements UserDataService {
 
