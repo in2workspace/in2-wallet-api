@@ -33,7 +33,7 @@ import java.util.*;
 import static es.in2.wallet.domain.util.MessageUtils.*;
 
 @Slf4j
-@Service
+@Service("domainService")
 @RequiredArgsConstructor
 public class UserDataServiceImpl implements UserDataService {
 
