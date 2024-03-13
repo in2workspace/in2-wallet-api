@@ -24,6 +24,7 @@ vault:
 
 azure:
   app:
+    endpoint: ${APP_CONFIG_ENDPOINT}
     label:
       global: service-discovery
   key-vault:
