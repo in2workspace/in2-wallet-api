@@ -2,7 +2,7 @@ server:
   port: 8088
 
 broker:
-  provider: "scorpio"
+  provider: scorpio
   external-url:
     scheme: "https"
     domain: "your-app-domain"
@@ -24,32 +24,33 @@ vault:
 
 azure:
   app:
+    endpoint: ${APP_CONFIG_ENDPOINT}
     label:
       global: service-discovery
-  keyvault:
-    endpoint: "your-app-domain"
+  key-vault:
+    endpoint: "your-endpoint"
 
 auth-server:
   external-url:
     scheme: "https"
     domain: "your-app-domain"
     port: 443
-    path: "/your-path"
+    path: "your-path"
   internal-url:
     scheme: "https"
     domain: "your-app-domain"
     port: 443
-    path: "/your-path"
+    path: "your-path"
   token-url:
     scheme: "https"
     domain: "your-app-domain"
     port: 443
-    path: "/your-path"
+    path: "your-path"
 
 wallet-wda:
   urls:
     - scheme: https
-      domain: wallet-wda-custom-domain-uri
+      domain: "your-wda-domain"
       port: 443
     - scheme: http
       domain: localhost
