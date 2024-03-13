@@ -78,6 +78,7 @@ hashicorp:
     scheme: http
     token: "hvs.48sBkFvHj3xK9c9s8xRdZws9"
 
+# These properties will be removed in the future
 auth-server:
   external-url:
     scheme: "http"
@@ -95,6 +96,7 @@ auth-server:
     port: "8080"
     path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
 
+# These properties are used to pass the EBSI Holder Wallet Test
 ebsi:
   test:
     url: http://localhost:8080/realms/wallet/protocol/openid-connect/token

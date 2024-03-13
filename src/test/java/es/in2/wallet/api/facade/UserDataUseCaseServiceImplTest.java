@@ -3,7 +3,7 @@ package es.in2.wallet.api.facade;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.application.service.impl.UserDataServiceImpl;
+import es.in2.wallet.application.service.impl.UserDataUseCaseServiceImpl;
 import es.in2.wallet.domain.model.CredentialsBasicInfoWithExpirationDate;
 import es.in2.wallet.domain.service.UserDataService;
 import es.in2.wallet.application.port.VaultService;
@@ -23,7 +23,7 @@ import java.util.Optional;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class UserDataServiceImplTest {
+class UserDataUseCaseServiceImplTest {
 
     @Mock
     private BrokerService brokerService;
@@ -35,7 +35,7 @@ class UserDataServiceImplTest {
     private VaultService vaultService;
 
     @InjectMocks
-    private UserDataServiceImpl userDataFacadeService;
+    private UserDataUseCaseServiceImpl userDataFacadeService;
 
     @Test
     void getUserVCs_UserExists_ReturnsVCs() throws JsonProcessingException {
