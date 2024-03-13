@@ -11,7 +11,7 @@ import org.springframework.validation.annotation.Validated;
 import java.util.Optional;
 
 @ConfigSourceNameAnnotation(name = ConfigProviderName.AZURE)
-@ConfigurationProperties(prefix = "app.config")
+@ConfigurationProperties(prefix = "azure.app")
 @Validated
 public record AzureAppConfigurationProperties(@NotNull(message = "Endpoint is mandatory") String endpoint,
                                               @NestedConfigurationProperty AzurePropertiesLabel label) {
