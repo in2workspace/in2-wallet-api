@@ -2,7 +2,8 @@ package es.in2.wallet.broker.adapter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.broker.config.properties.BrokerConfig;
+import es.in2.wallet.infrastructure.broker.adapter.ScorpioAdapter;
+import es.in2.wallet.infrastructure.broker.config.BrokerConfig;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -22,8 +23,8 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Optional;
 
-import static es.in2.wallet.api.util.MessageUtils.ATTRIBUTES;
-import static es.in2.wallet.api.util.MessageUtils.ENTITY_PREFIX;
+import static es.in2.wallet.domain.util.MessageUtils.ATTRIBUTES;
+import static es.in2.wallet.domain.util.MessageUtils.ENTITY_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
@@ -45,7 +46,7 @@ class ScorpioAdapterTest {
     @BeforeEach
     void setUp() throws IOException, NoSuchFieldException, IllegalAccessException {
         // Mock the behavior of broker properties to return predefined paths
-        when(brokerConfig.getPathEntities()).thenReturn("/entities");
+        when(brokerConfig.getEntitiesPath()).thenReturn("/entities");
         when(brokerConfig.getExternalUrl()).thenReturn("/external");
 
         // Initialize and start MockWebServer

@@ -1,6 +1,6 @@
 package es.in2.wallet.api.service;
 
-import es.in2.wallet.api.service.impl.CborGenerationServiceImpl;
+import es.in2.wallet.domain.service.impl.CborGenerationServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

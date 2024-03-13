@@ -3,12 +3,12 @@ package es.in2.wallet.api.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.exception.FailedDeserializingException;
-import es.in2.wallet.api.model.VcSelectorResponse;
-import es.in2.wallet.api.model.VerifiableCredential;
-import es.in2.wallet.api.model.VerifiablePresentation;
-import es.in2.wallet.api.service.impl.AuthorizationResponseServiceImpl;
-import es.in2.wallet.api.util.ApplicationUtils;
+import es.in2.wallet.domain.exception.FailedDeserializingException;
+import es.in2.wallet.domain.model.VcSelectorResponse;
+import es.in2.wallet.domain.model.VerifiableCredential;
+import es.in2.wallet.domain.model.VerifiablePresentation;
+import es.in2.wallet.domain.service.impl.AuthorizationResponseServiceImpl;
+import es.in2.wallet.domain.util.ApplicationUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,7 +21,7 @@ import reactor.test.StepVerifier;
 
 import java.util.List;
 
-import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
+import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 

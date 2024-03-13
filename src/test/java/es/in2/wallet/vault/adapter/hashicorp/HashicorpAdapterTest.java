@@ -1,8 +1,9 @@
 package es.in2.wallet.vault.adapter.hashicorp;
 
-import es.in2.wallet.vault.adapter.hashicorp.config.HashicorpConfig;
-import es.in2.wallet.vault.adapter.hashicorp.model.HashicorpSecretRequest;
-import es.in2.wallet.vault.model.secret.KeyVaultSecret;
+import es.in2.wallet.infrastructure.vault.adapter.hashicorp.HashicorpAdapter;
+import es.in2.wallet.infrastructure.vault.adapter.hashicorp.config.HashicorpConfig;
+import es.in2.wallet.infrastructure.vault.adapter.hashicorp.model.HashicorpSecretRequest;
+import es.in2.wallet.infrastructure.vault.model.KeyVaultSecret;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

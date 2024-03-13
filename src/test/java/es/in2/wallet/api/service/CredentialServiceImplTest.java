@@ -2,15 +2,15 @@ package es.in2.wallet.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.exception.FailedCommunicationException;
-import es.in2.wallet.api.exception.FailedDeserializingException;
-import es.in2.wallet.api.exception.FailedSerializingException;
-import es.in2.wallet.api.model.CredentialIssuerMetadata;
-import es.in2.wallet.api.model.CredentialOffer;
-import es.in2.wallet.api.model.CredentialResponse;
-import es.in2.wallet.api.model.TokenResponse;
-import es.in2.wallet.api.service.impl.CredentialServiceImpl;
-import es.in2.wallet.api.util.ApplicationUtils;
+import es.in2.wallet.domain.exception.FailedCommunicationException;
+import es.in2.wallet.domain.exception.FailedDeserializingException;
+import es.in2.wallet.domain.exception.FailedSerializingException;
+import es.in2.wallet.domain.model.CredentialIssuerMetadata;
+import es.in2.wallet.domain.model.CredentialOffer;
+import es.in2.wallet.domain.model.CredentialResponse;
+import es.in2.wallet.domain.model.TokenResponse;
+import es.in2.wallet.domain.service.impl.CredentialServiceImpl;
+import es.in2.wallet.domain.util.ApplicationUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,8 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.ApplicationUtils.postRequest;
-import static es.in2.wallet.api.util.MessageUtils.*;
+import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
+import static es.in2.wallet.domain.util.MessageUtils.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 

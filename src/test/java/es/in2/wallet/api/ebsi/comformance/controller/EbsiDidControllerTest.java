@@ -1,6 +1,7 @@
 package es.in2.wallet.api.ebsi.comformance.controller;
 
-import es.in2.wallet.api.ebsi.comformance.config.EbsiConfig;
+import es.in2.wallet.infrastructure.ebsi.config.EbsiConfig;
+import es.in2.wallet.infrastructure.ebsi.controller.EbsiDidController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

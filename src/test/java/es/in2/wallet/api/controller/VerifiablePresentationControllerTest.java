@@ -1,9 +1,10 @@
 package es.in2.wallet.api.controller;
 
-import es.in2.wallet.api.facade.AttestationExchangeServiceFacade;
-import es.in2.wallet.api.facade.CredentialPresentationForTurnstileServiceFacade;
-import es.in2.wallet.api.model.CredentialsBasicInfo;
-import es.in2.wallet.api.model.VcSelectorResponse;
+import es.in2.wallet.application.service.AttestationExchangeService;
+import es.in2.wallet.application.service.TurnstileAttestationExchangeService;
+import es.in2.wallet.domain.model.CredentialsBasicInfo;
+import es.in2.wallet.domain.model.VcSelectorResponse;
+import es.in2.wallet.infrastructure.core.controller.VerifiablePresentationController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,9 +20,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class VerifiablePresentationControllerTest {
     @Mock
-    private CredentialPresentationForTurnstileServiceFacade credentialPresentationForTurnstileServiceFacade;
+    private TurnstileAttestationExchangeService turnstileAttestationExchangeService;
     @Mock
-    private AttestationExchangeServiceFacade attestationExchangeServiceFacade;
+    private AttestationExchangeService attestationExchangeService;
     @InjectMocks
     private VerifiablePresentationController verifiablePresentationController;
     @Test
@@ -30,7 +31,7 @@ class VerifiablePresentationControllerTest {
         String authorizationToken = "authToken";
         VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().build();
 
-        when(attestationExchangeServiceFacade.buildVerifiablePresentationWithSelectedVCs(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
+        when(attestationExchangeService.buildVerifiablePresentationWithSelectedVCs(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
                 .thenReturn(Mono.empty());
 
         WebTestClient
@@ -50,7 +51,7 @@ class VerifiablePresentationControllerTest {
         CredentialsBasicInfo credentialsBasicInfo = CredentialsBasicInfo.builder().build();
         String expectedResponse = "cbor";
 
-        when(credentialPresentationForTurnstileServiceFacade.createVerifiablePresentationForTurnstile(anyString(), eq(authorizationToken), any()))
+        when(turnstileAttestationExchangeService.createVerifiablePresentationForTurnstile(anyString(), eq(authorizationToken), any()))
                 .thenReturn(Mono.just("cbor"));
 
         WebTestClient

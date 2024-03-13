@@ -2,11 +2,11 @@ package es.in2.wallet.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.api.config.AppConfig;
-import es.in2.wallet.api.model.AuthorisationServerMetadata;
-import es.in2.wallet.api.model.CredentialIssuerMetadata;
-import es.in2.wallet.api.service.impl.AuthorisationServerMetadataServiceImpl;
-import es.in2.wallet.api.util.ApplicationUtils;
+import es.in2.wallet.application.port.AppConfig;
+import es.in2.wallet.domain.model.AuthorisationServerMetadata;
+import es.in2.wallet.domain.model.CredentialIssuerMetadata;
+import es.in2.wallet.domain.service.impl.AuthorisationServerMetadataServiceImpl;
+import es.in2.wallet.domain.util.ApplicationUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,9 +20,9 @@ import reactor.test.StepVerifier;
 import java.util.List;
 import java.util.Map;
 
-import static es.in2.wallet.api.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE;
-import static es.in2.wallet.api.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
+import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
+import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE;
+import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,15 +46,16 @@ class AuthorisationServerMetadataServiceImplTest {
 
             when(appConfig.getAuthServerExternalUrl()).thenReturn("https://example.com");
             when(appConfig.getAuthServerTokenEndpoint()).thenReturn("https://example.com/example/token");
-            when(getRequest("example/.well-known/openid-configuration",headers)).thenReturn(Mono.just("response"));
+            when(getRequest("example/.well-known/openid-configuration", headers)).thenReturn(Mono.just("response"));
             when(objectMapper.readValue("response", AuthorisationServerMetadata.class)).thenReturn(authorizationServerMetadata);
 
-            StepVerifier.create(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata))
+            StepVerifier.create(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId, credentialIssuerMetadata))
                     .expectNext(expectedAuthorizationServerMetadataWithTokenEndpointHardcodedTest)
                     .verifyComplete();
 
         }
     }
+
     @Test
     void getAuthorizationServerMetadataFromCredentialIssuerMetadataWithoutTokenEndpointHardcodedTest() throws JsonProcessingException {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
@@ -64,25 +65,26 @@ class AuthorisationServerMetadataServiceImplTest {
             AuthorisationServerMetadata authorizationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("https://ebsi.com/token").build();
 
             when(appConfig.getAuthServerExternalUrl()).thenReturn("https://example.com");
-            when(getRequest("example/.well-known/openid-configuration",headers)).thenReturn(Mono.just("response"));
-            when(objectMapper.readValue("response",AuthorisationServerMetadata.class)).thenReturn(authorizationServerMetadata);
+            when(getRequest("example/.well-known/openid-configuration", headers)).thenReturn(Mono.just("response"));
+            when(objectMapper.readValue("response", AuthorisationServerMetadata.class)).thenReturn(authorizationServerMetadata);
 
-            StepVerifier.create(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata))
+            StepVerifier.create(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId, credentialIssuerMetadata))
                     .expectNext(authorizationServerMetadata)
                     .verifyComplete();
 
         }
     }
+
     @Test
-    void getCredentialIssuerMetadataError(){
+    void getCredentialIssuerMetadataError() {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().authorizationServer("example").build();
             List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
 
-            when(getRequest("example/.well-known/openid-configuration",headers)).thenReturn(Mono.error(new RuntimeException()));
+            when(getRequest("example/.well-known/openid-configuration", headers)).thenReturn(Mono.error(new RuntimeException()));
 
-            StepVerifier.create(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata))
+            StepVerifier.create(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId, credentialIssuerMetadata))
                     .expectError(RuntimeException.class)
                     .verify();
         }
