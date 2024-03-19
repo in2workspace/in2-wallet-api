@@ -30,21 +30,11 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public Mono<CredentialOffer> getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(String processId, String credentialOfferUri, String authorizationToken) {
-        return getCredentialOfferFromCredentialOfferUri(processId, credentialOfferUri, authorizationToken);
-    }
-
-    @Override
     public Mono<CredentialOffer> getCredentialOfferFromCredentialOfferUri(String processId, String credentialOfferUri) {
-        return getCredentialOfferFromCredentialOfferUri(processId, credentialOfferUri, null);
-    }
-
-
-    private Mono<CredentialOffer> getCredentialOfferFromCredentialOfferUri(String processId, String credentialOfferUri, String authorizationToken) {
         return parseCredentialOfferUri(credentialOfferUri)
                 .doOnSuccess(credentialOfferUriValue -> log.info("ProcessId: {}, Credential Offer Uri parsed successfully: {}", processId, credentialOfferUriValue))
                 .doOnError(e -> log.error("ProcessId: {}, Error while parsing Credential Offer Uri: {}", processId, e.getMessage()))
-                .flatMap(credentialOfferUriValue -> getCredentialOffer(credentialOfferUriValue, authorizationToken))
+                .flatMap(this::getCredentialOffer)
                 .doOnSuccess(credentialOffer -> log.info("ProcessId: {}, Credential Offer fetched successfully: {}", processId, credentialOffer))
                 .doOnError(e -> log.error("ProcessId: {}, Error while fetching Credential Offer: {}", processId, e.getMessage()))
                 .flatMap(this::parseCredentialOfferResponse)
@@ -65,21 +55,10 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
 
         });
     }
-    private Mono<String> getCredentialOffer(String credentialOfferUri, String authorizationToken) {
-        log.info("CredentialOfferServiceImpl - getCredentialOffer invoked");
-        List<Map.Entry<String, String>> headers;
-        if (authorizationToken != null) {
-             headers = List.of(
-                    Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON),
-                    Map.entry(HEADER_AUTHORIZATION, BEARER + authorizationToken));
-        }
-        else {
-            headers = List.of(
-                    Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
-        }
-        log.info("CredentialOfferServiceImpl - getCredentialOffer headers: {}", headers);
+    private Mono<String> getCredentialOffer(String credentialOfferUri) {
+        List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
         return getRequest(credentialOfferUri, headers)
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching credentialOffer from the issuer", e)));
+                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching credentialOffer from the issuer")));
     }
 
     private Mono<CredentialOffer> parseCredentialOfferResponse(String response) {
