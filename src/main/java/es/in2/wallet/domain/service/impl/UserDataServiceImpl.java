@@ -105,9 +105,9 @@ public class UserDataServiceImpl implements UserDataService {
     @Override
     public Mono<String> saveVC(String userEntity, List<CredentialResponse> credentials) {
         return serializeUserEntity(userEntity).flatMap(entity -> {
-            CredentialResponse selectedCredential = credentials.stream().filter(cred -> VC_JWT.equals(cred.format()) || VC_CWT.equals(cred.format())).findFirst().orElseThrow(() -> new RuntimeException("No suitable credential format found."));
+            CredentialResponse selectedCredential = credentials.stream().filter(cred -> VC_JWT.equals(cred.format()) || JWT_VC_JSON.equals(cred.format()) || VC_CWT.equals(cred.format())).findFirst().orElseThrow(() -> new RuntimeException("No suitable credential format found."));
 
-            Mono<JsonNode> vcJsonMono = selectedCredential.format().equals(VC_JWT) ? extractVcJsonFromVcJwt(selectedCredential.credential()) : fromVpCborToVcJsonReactive(selectedCredential.credential());
+            Mono<JsonNode> vcJsonMono = selectedCredential.format().equals(VC_JWT) || selectedCredential.format().equals(JWT_VC_JSON) ? extractVcJsonFromVcJwt((String) selectedCredential.credential()) : fromVpCborToVcJsonReactive((String) selectedCredential.credential());
 
             return vcJsonMono.flatMap(vcJson -> extractVerifiableCredentialIdFromVcJson(vcJson).flatMap(vcId -> {
                 List<VCAttribute> vcAttributes = new ArrayList<>();

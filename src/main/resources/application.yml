@@ -47,7 +47,7 @@ springdoc:
     operations-sorter: method
 
 server:
-  port: 8081
+  port: 8080
 
 broker:
   provider: scorpio
@@ -74,9 +74,9 @@ hashicorp:
   vault:
     path: /kv
     host: localhost
-    port: 8200
+    port: 8201
     scheme: http
-    token: "hvs.48sBkFvHj3xK9c9s8xRdZws9"
+    token: "hvs.7EBcpY0WgwHSu09doq6VI77E"
 
 # These properties will be removed in the future
 auth-server:
@@ -99,7 +99,7 @@ auth-server:
 # These properties are used to pass the EBSI Holder Wallet Test
 ebsi:
   test:
-    url: http://localhost:8080/realms/wallet/protocol/openid-connect/token
+    url: http://localhost:9099/realms/wallet/protocol/openid-connect/token
     client-secret: "fV51P8jFBo8VnFKMMuP3imw3H3i5mNck"
     client-id: user-registry-client
     username: adminWallet

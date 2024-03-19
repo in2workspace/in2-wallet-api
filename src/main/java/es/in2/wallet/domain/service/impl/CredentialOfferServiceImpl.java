@@ -1,6 +1,8 @@
 package es.in2.wallet.domain.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.CredentialOffer;
@@ -12,6 +14,8 @@ import reactor.core.publisher.Mono;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -79,13 +83,39 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
     }
 
     private Mono<CredentialOffer> parseCredentialOfferResponse(String response) {
-        log.info("CredentialOfferServiceImpl - parseCredentialOfferResponse invoked()");
         try {
-            // Standard deserialization for Credential Offer
-            return Mono.just(objectMapper.readValue(response, CredentialOffer.class));
-        }
-         catch (Exception e) {
-            return Mono.error(new FailedDeserializingException("Error while deserializing CredentialOffer: " + e));
+            JsonNode rootNode = objectMapper.readTree(response);
+            if (rootNode.has(CREDENTIALS)) {
+                JsonNode credentialsNode = rootNode.get(CREDENTIALS);
+                List<CredentialOffer.Credential> updatedCredentials = new ArrayList<>();
+
+                if (credentialsNode.isArray()) {
+                    for (JsonNode credentialNode : credentialsNode) {
+
+                        if (credentialNode.has("type") && !credentialNode.has("types")) {
+
+                            String type = credentialNode.get("type").asText();
+                            List<String> types = Collections.singletonList(type);
+
+                            ObjectNode modifiedCredentialNode = credentialNode.deepCopy();
+                            modifiedCredentialNode.remove("type");
+
+                            modifiedCredentialNode.set("types", objectMapper.valueToTree(types));
+
+                            CredentialOffer.Credential credential = objectMapper.treeToValue(modifiedCredentialNode, CredentialOffer.Credential.class);
+                            updatedCredentials.add(credential);
+                        } else {
+                            CredentialOffer.Credential credential = objectMapper.treeToValue(credentialNode, CredentialOffer.Credential.class);
+                            updatedCredentials.add(credential);
+                        }
+                    }
+                    ((ObjectNode)rootNode).set(CREDENTIALS, objectMapper.valueToTree(updatedCredentials));
+                }
+            }
+            CredentialOffer credentialOffer = objectMapper.treeToValue(rootNode, CredentialOffer.class);
+            return Mono.just(credentialOffer);
+        } catch (Exception e) {
+            return Mono.error(new FailedDeserializingException("Error while deserializing Credential Offer: " + e.getMessage()));
         }
     }
 
