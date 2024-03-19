@@ -2,7 +2,6 @@ package es.in2.wallet.domain.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.application.port.BrokerService;
@@ -23,7 +22,6 @@ import reactor.core.publisher.Mono;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
 import static es.in2.wallet.domain.util.MessageUtils.*;
@@ -224,7 +222,7 @@ public class PresentationServiceImpl implements PresentationService {
 
             String vpJson = objectMapper.writeValueAsString(vp);
 
-            return Base64.getEncoder().encodeToString(vpJson.getBytes());
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(vpJson.getBytes());
 
         });
     }

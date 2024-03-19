@@ -64,7 +64,7 @@ public class DomeVpTokenServiceImpl implements DomeVpTokenService {
      * This includes the VP token, presentation submission, and state parameters.
      */
     private Mono<Void> sendVpTokenResponse(String vpToken, AuthorizationRequest authorizationRequest) {
-            String body = "vp_token=" + URLEncoder.encode(vpToken, StandardCharsets.UTF_8);
+            String body = "vp_token=" + vpToken;
             List<Map.Entry<String, String>> headers = new ArrayList<>();
             headers.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
 
