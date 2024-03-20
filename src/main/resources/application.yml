@@ -78,6 +78,14 @@ hashicorp:
     scheme: http
     token: "hvs.7EBcpY0WgwHSu09doq6VI77E"
 
+azure:
+  app:
+    endpoint: ${APP_CONFIG_ENDPOINT}
+    label:
+      global: service-discovery
+  key-vault:
+    endpoint: "your-endpoint"
+
 # These properties will be removed in the future
 auth-server:
   external-url:
