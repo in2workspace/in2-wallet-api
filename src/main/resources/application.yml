@@ -3,6 +3,8 @@ spring:
     name: "wallet-server"
   main:
     web-application-type: reactive
+  webflux:
+    base-path: /wallet-server
 
 logging:
   pattern:
