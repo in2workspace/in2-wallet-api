@@ -57,25 +57,28 @@ public class ApplicationUtils {
                 .exchangeToMono(response -> {
                     if (response.statusCode().is3xxRedirection()) {
                         return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
-                    } else {
+                    }
+                    else if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("Error during post request:" + response.statusCode() ));
+                    }
+                    else {
                         return response.bodyToMono(String.class);
                     }
                 });
     }
 
     public static Mono<String> getRequest(String url, List<Map.Entry<String, String>> headers) {
-        log.info("get request to: " + url);
-
         return WEB_CLIENT.get()
                 .uri(URI.create(url))
                 .headers(httpHeaders -> headers.forEach(entry -> httpHeaders.add(entry.getKey(), entry.getValue())))
                 .exchangeToMono(response -> {
                     if (response.statusCode().is3xxRedirection()) {
-                        log.info("redirecting to: " + Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
-
                         return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
-                    } else {
-                        log.info("response body to mono...");
+                    }
+                    else if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("Error during get request:" + response.statusCode() ));
+                    }
+                    else {
 
                         return response.bodyToMono(String.class);
                     }
