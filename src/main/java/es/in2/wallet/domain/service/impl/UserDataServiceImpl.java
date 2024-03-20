@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 import static es.in2.wallet.domain.util.MessageUtils.*;
@@ -105,9 +106,9 @@ public class UserDataServiceImpl implements UserDataService {
     @Override
     public Mono<String> saveVC(String userEntity, List<CredentialResponse> credentials) {
         return serializeUserEntity(userEntity).flatMap(entity -> {
-            CredentialResponse selectedCredential = credentials.stream().filter(cred -> VC_JWT.equals(cred.format()) || VC_CWT.equals(cred.format())).findFirst().orElseThrow(() -> new RuntimeException("No suitable credential format found."));
+            CredentialResponse selectedCredential = credentials.stream().filter(cred -> VC_JWT.equals(cred.format()) || JWT_VC_JSON.equals(cred.format()) || VC_CWT.equals(cred.format())).findFirst().orElseThrow(() -> new RuntimeException("No suitable credential format found."));
 
-            Mono<JsonNode> vcJsonMono = selectedCredential.format().equals(VC_JWT) ? extractVcJsonFromVcJwt(selectedCredential.credential()) : fromVpCborToVcJsonReactive(selectedCredential.credential());
+            Mono<JsonNode> vcJsonMono = selectedCredential.format().equals(VC_JWT) || selectedCredential.format().equals(JWT_VC_JSON) ? extractVcJsonFromVcJwt((String) selectedCredential.credential()) : fromVpCborToVcJsonReactive((String) selectedCredential.credential());
 
             return vcJsonMono.flatMap(vcJson -> extractVerifiableCredentialIdFromVcJson(vcJson).flatMap(vcId -> {
                 List<VCAttribute> vcAttributes = new ArrayList<>();
@@ -233,7 +234,14 @@ public class UserDataServiceImpl implements UserDataService {
             LinkedHashMap<?, ?> vcDataValue = (LinkedHashMap<?, ?>) item.value();
             JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
 
-            return getVcTypeListFromVcJson(jsonNode).map(vcTypeList -> new CredentialsBasicInfoWithExpirationDate(item.id(), vcTypeList, jsonNode.get(CREDENTIAL_SUBJECT), ZonedDateTime.parse(jsonNode.get(EXPIRATION_DATE).asText())));
+            return getVcTypeListFromVcJson(jsonNode)
+                    .map(vcTypeList -> {
+                        ZonedDateTime expirationDate = null;
+                        if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
+                            expirationDate = ZonedDateTime.parse(jsonNode.get(EXPIRATION_DATE).asText());
+                        }
+                        return new CredentialsBasicInfoWithExpirationDate(item.id(), vcTypeList, jsonNode.get(CREDENTIAL_SUBJECT), expirationDate);
+                    });
         }).collectList().onErrorResume(NoSuchVerifiableCredentialException.class, Mono::error);
     }
 

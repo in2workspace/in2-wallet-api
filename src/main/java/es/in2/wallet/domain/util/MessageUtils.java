@@ -49,6 +49,7 @@ public class MessageUtils {
     public static final String CUSTOMER_PRESENTATION_DEFINITION = "CustomerPresentationDefinition";
     public static final String CUSTOMER_PRESENTATION_SUBMISSION = "CustomerPresentationSubmission";
     public static final String JWT_VC = "jwt_vc";
+    public static final String JWT_VC_JSON = "jwt_vc_json";
     public static final String JWT_VP = "jwt_vp";
     public static final String ALLOWED_METHODS = "*";
     public static final String GLOBAL_ENDPOINTS_API = "/api/v2/*";
@@ -56,6 +57,7 @@ public class MessageUtils {
     public static final Pattern CREDENTIAL_OFFER_PATTERN = Pattern.compile("(https|http)\\S*(credential-offer)\\S*");
     public static final Pattern OPENID_CREDENTIAL_OFFER_PATTERN = Pattern.compile("openid-credential-offer://\\S*");
     public static final Pattern EBSI_CREDENTIAL_OFFER_PATTERN = Pattern.compile("\\S*(conformance.ebsi)\\S*");
+    public static final Pattern DOME_LOGIN_REQUEST_PATTERN = Pattern.compile("\\S*(did:web:dome-marketplace.org)\\S*");
     public static final Pattern OPENID_AUTHENTICATION_REQUEST_PATTERN = Pattern.compile("openid://\\S*");
 
     public static final String ISO_8601_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ssX";

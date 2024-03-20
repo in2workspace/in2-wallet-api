@@ -28,9 +28,8 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
 
     @Override
     public Mono<AuthorisationServerMetadata> getAuthorizationServerMetadataFromCredentialIssuerMetadata(String processId, CredentialIssuerMetadata credentialIssuerMetadata) {
-        String authorizationServiceURL = credentialIssuerMetadata.authorizationServer() + "/.well-known/openid-configuration";
         // get Credential Issuer Metadata
-        return getAuthorizationServerMetadata(authorizationServiceURL)
+        return getAuthorizationServerMetadata(credentialIssuerMetadata)
                 .doOnSuccess(response -> log.info("ProcessID: {} - Authorisation Server Metadata Response: {}", processId, response))
                 .flatMap(this::parseCredentialIssuerMetadataResponse)
                 .doOnNext(authorisationServerMetadata -> log.info("ProcessID: {} - AuthorisationServerMetadata: {}", processId, authorisationServerMetadata))
@@ -40,10 +39,17 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
                 });
     }
 
-    private Mono<String> getAuthorizationServerMetadata(String authorizationServerURL) {
+    private Mono<String> getAuthorizationServerMetadata(CredentialIssuerMetadata credentialIssuerMetadata) {
         List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
-        return getRequest(authorizationServerURL, headers)
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching Authorisation Server Metadata from the Auth Server. Reason: " + e.getMessage())));
+        String authServer;
+        if (credentialIssuerMetadata.authorizationServer() != null){
+            authServer = credentialIssuerMetadata.authorizationServer();
+        }
+        else {
+            authServer = credentialIssuerMetadata.credentialIssuer();
+        }
+        return getRequest(authServer + "/.well-known/openid-configuration", headers)
+                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching Authorisation Server Metadata from the Auth Server")));
     }
 
     /**

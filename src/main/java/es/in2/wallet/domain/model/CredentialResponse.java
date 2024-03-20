@@ -13,7 +13,7 @@ public record CredentialResponse(
         @JsonProperty("format") String format,
         @Schema(example = "LUpixVCWJk0eOt4CXQe1NXK....WZwmhmn9OQp6YxX0a2L",
                 description = "Contains issued Credential")
-        @JsonProperty("credential") String credential,
+        @JsonProperty("credential") Object credential,
         @Schema(
                 example = "fGFF7UkhLA",
                 description = "Nonce to be used to create a proof of possession of key material when requesting a Credential. " +
