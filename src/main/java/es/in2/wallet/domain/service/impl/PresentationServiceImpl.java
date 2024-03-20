@@ -4,13 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import es.in2.wallet.application.port.BrokerService;
+import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
+import es.in2.wallet.domain.model.DomeVerifiablePresentation;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.model.VerifiablePresentation;
 import es.in2.wallet.domain.service.PresentationService;
 import es.in2.wallet.domain.service.SignerService;
 import es.in2.wallet.domain.service.UserDataService;
-import es.in2.wallet.application.port.BrokerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,10 +21,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.UUID;
+import java.util.*;
 
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
 import static es.in2.wallet.domain.util.MessageUtils.*;
@@ -65,6 +64,11 @@ public class PresentationServiceImpl implements PresentationService {
         return createSignedVerifiablePresentation(processId, authorizationToken, nonce, audience, List.of(credentialsBasicInfo), VC_CWT);
     }
 
+    @Override
+    public Mono<String> createEncodedVerifiablePresentationForDome(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse) {
+        return createVerifiablePresentationForDome(processId, authorizationToken,vcSelectorResponse.selectedVcList());
+    }
+
     private Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken,String nonce, String audience, List<CredentialsBasicInfo> selectedVcList, String format) {
         return  getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> brokerService.getEntityById(processId,userId))
@@ -90,6 +94,24 @@ public class PresentationServiceImpl implements PresentationService {
                 );
     }
 
+    private Mono<String> createVerifiablePresentationForDome(String processId, String authorizationToken,List<CredentialsBasicInfo> selectedVcList) {
+        return  getUserIdFromToken(authorizationToken)
+                .flatMap(userId -> brokerService.getEntityById(processId,userId))
+                .flatMap(optionalEntity -> optionalEntity
+                        .map(entity -> getVerifiableCredentials(entity,selectedVcList, VC_JSON)
+                                .flatMap(this::createEncodedPresentation)
+                                // Log success
+                                .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
+                                // Handle errors
+                                .onErrorResume(e -> {
+                                    log.error("Error in creating Verifiable Presentation: ", e);
+                                    return Mono.error(e);
+                                })
+                        )
+                        .orElseGet(() -> Mono.error(new RuntimeException("Failed to retrieve entity."))
+                        )
+                );
+    }
     /**
      * Retrieves a list of Verifiable Credential JWTs based on the VCs selected in the VcSelectorResponse.
      *
@@ -172,4 +194,36 @@ public class PresentationServiceImpl implements PresentationService {
         });
     }
 
+    /**
+     * Creates an unsigned Verifiable Presentation containing the selected VCs.
+     *
+     * @param vcs       The list of VC JWTs to include in the VP.
+     */
+    private Mono<String> createEncodedPresentation(
+            List<String> vcs) {
+        return Mono.fromCallable(() -> {
+            List<JsonNode> vcsJsonList = vcs.stream()
+                    .map(vc -> {
+                        try {
+                            return objectMapper.readTree(vc);
+                        } catch (Exception e) {
+                            throw new ParseErrorException("Error parsing VC string to JsonNode");
+                        }
+                    })
+                    .toList();
+
+            DomeVerifiablePresentation vp = DomeVerifiablePresentation
+                    .builder()
+                    .holder("did:my:wallet")
+                    .context(List.of(JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1))
+                    .type(List.of(VERIFIABLE_PRESENTATION))
+                    .verifiableCredential(vcsJsonList)
+                    .build();
+
+            String vpJson = objectMapper.writeValueAsString(vp);
+
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(vpJson.getBytes());
+
+        });
+    }
 }

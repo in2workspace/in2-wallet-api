@@ -60,7 +60,7 @@ public class SignerServiceImpl implements SignerService {
                             JWTClaimsSet payload = convertJsonNodeToJWTClaimsSet(document);
                             SignedJWT signedJWT = new SignedJWT(header, payload);
                             signedJWT.sign(signer);
-                            log.debug("JWT signed successfully");
+                            log.debug("JWT signed successfully: ");
                             return signedJWT.serialize();
                         } catch (Exception e) {
                             log.error("Error while creating the Signed JWT", e);

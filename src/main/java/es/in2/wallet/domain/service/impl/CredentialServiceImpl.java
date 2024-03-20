@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.exception.FailedSerializingException;
-import es.in2.wallet.domain.model.CredentialIssuerMetadata;
-import es.in2.wallet.domain.model.CredentialRequest;
-import es.in2.wallet.domain.model.CredentialResponse;
-import es.in2.wallet.domain.model.TokenResponse;
+import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.CredentialService;
 import es.in2.wallet.domain.util.ApplicationUtils;
 import es.in2.wallet.domain.util.MessageUtils;
@@ -95,7 +92,7 @@ public class CredentialServiceImpl implements CredentialService {
 
     private Mono<String> postCredential(TokenResponse tokenResponse,
                                         CredentialIssuerMetadata credentialIssuerMetadata,
-                                        CredentialRequest credentialRequest) {
+                                        Object credentialRequest) {
         try {
             List<Map.Entry<String, String>> headers = List.of(Map.entry(MessageUtils.CONTENT_TYPE, MessageUtils.CONTENT_TYPE_APPLICATION_JSON),
                     Map.entry(MessageUtils.HEADER_AUTHORIZATION, MessageUtils.BEARER + tokenResponse.accessToken()));
@@ -110,13 +107,23 @@ public class CredentialServiceImpl implements CredentialService {
         }
     }
 
-    private Mono<CredentialRequest> buildCredentialRequest(String jwt, String format, List<String> types){
-        return Mono.just(CredentialRequest.builder()
-                        .format(format)
-                        .types(types)
-                        .proof(CredentialRequest.Proof.builder().proofType("jwt").jwt(jwt).build())
-                        .build())
-                .doOnNext(requestBody -> log.debug("Credential Request Body: {}", requestBody));
+    private Mono<?> buildCredentialRequest(String jwt, String format, List<String> types){
+        if (types.size() > 1){
+            return Mono.just(CredentialRequest.builder()
+                            .format(format)
+                            .types(types)
+                            .proof(CredentialRequest.Proof.builder().proofType("jwt").jwt(jwt).build())
+                            .build())
+                    .doOnNext(requestBody -> log.debug("Credential Request Body: {}", requestBody));
+        }
+        else {
+            return Mono.just(FiwareCredentialRequest.builder()
+                            .format(format)
+                            .type(types.get(0))
+                            .types(types)
+                            .build())
+                    .doOnNext(requestBody -> log.debug("Credential Request Body: {}", requestBody));
+        }
     }
 
 }

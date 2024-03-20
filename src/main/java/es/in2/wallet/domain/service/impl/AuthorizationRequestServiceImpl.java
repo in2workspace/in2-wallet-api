@@ -51,4 +51,14 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
         }
     }
 
+    @Override
+    public Mono<AuthorizationRequest> getAuthorizationRequestFromAuthorizationRequestClaims(String processId, String authorizationRequestClaims) {
+        try {
+            return Mono.fromCallable(() -> AuthorizationRequest.fromString(authorizationRequestClaims));
+        } catch (Exception e) {
+            log.error("ProcessID: {} - Error while parsing Authorization Request: {}", processId, e.getMessage());
+            return Mono.error(new RuntimeException("Error while parsing Authorization Request"));
+        }
+    }
+
 }

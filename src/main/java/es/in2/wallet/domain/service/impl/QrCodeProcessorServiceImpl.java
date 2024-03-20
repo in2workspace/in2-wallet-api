@@ -1,5 +1,6 @@
 package es.in2.wallet.domain.service.impl;
 
+import es.in2.wallet.application.service.DomeAttestationExchangeService;
 import es.in2.wallet.application.service.EbsiCredentialService;
 import es.in2.wallet.domain.exception.NoSuchQrContentException;
 import es.in2.wallet.application.service.AttestationExchangeService;
@@ -22,6 +23,7 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
     private final CredentialIssuanceService credentialIssuanceService;
     private final EbsiCredentialService ebsiCredentialService;
     private final AttestationExchangeService attestationExchangeService;
+    private final DomeAttestationExchangeService domeAttestationExchangeService;
 
     @Override
     public Mono<Object> processQrContent(String processId, String authorizationToken, String qrContent) {
@@ -51,6 +53,10 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
                             log.info("ProcessID: {} - Processing an Authentication Request", processId);
                             return Mono.error(new NoSuchQrContentException("OpenID Authentication Request not implemented yet"));
                         }
+                        case DOME_VC_LOGIN_REQUEST: {
+                            log.info("ProcessID: {} - Processing an Authentication Request from DOME", processId);
+                            return domeAttestationExchangeService.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,qrContent);
+                        }
                         case UNKNOWN: {
                             String errorMessage = "The received QR content cannot be processed";
                             log.warn(errorMessage);
@@ -65,7 +71,10 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
 
     private Mono<QrType> identifyQrContentType(String qrContent) {
         return Mono.fromSupplier(() -> {
-            if (LOGIN_REQUEST_PATTERN.matcher(qrContent).matches()) {
+            if(DOME_LOGIN_REQUEST_PATTERN.matcher(qrContent).matches()){
+                return DOME_VC_LOGIN_REQUEST;
+            }
+            else if (LOGIN_REQUEST_PATTERN.matcher(qrContent).matches()) {
                 return VC_LOGIN_REQUEST;
             } else if (CREDENTIAL_OFFER_PATTERN.matcher(qrContent).matches()) {
                 return QrType.CREDENTIAL_OFFER_URI;
