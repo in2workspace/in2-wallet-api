@@ -58,9 +58,6 @@ public class ApplicationUtils {
                     if (response.statusCode().is3xxRedirection()) {
                         return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
                     }
-                    else if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
-                        return Mono.error(new RuntimeException("Error during post request:" + response.statusCode() ));
-                    }
                     else {
                         return response.bodyToMono(String.class);
                     }
