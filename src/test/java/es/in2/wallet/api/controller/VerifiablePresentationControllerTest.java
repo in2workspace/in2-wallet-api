@@ -38,7 +38,7 @@ class VerifiablePresentationControllerTest {
                 .bindToController(verifiablePresentationController)
                 .build()
                 .post()
-                .uri("/api/vp")
+                .uri("/api/v2/vp")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorizationToken)
                 .bodyValue(vcSelectorResponse)
                 .exchange()
@@ -58,11 +58,11 @@ class VerifiablePresentationControllerTest {
                 .bindToController(verifiablePresentationController)
                 .build()
                 .post()
-                .uri("/api/vp/cbor")
+                .uri("/api/v2/vp/cbor")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorizationToken)
                 .bodyValue(credentialsBasicInfo)
                 .exchange()
-                .expectStatus().isOk()
+                .expectStatus().isCreated()
                 .expectBody(String.class)
                 .isEqualTo(expectedResponse);
     }

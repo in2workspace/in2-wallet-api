@@ -9,6 +9,7 @@ import es.in2.wallet.domain.service.DidKeyGeneratorService;
 import es.in2.wallet.domain.service.UserDataService;
 import es.in2.wallet.domain.util.ApplicationUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -37,7 +38,7 @@ public class EbsiConfig {
 
     private String didForEbsi;
 
-    //@PostConstruct
+    @PostConstruct
     @Tag(name = "EbsiConfig", description = "Generate Did for ebsi purposes")
     public void init() {
         generateEbsiDid().subscribe(did -> this.didForEbsi = did);
