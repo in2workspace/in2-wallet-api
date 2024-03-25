@@ -76,7 +76,7 @@ hashicorp:
     host: localhost
     port: 8201
     scheme: http
-    token: "hvs.7EBcpY0WgwHSu09doq6VI77E"
+    token: "hvs.cvkSZ1qirXWnLvFyugyKbSsT"
 
 azure:
   app:

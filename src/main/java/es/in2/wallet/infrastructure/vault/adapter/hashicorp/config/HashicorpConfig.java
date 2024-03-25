@@ -7,6 +7,8 @@ import es.in2.wallet.infrastructure.vault.model.VaultProviderEnum;
 import es.in2.wallet.infrastructure.vault.util.VaultProviderAnnotation;
 import org.springframework.stereotype.Component;
 
+import java.util.Base64;
+
 @Component
 @VaultProviderAnnotation(provider = VaultProviderEnum.HASHICORP)
 public class HashicorpConfig {
@@ -36,6 +38,14 @@ public class HashicorpConfig {
     }
 
     public String getVaultToken() {
-        return genericConfigAdapter.getConfiguration(hashicorpProperties.token());
+        return decodeIfBase64(hashicorpProperties.token());
+    }
+    private String decodeIfBase64(String token) {
+        try {
+            byte[] decodedBytes = Base64.getDecoder().decode(token);
+            return new String(decodedBytes);
+        } catch (IllegalArgumentException ex) {
+            return token;
+        }
     }
 }

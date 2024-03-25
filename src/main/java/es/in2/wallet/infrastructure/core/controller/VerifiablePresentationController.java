@@ -20,7 +20,7 @@ import java.util.UUID;
 import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerToken;
 
 @RestController
-@RequestMapping("/api/vp")
+@RequestMapping("/api/v2/vp")
 @Slf4j
 @RequiredArgsConstructor
 public class VerifiablePresentationController {
@@ -43,7 +43,7 @@ public class VerifiablePresentationController {
                         attestationExchangeService.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse));
     }
     @PostMapping("/cbor")
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.CREATED)
     @Operation(
             summary = "Verifiable Presentation in CBOR format",
             description = "Create a Verifiable Presentation in CBOR format",
