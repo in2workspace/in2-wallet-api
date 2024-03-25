@@ -44,12 +44,13 @@ public class HashicorpConfig {
     }
     private String decodeIfBase64(String token) {
         try {
+            log.debug("encoded token {}", token);
             byte[] decodedBytes = Base64.getDecoder().decode(token);
             log.debug("validation token {}",  new String(decodedBytes));
-            return new String(decodedBytes);
+            return new String(decodedBytes).trim();
         } catch (IllegalArgumentException ex) {
             log.debug("validation token {}",token);
-            return token;
+            return token.trim();
         }
     }
 }
