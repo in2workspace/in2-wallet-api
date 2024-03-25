@@ -5,11 +5,13 @@ import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import es.in2.wallet.infrastructure.vault.adapter.hashicorp.config.properties.HashicorpProperties;
 import es.in2.wallet.infrastructure.vault.model.VaultProviderEnum;
 import es.in2.wallet.infrastructure.vault.util.VaultProviderAnnotation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Base64;
 
 @Component
+@Slf4j
 @VaultProviderAnnotation(provider = VaultProviderEnum.HASHICORP)
 public class HashicorpConfig {
     private final GenericConfigAdapter genericConfigAdapter;
@@ -43,8 +45,10 @@ public class HashicorpConfig {
     private String decodeIfBase64(String token) {
         try {
             byte[] decodedBytes = Base64.getDecoder().decode(token);
+            log.debug(new String(decodedBytes));
             return new String(decodedBytes);
         } catch (IllegalArgumentException ex) {
+            log.debug(token);
             return token;
         }
     }
