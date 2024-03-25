@@ -53,12 +53,18 @@ public class EbsiConfig {
         log.debug(headers.toString());
 
         headers.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
-
+        String clientSecret;
+        try {
+            byte[] decodedBytes = Base64.getDecoder().decode(appConfig.getIdentityProviderClientSecret());
+            clientSecret = new String(decodedBytes);
+        } catch (IllegalArgumentException ex) {
+           clientSecret = appConfig.getIdentityProviderClientSecret();
+        }
         String body = "grant_type=" + URLEncoder.encode("password", StandardCharsets.UTF_8) +
                 "&username=" + URLEncoder.encode(appConfig.getIdentityProviderUsername(), StandardCharsets.UTF_8) +
                 "&password=" + URLEncoder.encode(appConfig.getIdentityProviderPassword(), StandardCharsets.UTF_8) +
                 "&client_id=" + URLEncoder.encode(appConfig.getIdentityProviderClientId(), StandardCharsets.UTF_8) +
-                "&client_secret=" + URLEncoder.encode(appConfig.getIdentityProviderClientSecret(), StandardCharsets.UTF_8);
+                "&client_secret=" + URLEncoder.encode(clientSecret, StandardCharsets.UTF_8);
 
         return Mono.delay(Duration.ofSeconds(30))
                 .then(postRequest(appConfig.getIdentityProviderUrl(), headers, body))
