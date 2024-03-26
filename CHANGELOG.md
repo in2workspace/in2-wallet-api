@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Introduced the authentication process for Verifiable Presentations flow [OpenID.VP] combined with the Self-Issued OP v2 specification [OpenID.SIOP2]
 - Introduced the Verifiable Presentation flow for CWT (Cbor web token) format
 - Introduced the abstraction of the configuration and the vault
+- Compatibility with the attestation exchange of the DOME marketplace. 
 
 ## [v1.1.0](https://github.com/in2workspace/wallet-server/releases/tag/v1.1.1) - 2024-3-26
 ### Fixed
