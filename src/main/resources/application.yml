@@ -1,31 +1,15 @@
-# Spring Configuration
 spring:
   application:
     name: "wallet-server"
   main:
     web-application-type: reactive
-  cloud:
-    vault:
-      host: localhost
-      port: 8201
-      authentication: token
-      token: hvs.wClyFQZMycchksoBJFXUPjQY
-      scheme: http
-      kv:
-        enabled: true
-    azure:
-      keyvault:
-        secret:
-          endpoint: https://example
 
-# Spring Logging Configuration
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
-    es.in2.wallet: INFO
+    es.in2.wallet: DEBUG
 
-# Spring Management Configuration - Actuator
 management:
   endpoints:
     enabled-by-default: false
@@ -43,14 +27,17 @@ management:
     health:
       enabled: true
       show-details: always
+      vault:
+        enabled: false
     loggers:
       enabled: true
     metrics:
       enabled: true
     prometheus:
       enabled: true
+    tracing:
+      enabled: false
 
-# SpringDoc Configuration - OpenAPI 3.0 Documentation & Swagger UI
 springdoc:
   api-docs:
     path: /api-docs
@@ -59,32 +46,75 @@ springdoc:
     tags-sorter: alpha
     operations-sorter: method
 
-# Server Configuration
 server:
   port: 8080
 
-# Context Broker Configuration
 broker:
-  provider: "scorpio"
-  externalDomain: "http://localhost:9090"
-  internalDomain: "http://localhost:9090"
+  provider: scorpio
+  external-url:
+    scheme: http
+    domain: localhost
+    port: 9090
+  internal-url:
+    scheme: http
+    domain: localhost
+    port: 9090
   paths:
     entities: "/ngsi-ld/v1/entities"
 
+app:
+  config-source:
+    name: yaml
+
 vault:
   provider:
-    name: hashicorp #hashicorp #azure
+    name: hashicorp
 
+hashicorp:
+  vault:
+    path: /kv
+    host: localhost
+    port: 8201
+    scheme: http
+    token: "hvs.cvkSZ1qirXWnLvFyugyKbSsT"
+
+azure:
+  app:
+    endpoint: ${APP_CONFIG_ENDPOINT}
+    label:
+      global: service-discovery
+  key-vault:
+    endpoint: "your-endpoint"
+
+# These properties will be removed in the future
 auth-server:
-  domain: https://issuerkeycloak.demo.in2.es/realms/EAAProvider
-  token-endpoint: https://issuerkeycloak.demo.in2.es/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token
+  external-url:
+    scheme: "http"
+    domain: "localhost"
+    port: "8080"
+    path: "/cross-keycloak/realms/EAAProvider"
+  internal-url:
+    scheme: "http"
+    domain: "localhost"
+    port: "8080"
+    path: "/realms/EAAProvider"
+  token-url:
+    scheme: "http"
+    domain: "localhost"
+    port: "8080"
+    path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
 
-identity-provider:
-  url: http://localhost:9099/realms/wallet/protocol/openid-connect/token
-  client-secret: fV51P8jFBo8VnFKMMuP3imw3H3i5mNck
-  client-id: user-registry-client
-  username: adminWallet
-  password: adminPass
+# These properties are used to pass the EBSI Holder Wallet Test
+ebsi:
+  test:
+    url: http://localhost:9099/realms/wallet/protocol/openid-connect/token
+    client-secret: "fV51P8jFBo8VnFKMMuP3imw3H3i5mNck"
+    client-id: user-registry-client
+    username: adminWallet
+    password: adminPass
 
 wallet-wda:
-  url: http://localhost:4200
+  urls:
+    - scheme: http
+      domain: localhost
+      port: 4200

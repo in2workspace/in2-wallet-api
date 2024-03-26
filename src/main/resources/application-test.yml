@@ -1,0 +1,56 @@
+#server:
+#  port: 8088
+#
+#broker:
+#  provider: "scorpio"
+#  external-url:
+#    scheme: "https"
+#    domain: "your-app-domain"
+#    port: 443
+#  internal-url:
+#    scheme: "https"
+#    domain: "your-app-domain"
+#    port: 443
+#  paths:
+#    entities: "/ngsi-ld/v1/entities"
+#
+##app:
+#  config-source:
+#    name: azure
+#
+#vault:
+#  provider:
+#    name: azure
+#
+#azure:
+#  app:
+#    label:
+#      global: service-discovery
+#  keyvault:
+#    endpoint: "your-app-domain"
+#
+#auth-server:
+#  external-url:
+#    scheme: "https"
+#    domain: "your-app-domain"
+#    port: 443
+#    path: "/your-path"
+#  internal-url:
+#    scheme: "https"
+#    domain: "your-app-domain"
+#    port: 443
+#    path: "/your-path"
+#  token-url:
+#    scheme: "https"
+#    domain: "your-app-domain"
+#    port: 443
+#    path: "/your-path"
+#
+#wallet-wda:
+#  urls:
+#    - scheme: https
+#      domain: wallet-wda-custom-domain-uri
+#      port: 443
+#    - scheme: http
+#      domain: localhost
+#      port: 4200

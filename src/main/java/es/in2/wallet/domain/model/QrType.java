@@ -1,0 +1,11 @@
+package es.in2.wallet.domain.model;
+
+public enum QrType {
+    VC_LOGIN_REQUEST,
+    CREDENTIAL_OFFER_URI,
+    OPENID_CREDENTIAL_OFFER,
+    EBSI_CREDENTIAL_OFFER,
+    OPENID_AUTHENTICATION_REQUEST,
+    DOME_VC_LOGIN_REQUEST,
+    UNKNOWN
+}
