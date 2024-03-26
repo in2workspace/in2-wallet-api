@@ -38,7 +38,7 @@ public class EbsiConfig {
 
     private String didForEbsi;
 
-//    @PostConstruct
+    @PostConstruct
     @Tag(name = "EbsiConfig", description = "Generate Did for ebsi purposes")
     public void init() {
         generateEbsiDid().subscribe(did -> this.didForEbsi = did);
@@ -56,9 +56,9 @@ public class EbsiConfig {
         String clientSecret;
         try {
             byte[] decodedBytes = Base64.getDecoder().decode(appConfig.getIdentityProviderClientSecret());
-            clientSecret = new String(decodedBytes);
+            clientSecret = new String(decodedBytes).trim();
         } catch (IllegalArgumentException ex) {
-           clientSecret = appConfig.getIdentityProviderClientSecret();
+           clientSecret = appConfig.getIdentityProviderClientSecret().trim();
         }
         String body = "grant_type=" + URLEncoder.encode("password", StandardCharsets.UTF_8) +
                 "&username=" + URLEncoder.encode(appConfig.getIdentityProviderUsername(), StandardCharsets.UTF_8) +
