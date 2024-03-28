@@ -47,7 +47,7 @@ springdoc:
     operations-sorter: method
 
 server:
-  port: 8080
+  port: 8082
 
 broker:
   provider: scorpio
@@ -68,7 +68,7 @@ app:
 
 vault:
   provider:
-    name: hashicorp
+    name: azure
 
 hashicorp:
   vault:
@@ -84,7 +84,7 @@ azure:
     label:
       global: service-discovery
   key-vault:
-    endpoint: "your-endpoint"
+    endpoint: "https://epu-dev-kv-01.vault.azure.net/"
 
 # These properties will be removed in the future
 auth-server:
@@ -103,6 +103,10 @@ auth-server:
     domain: "localhost"
     port: "8080"
     path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
+
+verifiable-presentation:
+  expiration-time: 3
+  expiration-unit: MINUTES #DAYS HOURS MINUTES SECONDS
 
 # These properties are used to pass the EBSI Holder Wallet Test
 ebsi:
