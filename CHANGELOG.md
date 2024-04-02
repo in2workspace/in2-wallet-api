@@ -29,10 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Introduced the abstraction of the configuration and the vault
 - Compatibility with the attestation exchange of the DOME marketplace. 
 
-## [v1.1.0](https://github.com/in2workspace/wallet-server/releases/tag/v1.1.1) - 2024-3-26
+## [v1.1.0](https://github.com/in2workspace/wallet-server/releases/tag/v1.1.1) - 2024-04-02
 ### Fixed
 - Change the versioning of the api endpoints from v2 to v1
-
-## [v1.1.0](https://github.com/in2workspace/wallet-server/releases/tag/v1.1.2) - 2024-04-02
-### Fixed
 - Change hardcoded verifiable presentation expiration to dynamic variable
