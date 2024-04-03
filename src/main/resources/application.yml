@@ -47,7 +47,7 @@ springdoc:
     operations-sorter: method
 
 server:
-  port: 8080
+  port: 8081
 
 broker:
   provider: scorpio
@@ -76,33 +76,33 @@ hashicorp:
     host: localhost
     port: 8201
     scheme: http
-    token: "hvs.cvkSZ1qirXWnLvFyugyKbSsT"
+    token: "hvs.60TonjabQzUoOPF3HTqIPLnV"
 
-azure:
-  app:
-    endpoint: ${APP_CONFIG_ENDPOINT}
-    label:
-      global: service-discovery
-  key-vault:
-    endpoint: "your-endpoint"
+#azure:
+#  app:
+#    endpoint: ${APP_CONFIG_ENDPOINT}
+#    label:
+#      global: service-discovery
+#  key-vault:
+#    endpoint: "your-endpoint"
 
 # These properties will be removed in the future
-auth-server:
-  external-url:
-    scheme: "http"
-    domain: "localhost"
-    port: "8080"
-    path: "/cross-keycloak/realms/EAAProvider"
-  internal-url:
-    scheme: "http"
-    domain: "localhost"
-    port: "8080"
-    path: "/realms/EAAProvider"
-  token-url:
-    scheme: "http"
-    domain: "localhost"
-    port: "8080"
-    path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
+#auth-server:
+#  external-url:
+#    scheme: "http"
+#    domain: "localhost"
+#    port: "8080"
+#    path: "/cross-keycloak/realms/EAAProvider"
+#  internal-url:
+#    scheme: "http"
+#    domain: "localhost"
+#    port: "8080"
+#    path: "/realms/EAAProvider"
+#  token-url:
+#    scheme: "http"
+#    domain: "localhost"
+#    port: "8080"
+#    path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
 
 verifiable-presentation:
   expiration-time: 3

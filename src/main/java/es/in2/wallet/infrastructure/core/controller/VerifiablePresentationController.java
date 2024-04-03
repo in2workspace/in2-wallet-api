@@ -1,10 +1,11 @@
 package es.in2.wallet.infrastructure.core.controller;
 
-import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
 import es.in2.wallet.application.service.AttestationExchangeService;
+import es.in2.wallet.application.service.DomeAttestationExchangeService;
 import es.in2.wallet.application.service.TurnstileAttestationExchangeService;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorResponse;
+import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerToken;
+import static es.in2.wallet.domain.util.MessageUtils.DOME_REDIRECT_URI_PATTERN;
 
 @RestController
 @RequestMapping("/api/v1/vp")
@@ -27,6 +29,7 @@ public class VerifiablePresentationController {
 
     private final TurnstileAttestationExchangeService turnstileAttestationExchangeService;
     private final AttestationExchangeService attestationExchangeService;
+    private final DomeAttestationExchangeService domeAttestationExchangeService;
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
@@ -39,8 +42,14 @@ public class VerifiablePresentationController {
         String processId = UUID.randomUUID().toString();
         MDC.put("processId", processId);
         return getCleanBearerToken(authorizationHeader)
-                .flatMap(authorizationToken ->
-                        attestationExchangeService.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse));
+                .flatMap(authorizationToken ->{
+                        if (DOME_REDIRECT_URI_PATTERN.matcher(vcSelectorResponse.redirectUri()).matches()){
+                            return domeAttestationExchangeService.buildAndSendVerifiablePresentationWithSelectedVCsForDome(processId,authorizationToken,vcSelectorResponse);
+                        }
+                        else {
+                            return attestationExchangeService.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse);
+                        }
+                });
     }
     @PostMapping("/cbor")
     @ResponseStatus(HttpStatus.CREATED)

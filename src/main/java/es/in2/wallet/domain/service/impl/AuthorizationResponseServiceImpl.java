@@ -21,11 +21,12 @@ import reactor.core.publisher.Mono;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
+import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE;
+import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM;
 
 
 @Slf4j
@@ -41,6 +42,19 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
         return generateDescriptorMapping(verifiablePresentation)
                 .flatMap(descriptorMapping -> getPresentationSubmissionAsString(processId, descriptorMapping))
                 .flatMap(presentationSubmissionString -> postAuthorizationResponse(processId, vcSelectorResponse, verifiablePresentation, presentationSubmissionString, authorizationToken));
+    }
+
+    @Override
+    public Mono<Void> sendAuthorizationResponseForDome(String vpToken, VcSelectorResponse vcSelectorResponse) {
+        String body = "vp_token=" + vpToken;
+        List<Map.Entry<String, String>> headers = new ArrayList<>();
+        headers.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
+
+        String urlWithState = vcSelectorResponse.redirectUri() + "?state=" + vcSelectorResponse.state();
+
+        return postRequest(urlWithState, headers,body)
+                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while sending Vp Token Response")))
+                .then();
     }
 
     private Mono<DescriptorMap> generateDescriptorMapping(String verifiablePresentationString) throws JsonProcessingException {
@@ -161,7 +175,7 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                                                    String verifiablePresentation, String presentationSubmissionString, String authorizationToken) {
         // Headers
         List<Map.Entry<String, String>> headers = List.of(
-                Map.entry(MessageUtils.CONTENT_TYPE, MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM),
+                Map.entry(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM),
                 Map.entry(MessageUtils.HEADER_AUTHORIZATION, MessageUtils.BEARER + authorizationToken));
         // Build URL encoded form data request body
         Map<String, String> formDataMap = Map.of(
@@ -173,7 +187,7 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                 .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
                 .collect(Collectors.joining("&"));
         // Post request
-        return ApplicationUtils.postRequest(vcSelectorResponse.redirectUri(), headers, xWwwFormUrlencodedBody)
+        return postRequest(vcSelectorResponse.redirectUri(), headers, xWwwFormUrlencodedBody)
                 .doOnSuccess(response -> log.info("ProcessID: {} - Authorization Response: {}", processId, response))
                 .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching Credential Issuer Metadata from the Issuer")));
     }
