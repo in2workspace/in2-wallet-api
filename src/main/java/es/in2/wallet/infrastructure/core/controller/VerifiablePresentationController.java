@@ -49,7 +49,7 @@ public class VerifiablePresentationController {
                         else {
                             return attestationExchangeService.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse);
                         }
-                });
+                }).doOnSuccess(aVoid -> log.info("Attestation exchange successful"));
     }
     @PostMapping("/cbor")
     @ResponseStatus(HttpStatus.CREATED)
