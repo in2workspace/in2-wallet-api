@@ -47,7 +47,7 @@ springdoc:
     operations-sorter: method
 
 server:
-  port: 8081
+  port: 8080
 
 broker:
   provider: scorpio
