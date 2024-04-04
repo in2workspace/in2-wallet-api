@@ -4,7 +4,6 @@ import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.domain.model.AuthorizationRequest;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.service.DomeVpTokenService;
-import es.in2.wallet.domain.service.PresentationService;
 import es.in2.wallet.domain.service.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +13,8 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.domain.util.MessageUtils.DEFAULT_SCOPE_FOR_DOME_VERIFIER;
+import static es.in2.wallet.domain.util.MessageUtils.DEFAULT_VC_TYPES_FOR_DOME_VERIFIER;
 
 @Slf4j
 @Service
@@ -44,10 +45,18 @@ public class DomeVpTokenServiceImpl implements DomeVpTokenService {
     }
 
     private Mono<VcSelectorRequest> buildVpTokenResponse(String processId, String authorizationToken, AuthorizationRequest authorizationRequest) {
-        List<String> vcTypeList = List.of("LegalPersonCredential","LEARCredentialEmployee");
+        // Check if any of the scopes defined in DEFAULT_SCOPE_FOR_DOME_VERIFIER are present in the scope of AuthorizationRequest
+        boolean scopeMatches = DEFAULT_SCOPE_FOR_DOME_VERIFIER.stream().anyMatch(scope -> authorizationRequest.scope().contains(scope));
 
-        return buildVCSelectorRequest(processId, authorizationToken, vcTypeList,authorizationRequest);
+        if (scopeMatches) {
+            // If there is a match, use DEFAULT_VC_TYPES_FOR_DOME_VERIFIER as the list of VC types
+            return buildVCSelectorRequest(processId, authorizationToken, DEFAULT_VC_TYPES_FOR_DOME_VERIFIER, authorizationRequest);
+        } else {
+            // If there is no match, pass the scope from AuthorizationRequest directly
+            return buildVCSelectorRequest(processId, authorizationToken, authorizationRequest.scope(), authorizationRequest);
+        }
     }
+
 
 
     /**
