@@ -34,6 +34,6 @@ public class DomeAttestationExchangeServiceImpl implements DomeAttestationExchan
     public Mono<Void> buildAndSendVerifiablePresentationWithSelectedVCsForDome(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse) {
         // Get the Verifiable Credentials which will be used for the Presentation from the Wallet Data Service
         return presentationService.createEncodedVerifiablePresentationForDome(processId,authorizationToken,vcSelectorResponse)
-                .flatMap(vpToken -> authorizationResponseService.sendAuthorizationResponseForDome(vpToken,vcSelectorResponse));
+                .flatMap(vpToken -> authorizationResponseService.sendDomeAuthorizationResponse(vpToken,vcSelectorResponse));
     }
 }

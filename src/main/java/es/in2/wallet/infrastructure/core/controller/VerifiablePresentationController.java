@@ -43,12 +43,16 @@ public class VerifiablePresentationController {
         MDC.put("processId", processId);
         return getCleanBearerToken(authorizationHeader)
                 .flatMap(authorizationToken ->{
+                        // Since the attestation exchange of DOME does not follow the standard, we check if the content of the
+                        // redirect_uri belongs to the DOME verifier in order to continue with their use case.
                         if (DOME_REDIRECT_URI_PATTERN.matcher(vcSelectorResponse.redirectUri()).matches()){
                             return domeAttestationExchangeService.buildAndSendVerifiablePresentationWithSelectedVCsForDome(processId,authorizationToken,vcSelectorResponse);
                         }
+
                         else {
                             return attestationExchangeService.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse);
                         }
+
                 }).doOnSuccess(aVoid -> log.info("Attestation exchange successful"));
     }
     @PostMapping("/cbor")

@@ -86,4 +86,16 @@ public class GlobalExceptionHandler {
                 .path(path)
                 .build());
     }
+    @ExceptionHandler(NoSuchVerifiableCredentialException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public Mono<GlobalErrorMessage> noSuchVerifiableCredentialException(NoSuchVerifiableCredentialException ex, ServerHttpRequest request) {
+        String path = String.valueOf(request.getPath());
+        return Mono.just(GlobalErrorMessage.builder()
+                .title("NoSuchVerifiableCredentialException")
+                .message(ex.getMessage())
+                .path(path)
+                .build());
+    }
+
 }

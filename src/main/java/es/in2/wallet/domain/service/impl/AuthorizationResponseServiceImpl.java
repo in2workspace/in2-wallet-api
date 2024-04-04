@@ -10,7 +10,6 @@ import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.AuthorizationResponseService;
-import es.in2.wallet.domain.util.ApplicationUtils;
 import es.in2.wallet.domain.util.MessageUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +44,7 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
     }
 
     @Override
-    public Mono<Void> sendAuthorizationResponseForDome(String vpToken, VcSelectorResponse vcSelectorResponse) {
+    public Mono<Void> sendDomeAuthorizationResponse(String vpToken, VcSelectorResponse vcSelectorResponse) {
         String body = "vp_token=" + vpToken;
         List<Map.Entry<String, String>> headers = new ArrayList<>();
         headers.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));

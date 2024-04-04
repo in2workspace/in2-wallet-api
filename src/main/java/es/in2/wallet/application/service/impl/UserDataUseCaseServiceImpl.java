@@ -3,6 +3,7 @@ package es.in2.wallet.application.service.impl;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.port.VaultService;
 import es.in2.wallet.application.service.UserDataUseCaseService;
+import es.in2.wallet.domain.exception.NoSuchVerifiableCredentialException;
 import es.in2.wallet.domain.model.CredentialsBasicInfoWithExpirationDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,7 @@ public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
     public Mono<List<CredentialsBasicInfoWithExpirationDate>> getUserVCs(String processId, String userId) {
         return brokerService.getEntityById(processId, userId).flatMap(optionalEntity -> optionalEntity.map(userDataService::getUserVCsInJson).orElseGet(() -> {
             log.error("User with ID {} has no entity or credentials yet.", userId);
-            return Mono.just(List.of());
+            return Mono.error(new NoSuchVerifiableCredentialException("There is no credential available"));
         })).doOnSuccess(list -> log.info("Retrieved VCs in JSON for userId: {}", userId)).onErrorResume(Mono::error);
     }
 
