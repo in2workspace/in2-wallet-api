@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.service.impl.UserDataUseCaseServiceImpl;
+import es.in2.wallet.domain.exception.NoSuchVerifiableCredentialException;
 import es.in2.wallet.domain.model.CredentialsBasicInfoWithExpirationDate;
 import es.in2.wallet.domain.service.UserDataService;
 import es.in2.wallet.application.port.VaultService;
@@ -63,15 +64,15 @@ class UserDataUseCaseServiceImplTest {
     }
 
     @Test
-    void getUserVCs_UserDoesNotExist_ReturnsEmptyList() {
+    void getUserVCs_UserDoesNotExist_ReturnsError() {
         String processId = "process1";
         String userId = "user1";
-        List<CredentialsBasicInfoWithExpirationDate> expectedCredentials = List.of();
+
         when(brokerService.getEntityById(processId, userId)).thenReturn(Mono.just(Optional.empty()));
 
         StepVerifier.create(userDataFacadeService.getUserVCs(processId, userId))
-                .expectNext(expectedCredentials)
-                .verifyComplete();
+                .expectError(NoSuchVerifiableCredentialException.class)
+                .verify();
         verify(brokerService).getEntityById(processId, userId);
         verifyNoInteractions(userDataService);
     }
