@@ -44,7 +44,7 @@ public class DomeVpTokenServiceImpl implements DomeVpTokenService {
     }
 
     private Mono<VcSelectorRequest> buildVpTokenResponse(String processId, String authorizationToken, AuthorizationRequest authorizationRequest) {
-        List<String> vcTypeList = List.of("LegalPersonCredential");
+        List<String> vcTypeList = List.of("LegalPersonCredential","LEARCredentialEmployee");
 
         return buildVCSelectorRequest(processId, authorizationToken, vcTypeList,authorizationRequest);
     }

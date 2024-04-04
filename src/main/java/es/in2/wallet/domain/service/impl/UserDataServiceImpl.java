@@ -28,7 +28,10 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
 import java.util.*;
 
 import static es.in2.wallet.domain.util.MessageUtils.*;
@@ -230,20 +233,65 @@ public class UserDataServiceImpl implements UserDataService {
      */
     @Override
     public Mono<List<CredentialsBasicInfoWithExpirationDate>> getUserVCsInJson(String userEntity) {
-        return serializeUserEntity(userEntity).flatMapMany(user -> Flux.fromIterable(user.vcs().value())).filter(vcAttribute -> VC_JSON.equals(vcAttribute.type())).flatMap(item -> {
-            LinkedHashMap<?, ?> vcDataValue = (LinkedHashMap<?, ?>) item.value();
-            JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
+        return serializeUserEntity(userEntity).flatMapMany(user -> Flux.fromIterable(user.vcs().value()))
+                .filter(vcAttribute -> VC_JSON.equals(vcAttribute.type()))
+                .flatMap(item -> {
+                    LinkedHashMap<?, ?> vcDataValue = (LinkedHashMap<?, ?>) item.value();
+                    JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
 
-            return getVcTypeListFromVcJson(jsonNode)
-                    .map(vcTypeList -> {
-                        ZonedDateTime expirationDate = null;
-                        if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
-                            expirationDate = ZonedDateTime.parse(jsonNode.get(EXPIRATION_DATE).asText());
-                        }
-                        return new CredentialsBasicInfoWithExpirationDate(item.id(), vcTypeList, jsonNode.get(CREDENTIAL_SUBJECT), expirationDate);
-                    });
-        }).collectList().onErrorResume(NoSuchVerifiableCredentialException.class, Mono::error);
+                    return getVcTypeListFromVcJson(jsonNode)
+                            .map(vcTypeList -> {
+                                ZonedDateTime expirationDate = null;
+                                if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
+                                    expirationDate = parseZonedDateTime(jsonNode.get(EXPIRATION_DATE).asText());
+                                }
+                                return new CredentialsBasicInfoWithExpirationDate(item.id(), vcTypeList, jsonNode.get(CREDENTIAL_SUBJECT), expirationDate);
+                            });
+                }).collectList().onErrorResume(NoSuchVerifiableCredentialException.class, Mono::error);
     }
+
+    /**
+     * This method parses a date-time string into a ZonedDateTime object using a custom DateTimeFormatter.
+     * The formatter is built with Locale.US to ensure consistency in parsing text-based elements of the date-time,
+     * such as month names and AM/PM markers, according to US conventions. This choice does not imply the date-time
+     * is in a US timezone; rather, it ensures that the parsing behavior is consistent and matches the expected format,
+     * particularly for applications used across different locales. The input date-time format expected is 'yyyy-MM-dd HH:mm:ss'
+     * followed by optional nanoseconds and a timezone offset (e.g., '+0000' or equivalent UTC notation). The method
+     * handles date-time strings in an international format (ISO 8601) with high precision and includes provisions
+     * for parsing the timezone correctly. The use of Locale.US here is a standard practice for avoiding locale-specific
+     * variations in date-time parsing and formatting, ensuring that the application behaves consistently in diverse
+     * execution environments.
+     */
+
+//    private ZonedDateTime parseZonedDateTime(String dateString) {
+//        // First, try parsing with the default formatter for ISO ZonedDateTime.
+//        try {
+//            return ZonedDateTime.parse(dateString);
+//        } catch (DateTimeParseException e) {
+//            // If the default parsing fails, try with a custom formatter.
+//            DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+//                    // Date and time parts
+//                    .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
+//                    // Optional microseconds
+//                    .optionalStart()
+//                    .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
+//                    .optionalEnd()
+//                    // Offset (e.g., '+0000') or 'Z' for UTC
+//                    .appendOffset("+HHMM", "Z")
+//                    // Create the formatter (using default Locale)
+//                    .toFormatter(Locale.US);
+//
+//            try {
+//                return ZonedDateTime.parse(dateString, formatter);
+//            } catch (DateTimeParseException ex) {
+//                // If both parsing attempts fail, throw an IllegalArgumentException.
+//                throw new IllegalArgumentException("Invalid date format: " + dateString, ex);
+//            }
+//        }
+//    }
+
+
+
 
     /**
      * Retrieves a list of user's Verifiable Credentials (VCs) that match a given list of VC types.
