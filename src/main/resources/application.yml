@@ -108,6 +108,10 @@ verifiable-presentation:
   expiration-time: 3
   expiration-unit: MINUTES #DAYS HOURS MINUTES SECONDS
 
+verifiable-presentation:
+  expiration-time: 3
+  expiration-unit: MINUTES #DAYS HOURS MINUTES SECONDS
+
 # These properties are used to pass the EBSI Holder Wallet Test
 ebsi:
   test:
