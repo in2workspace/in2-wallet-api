@@ -63,15 +63,15 @@ class UserDataUseCaseServiceImplTest {
     }
 
     @Test
-    void getUserVCs_UserDoesNotExist_ReturnsError() {
+    void getUserVCs_UserDoesNotExist_ReturnsEmptyList() {
         String processId = "process1";
         String userId = "user1";
-
+        List<CredentialsBasicInfoWithExpirationDate> expectedCredentials = List.of();
         when(brokerService.getEntityById(processId, userId)).thenReturn(Mono.just(Optional.empty()));
 
         StepVerifier.create(userDataFacadeService.getUserVCs(processId, userId))
-                .expectError(RuntimeException.class)
-                .verify();
+                .expectNext(expectedCredentials)
+                .verifyComplete();
         verify(brokerService).getEntityById(processId, userId);
         verifyNoInteractions(userDataService);
     }

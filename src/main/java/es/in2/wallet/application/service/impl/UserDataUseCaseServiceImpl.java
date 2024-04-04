@@ -30,7 +30,7 @@ public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
     public Mono<List<CredentialsBasicInfoWithExpirationDate>> getUserVCs(String processId, String userId) {
         return brokerService.getEntityById(processId, userId).flatMap(optionalEntity -> optionalEntity.map(userDataService::getUserVCsInJson).orElseGet(() -> {
             log.error("User with ID {} has no entity or credentials yet.", userId);
-            return Mono.error(new RuntimeException("There's no credential available."));
+            return Mono.just(List.of());
         })).doOnSuccess(list -> log.info("Retrieved VCs in JSON for userId: {}", userId)).onErrorResume(Mono::error);
     }
 
