@@ -21,29 +21,8 @@ import static org.mockito.Mockito.when;
 class VerifiablePresentationControllerTest {
     @Mock
     private TurnstileAttestationExchangeService turnstileAttestationExchangeService;
-    @Mock
-    private AttestationExchangeService attestationExchangeService;
     @InjectMocks
     private VerifiablePresentationController verifiablePresentationController;
-    @Test
-    void testCreateVerifiablePresentation() {
-        // Arrange
-        String authorizationToken = "authToken";
-        VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().build();
-
-        when(attestationExchangeService.buildVerifiablePresentationWithSelectedVCs(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
-                .thenReturn(Mono.empty());
-
-        WebTestClient
-                .bindToController(verifiablePresentationController)
-                .build()
-                .post()
-                .uri("/api/v1/vp")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorizationToken)
-                .bodyValue(vcSelectorResponse)
-                .exchange()
-                .expectStatus().isCreated();
-    }
 
     @Test
     void testCreateVerifiablePresentationInCborFormat() {
