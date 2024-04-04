@@ -1,9 +1,7 @@
 package es.in2.wallet.api.controller;
 
-import es.in2.wallet.application.service.AttestationExchangeService;
 import es.in2.wallet.application.service.TurnstileAttestationExchangeService;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
-import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.infrastructure.core.controller.VerifiablePresentationController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,8 +19,6 @@ import static org.mockito.Mockito.when;
 class VerifiablePresentationControllerTest {
     @Mock
     private TurnstileAttestationExchangeService turnstileAttestationExchangeService;
-    @Mock
-    private AttestationExchangeService attestationExchangeService;
     @InjectMocks
     private VerifiablePresentationController verifiablePresentationController;
 

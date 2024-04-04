@@ -33,6 +33,8 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static es.in2.wallet.domain.util.MessageUtils.*;
 
@@ -263,32 +265,22 @@ public class UserDataServiceImpl implements UserDataService {
      * execution environments.
      */
 
-//    private ZonedDateTime parseZonedDateTime(String dateString) {
-//        // First, try parsing with the default formatter for ISO ZonedDateTime.
-//        try {
-//            return ZonedDateTime.parse(dateString);
-//        } catch (DateTimeParseException e) {
-//            // If the default parsing fails, try with a custom formatter.
-//            DateTimeFormatter formatter = new DateTimeFormatterBuilder()
-//                    // Date and time parts
-//                    .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
-//                    // Optional microseconds
-//                    .optionalStart()
-//                    .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
-//                    .optionalEnd()
-//                    // Offset (e.g., '+0000') or 'Z' for UTC
-//                    .appendOffset("+HHMM", "Z")
-//                    // Create the formatter (using default Locale)
-//                    .toFormatter(Locale.US);
-//
-//            try {
-//                return ZonedDateTime.parse(dateString, formatter);
-//            } catch (DateTimeParseException ex) {
-//                // If both parsing attempts fail, throw an IllegalArgumentException.
-//                throw new IllegalArgumentException("Invalid date format: " + dateString, ex);
-//            }
-//        }
-//    }
+    private ZonedDateTime parseZonedDateTime(String dateString) {
+        // Pattern for "2025-04-02 09:23:22.637345122 +0000 UTC"
+        Pattern pattern1 = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}) (\\d{2}:\\d{2}:\\d{2}\\.\\d+) \\+0000 UTC");
+        Matcher matcher1 = pattern1.matcher(dateString);
+        if (matcher1.matches()) {
+            String normalized = matcher1.group(1) + "T" + matcher1.group(2) + "Z"; // Convert to "2025-04-02T09:23:22.637345122Z"
+            return ZonedDateTime.parse(normalized, DateTimeFormatter.ISO_DATE_TIME);
+        }
+
+        // Pattern for ISO-8601 directly parseable formats like "2024-04-21T09:29:30Z"
+        try {
+            return ZonedDateTime.parse(dateString);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format: " + dateString, e);
+        }
+    }
 
 
 
