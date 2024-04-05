@@ -1,7 +1,7 @@
 package es.in2.wallet.domain.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.domain.exception.InvalidCredentialsException;
+import es.in2.wallet.domain.exception.InvalidPinException;
 import es.in2.wallet.infrastructure.core.config.PinRequestWebSocketHandler;
 import es.in2.wallet.infrastructure.core.config.WebSocketSessionManager;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
@@ -105,7 +105,7 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
 
         // Post request
         return postRequest(tokenURL, headers, xWwwFormUrlencodedBody)
-                .onErrorResume(e -> Mono.error(new InvalidCredentialsException("Incorrect PIN or expired access token" + e)));
+                .onErrorResume(e -> Mono.error(new InvalidPinException("Incorrect PIN" + e)));
     }
 
     private Mono<TokenResponse> parseTokenResponse(String response) {

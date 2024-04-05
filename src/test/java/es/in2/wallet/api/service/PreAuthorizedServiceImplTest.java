@@ -2,7 +2,7 @@ package es.in2.wallet.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.domain.exception.InvalidCredentialsException;
+import es.in2.wallet.domain.exception.InvalidPinException;
 import es.in2.wallet.infrastructure.core.config.PinRequestWebSocketHandler;
 import es.in2.wallet.infrastructure.core.config.WebSocketSessionManager;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
@@ -85,7 +85,7 @@ class PreAuthorizedServiceImplTest {
             when(postRequest(eq(authorisationServerMetadata.tokenEndpoint()), eq(headers), anyString())).thenReturn(Mono.error(new RuntimeException()));
 
             StepVerifier.create(tokenService.getPreAuthorizedToken(processId,credentialOffer,authorisationServerMetadata,token))
-                    .expectError(InvalidCredentialsException.class)
+                    .expectError(InvalidPinException.class)
                     .verify();
         }
     }

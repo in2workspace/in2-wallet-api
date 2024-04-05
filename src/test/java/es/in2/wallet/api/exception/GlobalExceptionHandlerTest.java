@@ -38,7 +38,7 @@ class GlobalExceptionHandlerTest {
                 NoSuchQrContentException.class,
                 ParseErrorException.class,
                 NoSuchVerifiableCredentialException.class,
-                InvalidCredentialsException.class
+                InvalidPinException.class
         ));
 
         List<String> messages = new ArrayList<>(Arrays.asList(
@@ -60,7 +60,7 @@ class GlobalExceptionHandlerTest {
                 (ex, req) -> globalExceptionHandler.noSuchQrContentException((NoSuchQrContentException) ex, req),
                 (ex, req) -> globalExceptionHandler.parseErrorException((ParseErrorException) ex, req),
                 (ex, req) -> globalExceptionHandler.noSuchVerifiableCredentialException((NoSuchVerifiableCredentialException) ex, req),
-                (ex, req) -> globalExceptionHandler.invalidCredentialsException((InvalidCredentialsException) ex, req)
+                (ex, req) -> globalExceptionHandler.invalidCredentialsException((InvalidPinException) ex, req)
 
         ));
 
@@ -72,7 +72,7 @@ class GlobalExceptionHandlerTest {
         exceptionMethodNames.put(NoSuchQrContentException.class, "NoSuchQrContentException");
         exceptionMethodNames.put(ParseErrorException.class, "ParseErrorException");
         exceptionMethodNames.put(NoSuchVerifiableCredentialException.class, "NoSuchVerifiableCredentialException");
-        exceptionMethodNames.put(InvalidCredentialsException.class, "InvalidCredentialsException");
+        exceptionMethodNames.put(InvalidPinException.class, "InvalidCredentialsException");
 
         return IntStream.range(0, classes.size())
                 .mapToObj(i -> Arguments.of(classes.get(i), messages.get(i), methods.get(i % methods.size()), exceptionMethodNames));
