@@ -9,7 +9,7 @@ import java.util.List;
 @Builder
 public record CredentialsBasicInfo(
         @JsonProperty("id") String id,
-        @JsonProperty("vcType") List<String> vcType,
+        @JsonProperty("type") List<String> type,
         @JsonProperty("credentialSubject") JsonNode credentialSubject
 ) {
 }

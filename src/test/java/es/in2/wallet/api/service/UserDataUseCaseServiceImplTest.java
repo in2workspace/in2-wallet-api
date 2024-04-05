@@ -195,11 +195,11 @@ class UserDataUseCaseServiceImplTest {
 
                     CredentialsBasicInfo vc1Info = vcBasicDataDTOList.get(0);
                     assertEquals("vc1", vc1Info.id());
-                    assertTrue(vc1Info.vcType().contains("SpecificCredentialType"));
+                    assertTrue(vc1Info.type().contains("SpecificCredentialType"));
 
                     CredentialsBasicInfo vc2Info = vcBasicDataDTOList.get(1);
                     assertEquals("vc2", vc2Info.id());
-                    assertTrue(vc2Info.vcType().contains("LEARCredential"));
+                    assertTrue(vc2Info.type().contains("LEARCredential"));
                 })
                 .verifyComplete();
     }
