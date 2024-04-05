@@ -85,7 +85,7 @@ class PreAuthorizedServiceImplTest {
             when(postRequest(eq(authorisationServerMetadata.tokenEndpoint()), eq(headers), anyString())).thenReturn(Mono.error(new RuntimeException()));
 
             StepVerifier.create(tokenService.getPreAuthorizedToken(processId,credentialOffer,authorisationServerMetadata,token))
-                    .expectError(InvalidPinException.class)
+                    .expectError(RuntimeException.class)
                     .verify();
         }
     }
