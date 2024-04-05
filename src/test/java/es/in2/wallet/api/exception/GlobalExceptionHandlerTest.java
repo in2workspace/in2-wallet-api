@@ -37,7 +37,8 @@ class GlobalExceptionHandlerTest {
                 JwtInvalidFormatException.class,
                 NoSuchQrContentException.class,
                 ParseErrorException.class,
-                NoSuchVerifiableCredentialException.class
+                NoSuchVerifiableCredentialException.class,
+                InvalidCredentialsException.class
         ));
 
         List<String> messages = new ArrayList<>(Arrays.asList(
@@ -47,7 +48,8 @@ class GlobalExceptionHandlerTest {
                 "JwtInvalidFormat",
                 "NoSuchQrContent",
                 "ParseError",
-                "NoSuchVerifiableCredential"
+                "NoSuchVerifiableCredential",
+                "InvalidCredentials"
         ));
 
         List<BiFunction<Exception, ServerHttpRequest, Mono<GlobalErrorMessage>>> methods = new ArrayList<>(Arrays.asList(
@@ -57,7 +59,8 @@ class GlobalExceptionHandlerTest {
                 (ex, req) -> globalExceptionHandler.jwtInvalidFormatException((JwtInvalidFormatException) ex, req),
                 (ex, req) -> globalExceptionHandler.noSuchQrContentException((NoSuchQrContentException) ex, req),
                 (ex, req) -> globalExceptionHandler.parseErrorException((ParseErrorException) ex, req),
-                (ex, req) -> globalExceptionHandler.noSuchVerifiableCredentialException((NoSuchVerifiableCredentialException) ex, req)
+                (ex, req) -> globalExceptionHandler.noSuchVerifiableCredentialException((NoSuchVerifiableCredentialException) ex, req),
+                (ex, req) -> globalExceptionHandler.invalidCredentialsException((InvalidCredentialsException) ex, req)
 
         ));
 
@@ -69,7 +72,7 @@ class GlobalExceptionHandlerTest {
         exceptionMethodNames.put(NoSuchQrContentException.class, "NoSuchQrContentException");
         exceptionMethodNames.put(ParseErrorException.class, "ParseErrorException");
         exceptionMethodNames.put(NoSuchVerifiableCredentialException.class, "NoSuchVerifiableCredentialException");
-
+        exceptionMethodNames.put(InvalidCredentialsException.class, "InvalidCredentialsException");
 
         return IntStream.range(0, classes.size())
                 .mapToObj(i -> Arguments.of(classes.get(i), messages.get(i), methods.get(i % methods.size()), exceptionMethodNames));

@@ -98,4 +98,15 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    public Mono<GlobalErrorMessage> invalidCredentialsException(InvalidCredentialsException ex, ServerHttpRequest request) {
+        String path = String.valueOf(request.getPath());
+        return Mono.just(GlobalErrorMessage.builder()
+                .title("InvalidCredentialsException")
+                .message(ex.getMessage())
+                .path(path)
+                .build());
+    }
 }
