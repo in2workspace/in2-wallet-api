@@ -14,6 +14,7 @@ import static es.in2.wallet.domain.util.MessageUtils.*;
 public record CredentialsBasicInfoWithExpirationDate(
         @JsonProperty("id") String id,
         @JsonProperty("type") List<String> vcType,
+        @JsonProperty(AVAILABLE_FORMATS) List<String> availableFormats,
         @JsonProperty(CREDENTIAL_SUBJECT) JsonNode credentialSubject,
         @JsonProperty(EXPIRATION_DATE)
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ISO_8601_DATE_PATTERN)

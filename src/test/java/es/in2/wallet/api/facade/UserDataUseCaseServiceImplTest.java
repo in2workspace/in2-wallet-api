@@ -46,11 +46,11 @@ class UserDataUseCaseServiceImplTest {
         Optional<String> userEntity = Optional.of(userEntityString);
 
 
-        String json = "{\"id\":\"subjectId\"}";
+        String jsonSubject = "{\"id\":\"subjectId\"}";
         ObjectMapper objectMapper2 = new ObjectMapper();
-        JsonNode credentialSubject = objectMapper2.readTree(json);
+        JsonNode credentialSubject = objectMapper2.readTree(jsonSubject);
 
-        List<CredentialsBasicInfoWithExpirationDate> expectedCredentials = List.of(new CredentialsBasicInfoWithExpirationDate("id1", List.of("type"), credentialSubject, ZonedDateTime.now()));
+        List<CredentialsBasicInfoWithExpirationDate> expectedCredentials = List.of(new CredentialsBasicInfoWithExpirationDate("id1", List.of("type"), List.of("jwt_vc","cwt_vc"),credentialSubject, ZonedDateTime.now()));
 
         when(brokerService.getEntityById(processId, userId)).thenReturn(Mono.just(userEntity));
         when(userDataService.getUserVCsInJson(anyString())).thenReturn(Mono.just(expectedCredentials));

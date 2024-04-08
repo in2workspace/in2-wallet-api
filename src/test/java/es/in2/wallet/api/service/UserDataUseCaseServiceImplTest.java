@@ -321,6 +321,7 @@ class UserDataUseCaseServiceImplTest {
         LinkedHashMap<String, Object> vcValue = new LinkedHashMap<>();
         vcValue.put("type", List.of("VerifiableCredential", "SpecificCredentialType"));
         vcValue.put(CREDENTIAL_SUBJECT, new LinkedHashMap<>(Map.of("id", "subjectId")));
+        vcValue.put(AVAILABLE_FORMATS, List.of("jwt_vc","cwt_vc"));
         vcValue.put(EXPIRATION_DATE, "2024-04-07T09:57:59Z");
 
         VCAttribute vcAttribute = new VCAttribute("vcId", VC_JSON, vcValue);
@@ -342,6 +343,7 @@ class UserDataUseCaseServiceImplTest {
                     CredentialsBasicInfoWithExpirationDate credentialsInfo = credentialsBasicInfoWithExpiredDate.get(0);
                     assertEquals("vcId", credentialsInfo.id());
                     assertEquals(List.of("VerifiableCredential", "SpecificCredentialType"), credentialsInfo.vcType());
+                    assertEquals(List.of("jwt_vc","cwt_vc"), credentialsInfo.availableFormats());
                     assertEquals("subjectId", credentialsInfo.credentialSubject().get("id").asText());
                     assertEquals(ZonedDateTime.parse("2024-04-07T09:57:59Z"), credentialsInfo.expirationDate());
                 })

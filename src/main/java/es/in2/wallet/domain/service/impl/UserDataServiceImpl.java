@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jwt.SignedJWT;
 import com.upokecenter.cbor.CBORObject;
@@ -118,6 +119,9 @@ public class UserDataServiceImpl implements UserDataService {
                 for (CredentialResponse cred : credentials) {
                     vcAttributes.add(new VCAttribute(vcId, cred.format(), cred.credential()));
                 }
+                ObjectNode vcJsonObject = (ObjectNode) vcJson;
+                ArrayNode formatArray = vcJsonObject.putArray(AVAILABLE_FORMATS);
+                credentials.forEach(cred -> formatArray.add(cred.format()));
                 vcAttributes.add(new VCAttribute(vcId, VC_JSON, vcJson));
                 List<VCAttribute> updatedVCs = new ArrayList<>(entity.vcs().value());
                 updatedVCs.addAll(vcAttributes);
@@ -239,16 +243,32 @@ public class UserDataServiceImpl implements UserDataService {
                     LinkedHashMap<?, ?> vcDataValue = (LinkedHashMap<?, ?>) item.value();
                     JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
 
-                    return getVcTypeListFromVcJson(jsonNode)
-                            .map(vcTypeList -> {
-                                ZonedDateTime expirationDate = null;
-                                if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
-                                    expirationDate = parseZonedDateTime(jsonNode.get(EXPIRATION_DATE).asText());
-                                }
-                                return new CredentialsBasicInfoWithExpirationDate(item.id(), vcTypeList, jsonNode.get(CREDENTIAL_SUBJECT), expirationDate);
-                            });
+                    Mono<List<String>> availableFormatsMono = getAvailableFormatListFromVcJson(jsonNode);
+
+                    return Mono.zip(
+                            getVcTypeListFromVcJson(jsonNode),
+                            availableFormatsMono,
+                            Mono.just(jsonNode)
+                    ).flatMap(tuple -> {
+                        List<String> vcTypeList = tuple.getT1();
+                        List<String> availableFormats = tuple.getT2();
+                        JsonNode credentialSubject = tuple.getT3().get(CREDENTIAL_SUBJECT);
+
+                        ZonedDateTime expirationDate = null;
+                        if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
+                            expirationDate = parseZonedDateTime(jsonNode.get(EXPIRATION_DATE).asText());
+                        }
+                        return Mono.just(new CredentialsBasicInfoWithExpirationDate(
+                                item.id(),
+                                vcTypeList,
+                                availableFormats,
+                                credentialSubject,
+                                expirationDate
+                        ));
+                    });
                 }).collectList().onErrorResume(NoSuchVerifiableCredentialException.class, Mono::error);
     }
+
 
     /**
      * This method parses a date-time string into a ZonedDateTime object using a custom DateTimeFormatter.
@@ -424,6 +444,27 @@ public class UserDataServiceImpl implements UserDataService {
             return Mono.just(result);
         } else {
             // Log a warning or throw an exception if the "type" field is not present or is not an array.
+            return Mono.error(new IllegalStateException("The 'type' field is missing or is not an array in the provided JSON node."));
+        }
+    }
+
+    /**
+     * Extracts a list of VC available format from a VC's JSON representation.
+     *
+     * @param jsonNode The JSON node representing the VC.
+     */
+    private Mono<List<String>> getAvailableFormatListFromVcJson(JsonNode jsonNode) {
+        // Initialize an empty list to store the available formats.
+        List<String> result = new ArrayList<>();
+
+        // Check if the "available_formats" field is present and is an array.
+        if (jsonNode.has(AVAILABLE_FORMATS) && jsonNode.get(AVAILABLE_FORMATS).isArray()) {
+            // Iterate through the array elements and add them to the result list.
+            jsonNode.get(AVAILABLE_FORMATS).forEach(node -> result.add(node.asText()));
+            // Return the result list wrapped in a Mono.
+            return Mono.just(result);
+        } else {
+            // Log a warning or throw an exception if the "available_formats" field is not present or is not an array.
             return Mono.error(new IllegalStateException("The 'type' field is missing or is not an array in the provided JSON node."));
         }
     }
