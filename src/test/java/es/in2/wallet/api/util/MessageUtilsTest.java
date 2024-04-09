@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,7 +25,18 @@ class MessageUtilsTest {
     void testConstantValues() {
         assertEquals("ProcessId: {}, Resource updated successfully.", MessageUtils.RESOURCE_UPDATED_MESSAGE);
         assertEquals("Error while updating resource: {}", MessageUtils.ERROR_UPDATING_RESOURCE_MESSAGE);
+
         // Add assertions for other constants as well
     }
 
+    @Test
+    void testDomeRedirectUriPattern() {
+        // Test the DOME_REDIRECT_URI_PATTERN
+        Pattern domePattern = MessageUtils.DOME_REDIRECT_URI_PATTERN;
+        Matcher matcher = domePattern.matcher("https://example.dome-marketplace.org/path");
+        assertTrue(matcher.find(), "URL should match DOME_REDIRECT_URI_PATTERN");
+
+        assertTrue(domePattern.matcher("https://another.dome-marketplace.org/other").find(),
+                "Another URL should match DOME_REDIRECT_URI_PATTERN");
+    }
 }
