@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jwt.SignedJWT;
 import com.upokecenter.cbor.CBORObject;
@@ -119,9 +118,6 @@ public class UserDataServiceImpl implements UserDataService {
                 for (CredentialResponse cred : credentials) {
                     vcAttributes.add(new VCAttribute(vcId, cred.format(), cred.credential()));
                 }
-                ObjectNode vcJsonObject = (ObjectNode) vcJson;
-                ArrayNode formatArray = vcJsonObject.putArray(AVAILABLE_FORMATS);
-                credentials.forEach(cred -> formatArray.add(cred.format()));
                 vcAttributes.add(new VCAttribute(vcId, VC_JSON, vcJson));
                 List<VCAttribute> updatedVCs = new ArrayList<>(entity.vcs().value());
                 updatedVCs.addAll(vcAttributes);
@@ -243,7 +239,7 @@ public class UserDataServiceImpl implements UserDataService {
                     LinkedHashMap<?, ?> vcDataValue = (LinkedHashMap<?, ?>) item.value();
                     JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
 
-                    Mono<List<String>> availableFormatsMono = getAvailableFormatListFromVcJson(jsonNode);
+                    Mono<List<String>> availableFormatsMono = getAvailableFormatListById(item.id(), userEntity);
 
                     return Mono.zip(
                             getVcTypeListFromVcJson(jsonNode),
@@ -449,24 +445,17 @@ public class UserDataServiceImpl implements UserDataService {
     }
 
     /**
-     * Extracts a list of VC available format from a VC's JSON representation.
+     * Extracts a list of VC available format from a VC id.
      *
-     * @param jsonNode The JSON node representing the VC.
+     * @param credentialId The id of the VC.
      */
-    private Mono<List<String>> getAvailableFormatListFromVcJson(JsonNode jsonNode) {
-        // Initialize an empty list to store the available formats.
-        List<String> result = new ArrayList<>();
-
-        // Check if the "available_formats" field is present and is an array.
-        if (jsonNode.has(AVAILABLE_FORMATS) && jsonNode.get(AVAILABLE_FORMATS).isArray()) {
-            // Iterate through the array elements and add them to the result list.
-            jsonNode.get(AVAILABLE_FORMATS).forEach(node -> result.add(node.asText()));
-            // Return the result list wrapped in a Mono.
-            return Mono.just(result);
-        } else {
-            // Log a warning or throw an exception if the "available_formats" field is not present or is not an array.
-            return Mono.error(new IllegalStateException("The 'type' field is missing or is not an array in the provided JSON node."));
-        }
+    private Mono<List<String>> getAvailableFormatListById(String credentialId,String userEntity) {
+        return serializeUserEntity(userEntity).flatMap(user -> {
+            List<VCAttribute> vcAttributeList = user.vcs().value().stream().filter(vc -> vc.id().equals(credentialId)&& !vc.type().equals(VC_JSON)).toList();
+            List<String> availableFormats = new ArrayList<>();
+            vcAttributeList.forEach(cred -> availableFormats.add(cred.type()));
+            return Mono.just(availableFormats);
+        });
     }
 
     /**
