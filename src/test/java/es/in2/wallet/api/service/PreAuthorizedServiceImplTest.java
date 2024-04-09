@@ -117,5 +117,32 @@ class PreAuthorizedServiceImplTest {
                     .verifyComplete();
         }
     }
+    @Test
+    void getPreAuthorizedTokenWithPinInvalidPinException () throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
+            String processId = "123";
+            String token = "ey123";
+            String userId = "user123";
+            String userPin = "1234";
+            String tokenResponseString = "token response";
+            CredentialOffer.Grant.PreAuthorizedCodeGrant preAuthorizedCodeGrant = CredentialOffer.Grant.PreAuthorizedCodeGrant.builder()
+                    .preAuthorizedCode("321").userPinRequired(true).build();
+            CredentialOffer.Grant grant = CredentialOffer.Grant.builder().preAuthorizedCodeGrant(preAuthorizedCodeGrant).build();
+            CredentialOffer credentialOffer = CredentialOffer.builder().grant(grant).build();
+            AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("/token").build();
+            List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
+
+            when(getUserIdFromToken(token)).thenReturn(Mono.just(userId));
+            when(sessionManager.getSession(userId)).thenReturn(Mono.just(mockSession));
+            when(pinRequestWebSocketHandler.getPinResponses(userId)).thenReturn(Flux.just(userPin));
+            when(postRequest(eq(authorisationServerMetadata.tokenEndpoint()), eq(headers), anyString()))
+                    .thenReturn(Mono.just(tokenResponseString));
+            when(objectMapper.readValue(tokenResponseString, TokenResponse.class)).thenThrow(new RuntimeException());
+
+            StepVerifier.create(tokenService.getPreAuthorizedToken(processId,credentialOffer,authorisationServerMetadata,token))
+                    .expectError(InvalidPinException.class)
+                    .verify();
+        }
+    }
 
 }

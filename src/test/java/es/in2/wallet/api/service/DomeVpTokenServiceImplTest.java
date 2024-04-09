@@ -76,5 +76,45 @@ class DomeVpTokenServiceImplTest {
             verify(brokerService).getEntityById(processId, userId);
     }
     }
+    @Test
+    void getVpRequestShouldReturnVcSelectorRequestWithDomeScope() {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
+            String processId = "processId";
+            String authorizationToken = "authToken";
+            AuthorizationRequest authorizationRequest = mock(AuthorizationRequest.class);
+            when(authorizationRequest.scope()).thenReturn(Arrays.asList("didRead", "defaultScope"));
+            when(authorizationRequest.redirectUri()).thenReturn("https://redirectUri.com");
+            when(authorizationRequest.state()).thenReturn("state123");
+
+            String userId = "userId";
+            when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just(userId));
+
+            String userEntity = "userEntityId";
+            when(brokerService.getEntityById(processId, userId)).thenReturn(Mono.just(Optional.of(userEntity)));
+
+            // Ajusta aquí para usar CredentialsBasicInfo
+            List<CredentialsBasicInfo> selectableVCs = List.of(
+                    new CredentialsBasicInfo("vcId1", List.of("vcType1"), JsonNodeFactory.instance.objectNode().put("example", "data"))
+            );
+            when(userDataService.getSelectableVCsByVcTypeList(anyList(), eq(userEntity))).thenReturn(Mono.just(selectableVCs));
+
+            VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder()
+                    .selectableVcList(selectableVCs)
+                    .redirectUri("https://redirectUri.com")
+                    .state("state123")
+                    .build();
+
+            StepVerifier.create(domeVpTokenService.getVpRequest(processId, authorizationToken, authorizationRequest))
+                    .expectNextMatches(vcSelectorRequest ->
+                            vcSelectorRequest.selectableVcList().equals(expectedVcSelectorRequest.selectableVcList()) &&
+                                    vcSelectorRequest.redirectUri().equals(expectedVcSelectorRequest.redirectUri()) &&
+                                    vcSelectorRequest.state().equals(expectedVcSelectorRequest.state())
+                    )
+                    .verifyComplete();
+
+            verify(userDataService).getSelectableVCsByVcTypeList(anyList(), eq(userEntity));
+            verify(brokerService).getEntityById(processId, userId);
+        }
+    }
 }
 
