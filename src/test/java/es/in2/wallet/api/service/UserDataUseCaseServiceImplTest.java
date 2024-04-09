@@ -361,6 +361,44 @@ class UserDataUseCaseServiceImplTest {
     }
 
     @Test
+    void testGetUserVCsInJsonDateTimeParseException() throws Exception {
+        String userEntityString = "userEntityJsonString";
+        String invalidDate = "2024434-04-07T09:57:59Z";
+        LinkedHashMap<String, Object> vcValue = new LinkedHashMap<>();
+        vcValue.put("type", List.of("VerifiableCredential", "SpecificCredentialType"));
+        vcValue.put(CREDENTIAL_SUBJECT, new LinkedHashMap<>(Map.of("id", "subjectId")));
+        vcValue.put(EXPIRATION_DATE, invalidDate);
+
+        List<VCAttribute> mockVcs = List.of(
+                VCAttribute.builder()
+                        .id("vc1")
+                        .type(VC_JSON)
+                        .value(vcValue)
+                        .build(),
+                VCAttribute.builder()
+                        .id("vc1")
+                        .type(JWT_VC)
+                        .value("ey24343...")
+                        .build()
+        );
+
+        UserEntity userEntity = new UserEntity(
+                "user123",
+                "userEntity",
+                new EntityAttribute<>("Property", List.of()),
+                new EntityAttribute<>("Property", mockVcs)
+        );
+
+        when(objectMapper.readValue(anyString(), eq(UserEntity.class))).thenReturn(userEntity);
+        when(objectMapper.convertValue(any(LinkedHashMap.class), eq(JsonNode.class)))
+                .thenReturn(new ObjectMapper().valueToTree(vcValue));
+
+        StepVerifier.create(userDataServiceImpl.getUserVCsInJson(userEntityString))
+                .expectError()
+                .verifyComplete();
+    }
+
+    @Test
     void testGetVerifiableCredentialByIdAndFormat() throws Exception {
         String userEntityString = "userEntityJsonString";
         String vcId = "vc1";
