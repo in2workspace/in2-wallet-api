@@ -236,6 +236,7 @@ public class UserDataServiceImpl implements UserDataService {
         return serializeUserEntity(userEntity).flatMapMany(user -> Flux.fromIterable(user.vcs().value()))
                 .filter(vcAttribute -> VC_JSON.equals(vcAttribute.type()))
                 .flatMap(item -> {
+
                     LinkedHashMap<?, ?> vcDataValue = (LinkedHashMap<?, ?>) item.value();
                     JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
 
@@ -243,24 +244,29 @@ public class UserDataServiceImpl implements UserDataService {
                             getVcTypeListFromVcJson(jsonNode),
                             getAvailableFormatListById(item.id(),userEntity),
                             Mono.just(jsonNode)
-                    ).flatMap(tuple -> {
-                        List<String> vcTypeList = tuple.getT1();
-                        List<String> availableFormats = tuple.getT2();
-                        JsonNode credentialSubject = tuple.getT3().get(CREDENTIAL_SUBJECT);
+                    )
+                            .flatMap(tuple -> {
+                                List<String> vcTypeList = tuple.getT1();
+                                List<String> availableFormats = tuple.getT2();
+                                JsonNode credentialSubject = tuple.getT3().get(CREDENTIAL_SUBJECT);
 
-                        ZonedDateTime expirationDate = null;
-                        if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
-                            expirationDate = parseZonedDateTime(jsonNode.get(EXPIRATION_DATE).asText());
-                        }
-                        return Mono.just(CredentialsBasicInfoWithExpirationDate.builder()
+                                ZonedDateTime expirationDate = null;
+                                if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
+                                    expirationDate = parseZonedDateTime(jsonNode.get(EXPIRATION_DATE).asText());
+                                }
+                            return Mono.just(CredentialsBasicInfoWithExpirationDate.builder()
                                 .id(item.id())
                                 .vcType(vcTypeList)
                                 .availableFormats(availableFormats)
                                 .credentialSubject(credentialSubject)
                                 .expirationDate(expirationDate)
                                 .build());
-                    });
-                }).collectList().onErrorResume(NoSuchVerifiableCredentialException.class, Mono::error);
+
+                            });
+                }).collectList()
+                .onErrorResume(
+                        NoSuchVerifiableCredentialException.class, Mono::error
+                );
     }
 
 
