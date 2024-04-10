@@ -239,11 +239,9 @@ public class UserDataServiceImpl implements UserDataService {
                     LinkedHashMap<?, ?> vcDataValue = (LinkedHashMap<?, ?>) item.value();
                     JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
 
-                    Mono<List<String>> availableFormatsMono = getAvailableFormatListById(item.id(), userEntity);
-
                     return Mono.zip(
                             getVcTypeListFromVcJson(jsonNode),
-                            availableFormatsMono,
+                            getAvailableFormatListById(item.id(),userEntity),
                             Mono.just(jsonNode)
                     ).flatMap(tuple -> {
                         List<String> vcTypeList = tuple.getT1();
@@ -254,13 +252,13 @@ public class UserDataServiceImpl implements UserDataService {
                         if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
                             expirationDate = parseZonedDateTime(jsonNode.get(EXPIRATION_DATE).asText());
                         }
-                        return Mono.just(new CredentialsBasicInfoWithExpirationDate(
-                                item.id(),
-                                vcTypeList,
-                                availableFormats,
-                                credentialSubject,
-                                expirationDate
-                        ));
+                        return Mono.just(CredentialsBasicInfoWithExpirationDate.builder()
+                                .id(item.id())
+                                .vcType(vcTypeList)
+                                .availableFormats(availableFormats)
+                                .credentialSubject(credentialSubject)
+                                .expirationDate(expirationDate)
+                                .build());
                     });
                 }).collectList().onErrorResume(NoSuchVerifiableCredentialException.class, Mono::error);
     }

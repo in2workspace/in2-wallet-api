@@ -53,10 +53,9 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
 
         return postRequest(urlWithState, headers,body).flatMap(message ->
                 {
-                    if (!message.equals("{}")){
+                    if (!message.equals("{}")) {
                         return  Mono.error(new RuntimeException("There was an error during the attestation exchange, error: " + message));
-                    }
-                    else {
+                    } else {
                         return Mono.empty();
                     }
                 }).then();
