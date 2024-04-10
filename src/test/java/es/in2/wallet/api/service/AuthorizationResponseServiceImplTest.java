@@ -124,7 +124,7 @@ class AuthorizationResponseServiceImplTest {
                     .state("abc123")
                     .build();
 
-            when(postRequest(anyString(), anyList(), anyString())).thenReturn(Mono.just("Success"));
+            when(postRequest(anyString(), anyList(), anyString())).thenReturn(Mono.just("{}"));
 
             StepVerifier.create(authorizationResponseService.sendDomeAuthorizationResponse(vpToken, vcSelectorResponse))
                     .verifyComplete();
@@ -132,7 +132,7 @@ class AuthorizationResponseServiceImplTest {
     }
 
     @Test
-    void sendDomeAuthorizationResponse_ErrorHandling() {
+    void sendDomeAuthorizationResponse_RuntimeExceptionError() {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String vpToken = "vpToken123";
             VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder()
@@ -144,8 +144,31 @@ class AuthorizationResponseServiceImplTest {
             when(postRequest(anyString(), anyList(), anyString())).thenReturn(Mono.error(new RuntimeException("Network error")));
 
             StepVerifier.create(authorizationResponseService.sendDomeAuthorizationResponse(vpToken, vcSelectorResponse))
-                    .expectErrorMatches(throwable -> throwable instanceof FailedCommunicationException &&
-                            throwable.getMessage().contains("Error while sending Vp Token Response"))
+                    .expectError(RuntimeException.class)
+                    .verify();
+        }
+    }
+
+    @Test
+    void sendDomeAuthorizationResponse_ErrorHandling() {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
+            String vpToken = "vpToken123";
+            VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder()
+                    .redirectUri("https://example.com/redirect")
+                    .state("abc123")
+                    .build();
+            String errorMessage = """
+                    {
+                        "summary": "invalid_vc"
+                    }
+                    """;
+
+            // Simula un error durante el envío de la respuesta
+            when(postRequest(anyString(), anyList(), anyString())).thenReturn(Mono.just(errorMessage));
+
+            StepVerifier.create(authorizationResponseService.sendDomeAuthorizationResponse(vpToken, vcSelectorResponse))
+                    .expectErrorMatches(throwable -> throwable instanceof RuntimeException &&
+                            throwable.getMessage().contains("There was an error during the attestation exchange, error: " + errorMessage))
                     .verify();
         }
     }

@@ -51,9 +51,15 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
 
         String urlWithState = vcSelectorResponse.redirectUri() + "?state=" + vcSelectorResponse.state();
 
-        return postRequest(urlWithState, headers,body)
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while sending Vp Token Response")))
-                .then();
+        return postRequest(urlWithState, headers,body).flatMap(message ->
+                {
+                    if (!message.equals("{}")){
+                        return  Mono.error(new RuntimeException("There was an error during the attestation exchange, error: " + message));
+                    }
+                    else {
+                        return Mono.empty();
+                    }
+                }).then();
     }
 
     private Mono<DescriptorMap> generateDescriptorMapping(String verifiablePresentationString) throws JsonProcessingException {
