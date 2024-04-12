@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.service.impl.UserDataUseCaseServiceImpl;
 import es.in2.wallet.domain.exception.NoSuchVerifiableCredentialException;
-import es.in2.wallet.domain.model.CredentialsBasicInfoWithExpirationDate;
+import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.service.UserDataService;
 import es.in2.wallet.application.port.VaultService;
 import es.in2.wallet.application.port.BrokerService;
@@ -50,7 +50,7 @@ class UserDataUseCaseServiceImplTest {
         ObjectMapper objectMapper2 = new ObjectMapper();
         JsonNode credentialSubject = objectMapper2.readTree(jsonSubject);
 
-        List<CredentialsBasicInfoWithExpirationDate> expectedCredentials = List.of(new CredentialsBasicInfoWithExpirationDate("id1", List.of("type"), List.of("jwt_vc","cwt_vc"),credentialSubject, ZonedDateTime.now()));
+        List<CredentialsBasicInfo> expectedCredentials = List.of(new CredentialsBasicInfo("id1", List.of("type"), List.of("jwt_vc","cwt_vc"),credentialSubject, ZonedDateTime.now()));
 
         when(brokerService.getEntityById(processId, userId)).thenReturn(Mono.just(userEntity));
         when(userDataService.getUserVCsInJson(anyString())).thenReturn(Mono.just(expectedCredentials));

@@ -2,7 +2,6 @@ package es.in2.wallet.domain.service;
 
 import es.in2.wallet.domain.model.CredentialResponse;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
-import es.in2.wallet.domain.model.CredentialsBasicInfoWithExpirationDate;
 import es.in2.wallet.domain.model.VCAttribute;
 import reactor.core.publisher.Mono;
 
@@ -12,7 +11,7 @@ public interface UserDataService {
 
     Mono<String> createUserEntity(String id);
     Mono<String> saveVC(String userEntity, List<CredentialResponse> credentials);
-    Mono<List<CredentialsBasicInfoWithExpirationDate>> getUserVCsInJson(String userEntity);
+    Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String userEntity);
 
     Mono<List<VCAttribute>> getVerifiableCredentialsByFormat(String userEntity, String format);
 

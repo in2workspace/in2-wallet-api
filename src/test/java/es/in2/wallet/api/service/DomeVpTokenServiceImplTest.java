@@ -18,11 +18,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.domain.util.MessageUtils.VC_JWT;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,6 +43,7 @@ class DomeVpTokenServiceImplTest {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             String processId = "processId";
             String authorizationToken = "authToken";
+            ZonedDateTime expirationDate = ZonedDateTime.now().plusDays(30);
             AuthorizationRequest authorizationRequest = mock(AuthorizationRequest.class);
             when(authorizationRequest.scope()).thenReturn(Arrays.asList("scope1", "scope2"));
             when(authorizationRequest.redirectUri()).thenReturn("https://redirectUri.com");
@@ -54,7 +57,7 @@ class DomeVpTokenServiceImplTest {
 
             // Ajusta aquí para usar CredentialsBasicInfo
             List<CredentialsBasicInfo> selectableVCs = List.of(
-                    new CredentialsBasicInfo("vcId1", List.of("vcType1"), JsonNodeFactory.instance.objectNode().put("example", "data"))
+                    new CredentialsBasicInfo("vcId1", List.of("vcType1"),List.of(VC_JWT),JsonNodeFactory.instance.objectNode().put("example", "data"), expirationDate)
             );
             when(userDataService.getSelectableVCsByVcTypeList(anyList(), eq(userEntity))).thenReturn(Mono.just(selectableVCs));
 
@@ -81,6 +84,7 @@ class DomeVpTokenServiceImplTest {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             String processId = "processId";
             String authorizationToken = "authToken";
+            ZonedDateTime expirationDate = ZonedDateTime.now().plusDays(30);
             AuthorizationRequest authorizationRequest = mock(AuthorizationRequest.class);
             when(authorizationRequest.scope()).thenReturn(Arrays.asList("didRead", "defaultScope"));
             when(authorizationRequest.redirectUri()).thenReturn("https://redirectUri.com");
@@ -94,7 +98,7 @@ class DomeVpTokenServiceImplTest {
 
             // Ajusta aquí para usar CredentialsBasicInfo
             List<CredentialsBasicInfo> selectableVCs = List.of(
-                    new CredentialsBasicInfo("vcId1", List.of("vcType1"), JsonNodeFactory.instance.objectNode().put("example", "data"))
+                    new CredentialsBasicInfo("vcId1", List.of("vcType1"),List.of(VC_JWT) ,JsonNodeFactory.instance.objectNode().put("example", "data"), expirationDate)
             );
             when(userDataService.getSelectableVCsByVcTypeList(anyList(), eq(userEntity))).thenReturn(Mono.just(selectableVCs));
 

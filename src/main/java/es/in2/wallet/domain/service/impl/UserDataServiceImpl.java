@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuples;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -232,7 +233,7 @@ public class UserDataServiceImpl implements UserDataService {
      * @param userEntity The user entity whose VCs are to be retrieved.
      */
     @Override
-    public Mono<List<CredentialsBasicInfoWithExpirationDate>> getUserVCsInJson(String userEntity) {
+    public Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String userEntity) {
         return serializeUserEntity(userEntity).flatMapMany(user -> Flux.fromIterable(user.vcs().value()))
                 .filter(vcAttribute -> VC_JSON.equals(vcAttribute.type()))
                 .flatMap(item -> {
@@ -254,7 +255,7 @@ public class UserDataServiceImpl implements UserDataService {
                                 if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
                                     expirationDate = parseZonedDateTime(jsonNode.get(EXPIRATION_DATE).asText());
                                 }
-                            return Mono.just(CredentialsBasicInfoWithExpirationDate.builder()
+                            return Mono.just(CredentialsBasicInfo.builder()
                                 .id(item.id())
                                 .vcType(vcTypeList)
                                 .availableFormats(availableFormats)
@@ -315,39 +316,56 @@ public class UserDataServiceImpl implements UserDataService {
      */
     @Override
     public Mono<List<CredentialsBasicInfo>> getSelectableVCsByVcTypeList(List<String> vcTypeList, String userEntity) {
-        // Retrieve all VCs of the user in the specified format (VC_JSON in this case).
-        return getVerifiableCredentialsByFormat(userEntity, VC_JSON).flatMapMany(Flux::fromIterable) // Convert the list of VCs to a Flux stream for processing.
-                .collectList() // Collect the Flux stream back into a list.
-                .flatMap(vcs -> {
-                    List<CredentialsBasicInfo> matchingVCs = new ArrayList<>();
+        // First, retrieve all VCs for the user in the VC_JSON format.
+        return getVerifiableCredentialsByFormat(userEntity, VC_JSON)
+                .flatMapMany(Flux::fromIterable) // Convert the list of VCs to a Flux stream for further processing.
+                .flatMap(vcAttribute -> {
+                    // Convert each VC attribute value to a JsonNode for easier data extraction.
+                    JsonNode jsonNode = objectMapper.convertValue(vcAttribute.value(), JsonNode.class);
 
-                    // Iterate over each VC type specified in vcTypeList.
-                    for (String vcType : vcTypeList) {
+                    // Fetch the available formats asynchronously.
+                    Mono<List<String>> availableFormatsMono = getAvailableFormatListById(vcAttribute.id(), userEntity);
 
-                        // Iterate over each VC attribute in the list of all user's VCs.
-                        for (VCAttribute vcAttribute : vcs) {
 
-                            // Convert the VC attribute value to a JsonNode for easier processing.
-                            JsonNode jsonNode = objectMapper.convertValue(vcAttribute.value(), JsonNode.class);
+                    // Since expiration date is handled synchronously, only zip the asynchronous operations.
+                    return availableFormatsMono.map(availableFormats -> Tuples.of(vcAttribute.id(), availableFormats, jsonNode));
+                })
+                .filter(tuple -> {
+                    // Extract VC types list from the JSON node.
+                    JsonNode jsonNode = tuple.getT3();
+                    List<String> vcDataTypeList = new ArrayList<>();
+                    jsonNode.withArray("type").elements().forEachRemaining(node -> vcDataTypeList.add(node.asText()));
+                    // Ensure the VC matches at least one of the specified types.
+                    return vcTypeList.stream().anyMatch(vcDataTypeList::contains);
+                })
+                .map(tuple -> {
+                    // Map the tuple to a CredentialsBasicInfo object.
+                    String vcId = tuple.getT1();
+                    List<String> availableFormats = tuple.getT2();
+                    JsonNode jsonNode = tuple.getT3();
 
-                            // Extract the list of types from the VC's JSON structure.
-                            List<String> vcDataTypeList = new ArrayList<>();
-                            jsonNode.get("type").forEach(node -> vcDataTypeList.add(node.asText()));
-
-                            // Check if the VC's type list contains the current type we're looking for.
-                            if (vcDataTypeList.contains(vcType)) {
-
-                                // If a match is found, create a CredentialsBasicInfo object and add it to the list.
-                                CredentialsBasicInfo dto = new CredentialsBasicInfo(jsonNode.get("id").asText(), vcDataTypeList, jsonNode.get("credentialSubject"));
-
-                                matchingVCs.add(dto);
-                            }
-                        }
+                    ZonedDateTime expirationDate = null;
+                    if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
+                        expirationDate = parseZonedDateTime(jsonNode.get(EXPIRATION_DATE).asText());
                     }
-                    // Return the list of matching VCs.
-                    return Mono.just(matchingVCs);
-                });
+
+                    List<String> vcDataTypeList = new ArrayList<>();
+                    jsonNode.withArray("type").elements().forEachRemaining(node -> vcDataTypeList.add(node.asText()));
+                    JsonNode credentialSubject = jsonNode.path(CREDENTIAL_SUBJECT);
+
+                    // Construct and return the CredentialsBasicInfo object.
+                    return CredentialsBasicInfo.builder()
+                            .id(vcId)
+                            .vcType(vcDataTypeList)
+                            .availableFormats(availableFormats)
+                            .credentialSubject(credentialSubject)
+                            .expirationDate(expirationDate)
+                            .build();
+                })
+                .collectList(); // Collect the stream of CredentialsBasicInfo objects into a list.
     }
+
+
 
     /**
      * Extracts the DID from a Verifiable Credential.

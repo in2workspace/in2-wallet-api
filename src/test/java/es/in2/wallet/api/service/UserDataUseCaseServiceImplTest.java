@@ -195,11 +195,11 @@ class UserDataUseCaseServiceImplTest {
 
                     CredentialsBasicInfo vc1Info = vcBasicDataDTOList.get(0);
                     assertEquals("vc1", vc1Info.id());
-                    assertTrue(vc1Info.type().contains("SpecificCredentialType"));
+                    assertTrue(vc1Info.vcType().contains("SpecificCredentialType"));
 
                     CredentialsBasicInfo vc2Info = vcBasicDataDTOList.get(1);
                     assertEquals("vc2", vc2Info.id());
-                    assertTrue(vc2Info.type().contains("LEARCredential"));
+                    assertTrue(vc2Info.vcType().contains("LEARCredential"));
                 })
                 .verifyComplete();
     }
@@ -350,7 +350,7 @@ class UserDataUseCaseServiceImplTest {
         StepVerifier.create(userDataServiceImpl.getUserVCsInJson(userEntityString))
                 .assertNext(credentialsBasicInfoWithExpiredDate -> {
                     assertEquals(1, credentialsBasicInfoWithExpiredDate.size());
-                    CredentialsBasicInfoWithExpirationDate credentialsInfo = credentialsBasicInfoWithExpiredDate.get(0);
+                    CredentialsBasicInfo credentialsInfo = credentialsBasicInfoWithExpiredDate.get(0);
                     assertEquals("vc1", credentialsInfo.id());
                     assertEquals(List.of("VerifiableCredential", "SpecificCredentialType"), credentialsInfo.vcType());
                     assertEquals(List.of("jwt_vc"), credentialsInfo.availableFormats());
