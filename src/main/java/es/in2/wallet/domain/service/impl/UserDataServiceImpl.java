@@ -309,6 +309,10 @@ public class UserDataServiceImpl implements UserDataService {
      * This method filters the user's VCs based on the specified VC types and returns a list of
      * CredentialsBasicInfo objects representing the matching VCs.
      *
+     * TODO: Instead of using JsonNode directly to extract VC type, map the VC type to its schema to ensure
+     * better type safety and schema validation. This could involve creating a model class for the VCs and
+     * using a more structured approach to parsing and validating VCs based on their defined schemas.
+     *
      * @param vcTypeList A list of VC types to filter the user's VCs by.
      * @param userEntity The identifier for the user entity whose VCs are to be filtered.
      * @return A Mono emitting a list of CredentialsBasicInfo objects representing the user's VCs
@@ -352,6 +356,7 @@ public class UserDataServiceImpl implements UserDataService {
                     List<String> vcDataTypeList = new ArrayList<>();
                     jsonNode.withArray("type").elements().forEachRemaining(node -> vcDataTypeList.add(node.asText()));
                     JsonNode credentialSubject = jsonNode.path(CREDENTIAL_SUBJECT);
+
 
                     // Construct and return the CredentialsBasicInfo object.
                     return CredentialsBasicInfo.builder()
