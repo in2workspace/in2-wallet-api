@@ -1,6 +1,7 @@
 package es.in2.wallet.api.facade;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.service.impl.AttestationExchangeServiceImpl;
 import es.in2.wallet.domain.model.AuthorizationRequest;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
@@ -8,7 +9,6 @@ import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.service.*;
 import es.in2.wallet.domain.util.ApplicationUtils;
-import es.in2.wallet.application.port.BrokerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

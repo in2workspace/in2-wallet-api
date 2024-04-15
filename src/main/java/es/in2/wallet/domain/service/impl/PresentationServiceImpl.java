@@ -104,7 +104,7 @@ public class PresentationServiceImpl implements PresentationService {
                         .map(entity -> getVerifiableCredentials(entity,selectedVcList, VC_JSON)
                                 .flatMap(this::createEncodedPresentation)
                                 // Log success
-                                .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
+                                .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - DOME Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
                                 // Handle errors
                                 .onErrorResume(e -> {
                                     log.error("Error in creating Verifiable Presentation: ", e);

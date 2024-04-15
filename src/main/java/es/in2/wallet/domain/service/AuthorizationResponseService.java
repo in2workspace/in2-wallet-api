@@ -6,4 +6,5 @@ import reactor.core.publisher.Mono;
 
 public interface AuthorizationResponseService {
     Mono<String> buildAndPostAuthorizationResponseWithVerifiablePresentation(String processId, VcSelectorResponse vcSelectorResponse, String verifiablePresentation, String authorizationToken) throws JsonProcessingException;
+    Mono<Void> sendDomeAuthorizationResponse(String vpToken, VcSelectorResponse vcSelectorResponse);
 }

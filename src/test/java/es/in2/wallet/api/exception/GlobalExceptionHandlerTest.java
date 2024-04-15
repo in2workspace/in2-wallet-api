@@ -36,7 +36,9 @@ class GlobalExceptionHandlerTest {
                 FailedSerializingException.class,
                 JwtInvalidFormatException.class,
                 NoSuchQrContentException.class,
-                ParseErrorException.class
+                ParseErrorException.class,
+                NoSuchVerifiableCredentialException.class,
+                InvalidPinException.class
         ));
 
         List<String> messages = new ArrayList<>(Arrays.asList(
@@ -45,7 +47,9 @@ class GlobalExceptionHandlerTest {
                 "FailedSerializing",
                 "JwtInvalidFormat",
                 "NoSuchQrContent",
-                "ParseError"
+                "ParseError",
+                "NoSuchVerifiableCredential",
+                "InvalidCredentials"
         ));
 
         List<BiFunction<Exception, ServerHttpRequest, Mono<GlobalErrorMessage>>> methods = new ArrayList<>(Arrays.asList(
@@ -54,7 +58,9 @@ class GlobalExceptionHandlerTest {
                 (ex, req) -> globalExceptionHandler.failedSerializingException((FailedSerializingException) ex, req),
                 (ex, req) -> globalExceptionHandler.jwtInvalidFormatException((JwtInvalidFormatException) ex, req),
                 (ex, req) -> globalExceptionHandler.noSuchQrContentException((NoSuchQrContentException) ex, req),
-                (ex, req) -> globalExceptionHandler.parseErrorException((ParseErrorException) ex, req)
+                (ex, req) -> globalExceptionHandler.parseErrorException((ParseErrorException) ex, req),
+                (ex, req) -> globalExceptionHandler.noSuchVerifiableCredentialException((NoSuchVerifiableCredentialException) ex, req),
+                (ex, req) -> globalExceptionHandler.invalidCredentialsException((InvalidPinException) ex, req)
 
         ));
 
@@ -65,7 +71,8 @@ class GlobalExceptionHandlerTest {
         exceptionMethodNames.put(JwtInvalidFormatException.class, "JwtInvalidFormatException");
         exceptionMethodNames.put(NoSuchQrContentException.class, "NoSuchQrContentException");
         exceptionMethodNames.put(ParseErrorException.class, "ParseErrorException");
-
+        exceptionMethodNames.put(NoSuchVerifiableCredentialException.class, "NoSuchVerifiableCredentialException");
+        exceptionMethodNames.put(InvalidPinException.class, "InvalidCredentialsException");
 
         return IntStream.range(0, classes.size())
                 .mapToObj(i -> Arguments.of(classes.get(i), messages.get(i), methods.get(i % methods.size()), exceptionMethodNames));

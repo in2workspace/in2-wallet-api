@@ -2,6 +2,7 @@ package es.in2.wallet.domain.util;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -51,6 +52,7 @@ public class MessageUtils {
     public static final String JWT_VC = "jwt_vc";
     public static final String JWT_VC_JSON = "jwt_vc_json";
     public static final String JWT_VP = "jwt_vp";
+    public static final String AVAILABLE_FORMATS = "available_formats";
     public static final String ALLOWED_METHODS = "*";
     public static final String GLOBAL_ENDPOINTS_API = "/api/v1/**";
     public static final Pattern LOGIN_REQUEST_PATTERN = Pattern.compile("(https|http)\\S*(authentication-request|authentication-requests)\\S*");
@@ -58,7 +60,10 @@ public class MessageUtils {
     public static final Pattern OPENID_CREDENTIAL_OFFER_PATTERN = Pattern.compile("openid-credential-offer://\\S*");
     public static final Pattern EBSI_CREDENTIAL_OFFER_PATTERN = Pattern.compile("\\S*(conformance.ebsi)\\S*");
     public static final Pattern DOME_LOGIN_REQUEST_PATTERN = Pattern.compile("\\S*(did:web:dome-marketplace.org)\\S*");
+    public static final Pattern DOME_REDIRECT_URI_PATTERN = Pattern.compile("\\S*(dome-marketplace.org)\\S*");
     public static final Pattern OPENID_AUTHENTICATION_REQUEST_PATTERN = Pattern.compile("openid://\\S*");
 
     public static final String ISO_8601_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ssX";
+    public static final List<String> DEFAULT_VC_TYPES_FOR_DOME_VERIFIER = List.of("LegalPersonCredential","LEARCredentialEmployee");
+    public static final List<String> DEFAULT_SCOPE_FOR_DOME_VERIFIER = List.of("didRead", "defaultScope");
 }

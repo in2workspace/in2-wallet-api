@@ -2,14 +2,15 @@ package es.in2.wallet.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import es.in2.wallet.application.port.AppConfig;
+import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.service.SignerService;
 import es.in2.wallet.domain.service.UserDataService;
 import es.in2.wallet.domain.service.impl.PresentationServiceImpl;
 import es.in2.wallet.domain.util.ApplicationUtils;
-import es.in2.wallet.application.port.BrokerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,13 +21,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.domain.util.MessageUtils.JWT_VC;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static es.in2.wallet.domain.util.MessageUtils.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -97,6 +99,39 @@ class PresentationServiceImplTest {
             StepVerifier.create(presentationService.createSignedVerifiablePresentation(processId, authorizationToken, vcSelectorResponse, nonce, audience))
                     .expectNext(signedVP)
                     .verifyComplete();
+        }
+    }
+    @Test
+    void createEncodedVerifiablePresentationForDome_UserExists_ReturnsEncodedVP() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
+        String processId = "processId";
+        String authorizationToken = "authToken";
+        List<CredentialsBasicInfo> selectedVcList = List.of(
+                new CredentialsBasicInfo("vcId1", List.of("vcType1"), List.of(VC_JWT),JsonNodeFactory.instance.objectNode().put("exampleData", "exampleValue"),ZonedDateTime.now().plusDays(30))
+        );
+        VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().selectedVcList(selectedVcList).build();
+
+        String userId = "userId";
+        String userEntity = "userEntityId";
+        String encodedPresentation = "dnBKc29u";
+
+        // Mock getUserIdFromToken and getEntityById to simulate finding a user entity
+        when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just(userId));
+        when(brokerService.getEntityById(processId, userId)).thenReturn(Mono.just(Optional.of(userEntity)));
+
+        // Mock getVerifiableCredentials to return a list of credentials
+        when(userDataService.getVerifiableCredentialByIdAndFormat(anyString(), anyString(), eq(VC_JSON)))
+                .thenReturn(Mono.just("vcString")); // Simplified for demonstration
+
+        // Mock objectMapper.writeValueAsString to simulate JSON serialization
+        when(objectMapper.writeValueAsString(any())).thenReturn("vpJson");
+
+        StepVerifier.create(presentationService.createEncodedVerifiablePresentationForDome(processId, authorizationToken, vcSelectorResponse))
+                .expectNext(encodedPresentation)
+                .verifyComplete();
+
+        verify(brokerService).getEntityById(processId, userId);
+        verify(userDataService).getVerifiableCredentialByIdAndFormat(anyString(), anyString(), eq(VC_JSON));
         }
     }
 }

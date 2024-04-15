@@ -3,6 +3,7 @@ package es.in2.wallet.api.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.model.VerifiableCredential;
@@ -22,7 +23,7 @@ import reactor.test.StepVerifier;
 import java.util.List;
 
 import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -112,6 +113,64 @@ class AuthorizationResponseServiceImplTest {
                     .verifyComplete();
         }
 
+    }
+
+    @Test
+    void sendDomeAuthorizationResponse_Success() {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
+            String vpToken = "vpToken123";
+            VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder()
+                    .redirectUri("https://example.com/redirect")
+                    .state("abc123")
+                    .build();
+
+            when(postRequest(anyString(), anyList(), anyString())).thenReturn(Mono.just("{}"));
+
+            StepVerifier.create(authorizationResponseService.sendDomeAuthorizationResponse(vpToken, vcSelectorResponse))
+                    .verifyComplete();
+        }
+    }
+
+    @Test
+    void sendDomeAuthorizationResponse_RuntimeExceptionError() {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
+            String vpToken = "vpToken123";
+            VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder()
+                    .redirectUri("https://example.com/redirect")
+                    .state("abc123")
+                    .build();
+
+            // Simula un error durante el envío de la respuesta
+            when(postRequest(anyString(), anyList(), anyString())).thenReturn(Mono.error(new RuntimeException("Network error")));
+
+            StepVerifier.create(authorizationResponseService.sendDomeAuthorizationResponse(vpToken, vcSelectorResponse))
+                    .expectError(RuntimeException.class)
+                    .verify();
+        }
+    }
+
+    @Test
+    void sendDomeAuthorizationResponse_ErrorHandling() {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
+            String vpToken = "vpToken123";
+            VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder()
+                    .redirectUri("https://example.com/redirect")
+                    .state("abc123")
+                    .build();
+            String errorMessage = """
+                    {
+                        "summary": "invalid_vc"
+                    }
+                    """;
+
+            // Simula un error durante el envío de la respuesta
+            when(postRequest(anyString(), anyList(), anyString())).thenReturn(Mono.just(errorMessage));
+
+            StepVerifier.create(authorizationResponseService.sendDomeAuthorizationResponse(vpToken, vcSelectorResponse))
+                    .expectErrorMatches(throwable -> throwable instanceof RuntimeException &&
+                            throwable.getMessage().contains("There was an error during the attestation exchange, error: " + errorMessage))
+                    .verify();
+        }
     }
 
 }

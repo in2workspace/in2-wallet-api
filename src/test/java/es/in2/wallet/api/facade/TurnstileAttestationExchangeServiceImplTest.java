@@ -1,5 +1,6 @@
 package es.in2.wallet.api.facade;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import es.in2.wallet.application.service.impl.TurnstileAttestationExchangeServiceImpl;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.service.CborGenerationService;
@@ -9,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import com.fasterxml.jackson.core.JsonParseException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 

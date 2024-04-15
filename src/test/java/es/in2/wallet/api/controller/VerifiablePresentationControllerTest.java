@@ -1,6 +1,7 @@
 package es.in2.wallet.api.controller;
 
 import es.in2.wallet.application.service.AttestationExchangeService;
+import es.in2.wallet.application.service.DomeAttestationExchangeService;
 import es.in2.wallet.application.service.TurnstileAttestationExchangeService;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorResponse;
@@ -23,13 +24,16 @@ class VerifiablePresentationControllerTest {
     private TurnstileAttestationExchangeService turnstileAttestationExchangeService;
     @Mock
     private AttestationExchangeService attestationExchangeService;
+    @Mock
+    private DomeAttestationExchangeService domeAttestationExchangeService;
     @InjectMocks
     private VerifiablePresentationController verifiablePresentationController;
+
     @Test
     void testCreateVerifiablePresentation() {
         // Arrange
         String authorizationToken = "authToken";
-        VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().build();
+        VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().redirectUri("https://redirect.uri.com").build();
 
         when(attestationExchangeService.buildVerifiablePresentationWithSelectedVCs(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
                 .thenReturn(Mono.empty());
@@ -45,6 +49,25 @@ class VerifiablePresentationControllerTest {
                 .expectStatus().isCreated();
     }
 
+    @Test
+    void testCreateVerifiablePresentationDomeCase() {
+        // Arrange
+        String authorizationToken = "authToken";
+        VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().redirectUri("https://dome-marketplace.org").build();
+
+        when(domeAttestationExchangeService.buildAndSendVerifiablePresentationWithSelectedVCsForDome(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
+                .thenReturn(Mono.empty());
+
+        WebTestClient
+                .bindToController(verifiablePresentationController)
+                .build()
+                .post()
+                .uri("/api/v1/vp")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorizationToken)
+                .bodyValue(vcSelectorResponse)
+                .exchange()
+                .expectStatus().isCreated();
+    }
     @Test
     void testCreateVerifiablePresentationInCborFormat() {
         String authorizationToken = "authToken";

@@ -1,13 +1,13 @@
 package es.in2.wallet.domain.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.infrastructure.core.config.PinRequestWebSocketHandler;
-import es.in2.wallet.infrastructure.core.config.WebSocketSessionManager;
-import es.in2.wallet.domain.exception.FailedDeserializingException;
+import es.in2.wallet.domain.exception.InvalidPinException;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
 import es.in2.wallet.domain.model.CredentialOffer;
 import es.in2.wallet.domain.model.TokenResponse;
 import es.in2.wallet.domain.service.PreAuthorizedService;
+import es.in2.wallet.infrastructure.core.config.PinRequestWebSocketHandler;
+import es.in2.wallet.infrastructure.core.config.WebSocketSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -110,7 +110,7 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
         try {
             return Mono.just(objectMapper.readValue(response, TokenResponse.class));
         } catch (Exception e) {
-            return Mono.error(new FailedDeserializingException("Error while deserializing response: " + e));
+            return Mono.error(new InvalidPinException("Incorrect PIN" + e));
         }
     }
 
