@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 
 import static es.in2.wallet.domain.util.MessageUtils.ATTRIBUTES;
-import static es.in2.wallet.domain.util.MessageUtils.ENTITY_PREFIX;
+import static es.in2.wallet.domain.util.MessageUtils.USER_ENTITY_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
@@ -102,7 +102,7 @@ class OrionLdAdapterTest {
                 .setBody(expectedResponse));
 
         // Test the getEntityById method
-        StepVerifier.create(orionLdAdapter.getEntityById(processId, userId))
+        StepVerifier.create(orionLdAdapter.getUserEntityById(processId, userId))
                 .expectNextMatches(optionalResponse ->
                         optionalResponse.map(response -> response.contains("\"id\":\"entityId\""))
                                 .orElse(false)) // Verify the response content within the Optional
@@ -110,7 +110,7 @@ class OrionLdAdapterTest {
 
         // Verify the GET request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/external/entities" + ENTITY_PREFIX + userId, recordedRequest.getPath());
+        assertEquals("/external/entities" + "/" + USER_ENTITY_PREFIX + userId, recordedRequest.getPath());
         assertEquals("GET", recordedRequest.getMethod());
     }
 
@@ -130,7 +130,7 @@ class OrionLdAdapterTest {
 
         // Verify the PATCH request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/external/entities" + ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
+        assertEquals("/external/entities" + "/" + USER_ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
         assertEquals("PATCH", recordedRequest.getMethod());
         assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent

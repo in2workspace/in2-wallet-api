@@ -1,5 +1,7 @@
 package es.in2.wallet.infrastructure.broker.adapter;
 
+import es.in2.wallet.domain.exception.NoSuchTransactionException;
+import es.in2.wallet.domain.exception.NoSuchVerifiableCredentialException;
 import es.in2.wallet.domain.util.ApplicationUtils;
 import es.in2.wallet.infrastructure.broker.config.BrokerConfig;
 import es.in2.wallet.infrastructure.broker.service.GenericBrokerService;
@@ -42,24 +44,75 @@ public class OrionLdAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<Optional<String>> getEntityById(String processId, String userId) {
+    public Mono<Optional<String>> getUserEntityById(String processId, String userId) {
         return webClient.get()
-                .uri( brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + ENTITY_PREFIX + userId)
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + USER_ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .onStatus(status -> status != null && status.is4xxClientError(), response -> response.createException().flatMap(Mono::error))
                 .bodyToMono(String.class)
                 .map(Optional::of)
                 .doOnNext(body -> log.info("Response body: {}", body))
-                .doOnError(error -> log.error("Error occurred: ", error))
-                .onErrorResume(WebClientResponseException.NotFound.class, e -> Mono.just(Optional.empty()))
-                .defaultIfEmpty(Optional.empty());
+                .onErrorResume(WebClientResponseException.NotFound.class, e -> Mono.just(Optional.empty())) // Specifically handle the 404 case here
+                .defaultIfEmpty(Optional.empty()); // Handle the case where the response is successful but there is no body
     }
 
     @Override
-    public Mono<Void> updateEntity(String processId, String userId, String requestBody) {
+    public Mono<String> getCredentialsThatBelongToUser(String processId, String userId) {
+        return webClient.get()
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "?type=Credential&q=belongsTo==" + USER_ENTITY_PREFIX + userId)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorResume(e -> Mono.error(new NoSuchVerifiableCredentialException("Error fetching credentials from user: " + userId)));
+    }
+
+    @Override
+    public Mono<String> getCredentialByIdThatBelongToUser(String processId, String userId, String credentialId) {
+        return webClient.get()
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + CREDENTIAL_ENTITY_PREFIX + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorResume(e -> Mono.error(new NoSuchVerifiableCredentialException("Error fetching credentials from user: " + userId)));
+    }
+
+    @Override
+    public Mono<Void> deleteCredentialByIdThatBelongToUser(String processId, String userId, String credentialId) {
+        return webClient.delete()
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + CREDENTIAL_ENTITY_PREFIX + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .onErrorResume(e -> Mono.error(new NoSuchVerifiableCredentialException("Error deleting credential with id: " + credentialId + " from user: " + userId)));
+    }
+
+    @Override
+    public Mono<String> getCredentialByCredentialTypeThatBelongToUser(String processId, String userId, String credentialType) {
+        return webClient.get()
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
+                        "?type=Credential&q=belongsTo==" + USER_ENTITY_PREFIX + userId + ";credentialType==" + credentialType)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorResume(e -> Mono.error(new NoSuchVerifiableCredentialException(
+                        "Error fetching credentials of type: " + credentialType + " from user: " + userId)));
+    }
+
+    @Override
+    public Mono<String> getTransactionThatIsLinkedToACredential(String processId, String credentialId) {
+        return webClient.get()
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "?type=Transaction&q=linkedTo==" + CREDENTIAL_ENTITY_PREFIX + credentialId)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorResume(e -> Mono.error(new NoSuchTransactionException("Error fetching transaction from credential: " + credentialId)));
+    }
+
+    @Override
+    public Mono<Void> updateEntity(String processId, String entityId, String requestBody) {
         return webClient.patch()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + ENTITY_PREFIX + userId + ATTRIBUTES)
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + entityId + ATTRIBUTES)
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)

@@ -36,7 +36,7 @@ class UserDataUseCaseServiceImplTest {
     void testRegisterUserInContextBroker() throws JsonProcessingException {
         String id = "123";
 
-        UserEntity expectedUserEntity = new UserEntity(
+        WalletUser expectedWalletUser = new WalletUser(
                 "urn:entities:userId:" + id,
                 "userEntity",
                 new EntityAttribute<>(PROPERTY_TYPE, new ArrayList<>()),
@@ -45,7 +45,7 @@ class UserDataUseCaseServiceImplTest {
 
         ObjectWriter mockWriter = mock(ObjectWriter.class);
         when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
-        when(mockWriter.writeValueAsString(expectedUserEntity)).thenReturn("user entity");
+        when(mockWriter.writeValueAsString(expectedWalletUser)).thenReturn("user entity");
 
         // Executing the method under test
         StepVerifier.create(userDataServiceImpl.createUserEntity(id))
@@ -114,7 +114,7 @@ class UserDataUseCaseServiceImplTest {
 
         List<CredentialResponse> credentails = List.of(CredentialResponse.builder().credential(vcJwt).format(JWT_VC).build(),CredentialResponse.builder().credential(vcCbor).format(VC_CWT).build());
         // Sample JSON response entity
-        UserEntity mockUserEntity = UserEntity.builder()
+        WalletUser mockWalletUser = WalletUser.builder()
                 .id("urn:entities:userId:1234")
                 .type("userEntity")
                 .dids(EntityAttribute.<List<DidAttribute>>builder()
@@ -127,7 +127,7 @@ class UserDataUseCaseServiceImplTest {
                         .build())
                 .build();
 
-        when(objectMapper.readValue(anyString(), eq(UserEntity.class))).thenReturn(mockUserEntity);
+        when(objectMapper.readValue(anyString(), eq(WalletUser.class))).thenReturn(mockWalletUser);
         ObjectWriter mockWriter = mock(ObjectWriter.class);
         when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
         when(mockWriter.writeValueAsString(any())).thenReturn("user entity with updated credential");
@@ -172,7 +172,7 @@ class UserDataUseCaseServiceImplTest {
                         .build()
         );
 
-        UserEntity userEntity = UserEntity.builder()
+        WalletUser walletUser = WalletUser.builder()
                 .id("urn:entities:userId:1234")
                 .type("userEntity")
                 .dids(new EntityAttribute<>("Property", new ArrayList<>()))
@@ -180,7 +180,7 @@ class UserDataUseCaseServiceImplTest {
                 .build();
 
         // Deserializing userEntityJson into UserEntity
-        when(objectMapper.readValue(anyString(), eq(UserEntity.class))).thenReturn(userEntity);
+        when(objectMapper.readValue(anyString(), eq(WalletUser.class))).thenReturn(walletUser);
 
         when(objectMapper.convertValue(any(Map.class), eq(JsonNode.class)))
                 .thenAnswer(invocation -> {
@@ -223,14 +223,14 @@ class UserDataUseCaseServiceImplTest {
 
         List<VCAttribute> vcAttributes = List.of(vcAttributeWithDid);
 
-        UserEntity userEntity = UserEntity.builder()
+        WalletUser walletUser = WalletUser.builder()
                 .id("urn:entities:userId:1234")
                 .type("userEntity")
                 .dids(new EntityAttribute<>("Property", new ArrayList<>()))
                 .vcs(new EntityAttribute<>("Property", vcAttributes))
                 .build();
 
-        when(objectMapper.readValue(anyString(), eq(UserEntity.class))).thenReturn(userEntity);
+        when(objectMapper.readValue(anyString(), eq(WalletUser.class))).thenReturn(walletUser);
         when(objectMapper.convertValue(any(Map.class), eq(JsonNode.class)))
                 .thenAnswer(invocation -> new ObjectMapper().valueToTree(invocation.getArgument(0)));
 
@@ -246,14 +246,14 @@ class UserDataUseCaseServiceImplTest {
         String didToDelete = "did:example:123";
         String updatedUserEntityJson = "user entity with the deleted credential";
 
-        UserEntity userEntity = new UserEntity(
+        WalletUser walletUser = new WalletUser(
                 userEntityId,
                 "userEntity",
                 new EntityAttribute<>("Property", List.of(new DidAttribute("didType", didToDelete))),
                 new EntityAttribute<>("Property", List.of(new VCAttribute(vcIdToDelete, "vc_json", Map.of("id", vcIdToDelete))))
         );
 
-        when(objectMapper.readValue(anyString(), eq(UserEntity.class))).thenReturn(userEntity);
+        when(objectMapper.readValue(anyString(), eq(WalletUser.class))).thenReturn(walletUser);
 
         ObjectWriter mockWriter = mock(ObjectWriter.class);
         when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
@@ -272,14 +272,14 @@ class UserDataUseCaseServiceImplTest {
         String updatedUserEntityJson = "user entity with the deleted did";
 
         List<DidAttribute> initialDids = List.of(new DidAttribute("key", "did:key:456"));
-        UserEntity userEntity = new UserEntity(
+        WalletUser walletUser = new WalletUser(
                 "user123",
                 "userEntity",
                 new EntityAttribute<>("Property", initialDids),
                 new EntityAttribute<>("Property", new ArrayList<>())
         );
 
-        when(objectMapper.readValue(anyString(), eq(UserEntity.class))).thenReturn(userEntity);
+        when(objectMapper.readValue(anyString(), eq(WalletUser.class))).thenReturn(walletUser);
 
         ObjectWriter mockWriter = mock(ObjectWriter.class);
         when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
@@ -297,14 +297,14 @@ class UserDataUseCaseServiceImplTest {
         String updatedUserEntityJson = "user entity with updated did";
 
         List<DidAttribute> didsList = List.of(new DidAttribute("key", selectedDid));
-        UserEntity userEntity = new UserEntity(
+        WalletUser walletUser = new WalletUser(
                 "user123",
                 "userEntity",
                 new EntityAttribute<>("Property", didsList),
                 new EntityAttribute<>("Property", new ArrayList<>())
         );
 
-        when(objectMapper.readValue(anyString(), eq(UserEntity.class))).thenReturn(userEntity);
+        when(objectMapper.readValue(anyString(), eq(WalletUser.class))).thenReturn(walletUser);
 
         ObjectWriter mockWriter = mock(ObjectWriter.class);
         when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
@@ -336,14 +336,14 @@ class UserDataUseCaseServiceImplTest {
                         .build()
         );
 
-        UserEntity userEntity = new UserEntity(
+        WalletUser walletUser = new WalletUser(
                 "user123",
                 "userEntity",
                 new EntityAttribute<>("Property", List.of()),
                 new EntityAttribute<>("Property", mockVcs)
         );
 
-        when(objectMapper.readValue(anyString(), eq(UserEntity.class))).thenReturn(userEntity);
+        when(objectMapper.readValue(anyString(), eq(WalletUser.class))).thenReturn(walletUser);
         when(objectMapper.convertValue(any(LinkedHashMap.class), eq(JsonNode.class)))
                 .thenReturn(new ObjectMapper().valueToTree(vcValue));
 
@@ -382,14 +382,14 @@ class UserDataUseCaseServiceImplTest {
                         .build()
         );
 
-        UserEntity userEntity = new UserEntity(
+        WalletUser walletUser = new WalletUser(
                 "user123",
                 "userEntity",
                 new EntityAttribute<>("Property", List.of()),
                 new EntityAttribute<>("Property", mockVcs)
         );
 
-        when(objectMapper.readValue(anyString(), eq(UserEntity.class))).thenReturn(userEntity);
+        when(objectMapper.readValue(anyString(), eq(WalletUser.class))).thenReturn(walletUser);
         when(objectMapper.convertValue(any(LinkedHashMap.class), eq(JsonNode.class)))
                 .thenReturn(new ObjectMapper().valueToTree(vcValue));
 
@@ -407,14 +407,14 @@ class UserDataUseCaseServiceImplTest {
 
         VCAttribute vcAttribute = new VCAttribute(vcId, format, expectedVCValue);
 
-        UserEntity userEntity = new UserEntity(
+        WalletUser walletUser = new WalletUser(
                 "user123",
                 "userEntity",
                 new EntityAttribute<>("Property", List.of()),
                 new EntityAttribute<>("Property", List.of(vcAttribute))
         );
 
-        when(objectMapper.readValue(anyString(), eq(UserEntity.class))).thenReturn(userEntity);
+        when(objectMapper.readValue(anyString(), eq(WalletUser.class))).thenReturn(walletUser);
 
         StepVerifier.create(userDataServiceImpl.getVerifiableCredentialByIdAndFormat(userEntityString, vcId, format))
                 .expectNext(expectedVCValue)
@@ -426,14 +426,14 @@ class UserDataUseCaseServiceImplTest {
         String userEntityString = "userEntityJsonString";
         String vcId = "vcNonExistent";
 
-        UserEntity userEntity = new UserEntity(
+        WalletUser walletUser = new WalletUser(
                 "user123",
                 "userEntity",
                 new EntityAttribute<>("Property", List.of()),
                 new EntityAttribute<>("Property", List.of()) // Without VCs
         );
 
-        when(objectMapper.readValue(any(String.class), eq(UserEntity.class))).thenReturn(userEntity);
+        when(objectMapper.readValue(any(String.class), eq(WalletUser.class))).thenReturn(walletUser);
 
         StepVerifier.create(userDataServiceImpl.getVerifiableCredentialByIdAndFormat(userEntityString, vcId, VC_JSON))
                 .expectError(NoSuchElementException.class)
@@ -448,14 +448,14 @@ class UserDataUseCaseServiceImplTest {
                 new DidAttribute("exampleMethod2", "did:example:456")
         );
 
-        UserEntity userEntity = new UserEntity(
+        WalletUser walletUser = new WalletUser(
                 "user123",
                 "userEntity",
                 new EntityAttribute<>("Property", didAttributes),
                 new EntityAttribute<>("Property", List.of())
         );
 
-        when(objectMapper.readValue(anyString(), eq(UserEntity.class))).thenReturn(userEntity);
+        when(objectMapper.readValue(anyString(), eq(WalletUser.class))).thenReturn(walletUser);
 
         StepVerifier.create(userDataServiceImpl.getDidsByUserEntity(userEntityString))
                 .expectNextMatches(dids -> {

@@ -98,6 +98,17 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
+    @ExceptionHandler(NoSuchTransactionException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public Mono<GlobalErrorMessage> noSuchTransactionException(NoSuchTransactionException ex, ServerHttpRequest request) {
+        String path = String.valueOf(request.getPath());
+        return Mono.just(GlobalErrorMessage.builder()
+                .title("NoSuchTransactionException")
+                .message(ex.getMessage())
+                .path(path)
+                .build());
+    }
     @ExceptionHandler(InvalidPinException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody

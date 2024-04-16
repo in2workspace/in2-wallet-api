@@ -24,7 +24,7 @@ import java.lang.reflect.Field;
 import java.util.Optional;
 
 import static es.in2.wallet.domain.util.MessageUtils.ATTRIBUTES;
-import static es.in2.wallet.domain.util.MessageUtils.ENTITY_PREFIX;
+import static es.in2.wallet.domain.util.MessageUtils.USER_ENTITY_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
@@ -135,7 +135,7 @@ class ScorpioAdapterTest {
                 .setBody(expectedResponse));
 
         // Test the getEntityById method
-        StepVerifier.create(scorpioAdapter.getEntityById(processId, userId))
+        StepVerifier.create(scorpioAdapter.getUserEntityById(processId, userId))
                 .expectNextMatches(optionalResponse ->
                         optionalResponse.map(response -> response.contains("\"id\":\"entityId\""))
                                 .orElse(false)) // Verify the response content within the Optional
@@ -143,7 +143,7 @@ class ScorpioAdapterTest {
 
         // Verify the GET request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/external/entities" + ENTITY_PREFIX + userId, recordedRequest.getPath());
+        assertEquals("/external/entities" + "/" + USER_ENTITY_PREFIX + userId, recordedRequest.getPath());
         assertEquals("GET", recordedRequest.getMethod());
     }
 
@@ -168,7 +168,7 @@ class ScorpioAdapterTest {
 
         // Verify the PATCH request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/external/entities" + ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
+        assertEquals("/external/entities" + "/" + USER_ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
         assertEquals("PATCH", recordedRequest.getMethod());
         assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
@@ -195,7 +195,7 @@ class ScorpioAdapterTest {
 
         // Verify the PATCH request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/external/entities" + ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
+        assertEquals("/external/entities" + "/" + USER_ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
         assertEquals("PATCH", recordedRequest.getMethod());
         assertEquals(MediaType.valueOf("application/ld+json").toString(), recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
@@ -209,12 +209,12 @@ class ScorpioAdapterTest {
         mockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
         // Test the getEntityById method expecting an empty result
-        StepVerifier.create(scorpioAdapter.getEntityById(processId,userId))
+        StepVerifier.create(scorpioAdapter.getUserEntityById(processId,userId))
                 .expectNextMatches(Optional::isEmpty) // Verify that an empty Optional is received
                 .verifyComplete();
 
         // Verify the GET request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/external/entities" + ENTITY_PREFIX + userId, recordedRequest.getPath());
+        assertEquals("/external/entities" + "/" + USER_ENTITY_PREFIX + userId, recordedRequest.getPath());
     }
 }

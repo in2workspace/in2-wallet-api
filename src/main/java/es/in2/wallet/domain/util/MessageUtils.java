@@ -13,7 +13,13 @@ public class MessageUtils {
     }
     public static final String RESOURCE_UPDATED_MESSAGE = "ProcessId: {}, Resource updated successfully.";
     public static final String ERROR_UPDATING_RESOURCE_MESSAGE = "Error while updating resource: {}";
-    public static final String ENTITY_PREFIX = "/urn:entities:userId:";
+    public static final String USER_ENTITY_PREFIX = "urn:entities:walletUser:";
+    public static final String WALLET_USER_TYPE = "WalletUser";
+    public static final String CREDENTIAL_TYPE = "Credential";
+    public static final String TRANSACTION_TYPE = "Transaction";
+    public static final String PROPERTY_TYPE = "Property";
+    public static final String RELATIONSHIP_TYPE = "Relationship";
+    public static final String CREDENTIAL_ENTITY_PREFIX = "urn:entities:credential:";
     public static final String ATTRIBUTES = "/attrs";
     public static final String PROCESS_ID = "ProcessId";
     public static final String PRIVATE_KEY_TYPE = "privateKey";
@@ -41,7 +47,6 @@ public class MessageUtils {
     public static final String VC_JWT = "jwt_vc";
     public static final String VC_JSON = "json_vc";
     public static final String VC_CWT = "cwt_vc";
-    public static final String PROPERTY_TYPE = "Property";
     public static final String CREDENTIAL_SUBJECT = "credentialSubject";
     public static final String EXPIRATION_DATE = "expirationDate";
     public static final String GLOBAL_STATE = "MTo3NzcwMjoyNDU1NTkwMjMzOjE3MDU5MTE3NDA=";

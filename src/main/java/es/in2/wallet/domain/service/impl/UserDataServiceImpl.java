@@ -45,29 +45,29 @@ public class UserDataServiceImpl implements UserDataService {
     private final ObjectMapper objectMapper;
 
     /**
-     * Creates a new UserEntity instance with an empty list of credentials and DIDs.
+     * Creates a new UserEntity.
      *
      * @param id The unique identifier for the user.
      */
     @Override
     public Mono<String> createUserEntity(String id) {
         // Construct the UserEntity
-        UserEntity userEntity = new UserEntity("urn:entities:userId:" + id, "userEntity", new EntityAttribute<>(PROPERTY_TYPE, new ArrayList<>()), new EntityAttribute<>(PROPERTY_TYPE, new ArrayList<>()));
+        WalletUser walletUser = WalletUser.builder().id(USER_ENTITY_PREFIX + id).type(WALLET_USER_TYPE).build();
 
         // Log the creation of the entity
         log.debug("UserEntity created for: {}", id);
 
-        return deserializeUserEntityToString(userEntity);
+        return deserializeUserEntityToString(walletUser);
     }
 
     /**
      * Deserializes a UserEntity object to a JSON string.
      *
-     * @param userEntity The UserEntity object to be deserialized.
+     * @param walletUser The UserEntity object to be deserialized.
      */
-    private Mono<String> deserializeUserEntityToString(UserEntity userEntity) {
+    private Mono<String> deserializeUserEntityToString(WalletUser walletUser) {
         try {
-            return Mono.just(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(userEntity));
+            return Mono.just(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(walletUser));
 
         } catch (JsonProcessingException e) {
             return Mono.error(new ParseErrorException("Error deserializing UserEntity: " + e));
@@ -79,13 +79,13 @@ public class UserDataServiceImpl implements UserDataService {
      *
      * @param userEntity The JSON string representing a UserEntity.
      */
-    private Mono<UserEntity> serializeUserEntity(String userEntity) {
+    private Mono<WalletUser> serializeUserEntity(String userEntity) {
         try {
             // Setting up ObjectMapper for deserialization
             objectMapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
             // Deserializing the response into a UserEntity
-            UserEntity entity = objectMapper.readValue(userEntity, UserEntity.class);
+            WalletUser entity = objectMapper.readValue(userEntity, WalletUser.class);
             log.debug("User Entity: {}", userEntity);
 
             // Returning the UserEntity wrapped in a Mono
@@ -115,7 +115,7 @@ public class UserDataServiceImpl implements UserDataService {
             Mono<JsonNode> vcJsonMono = selectedCredential.format().equals(VC_JWT) || selectedCredential.format().equals(JWT_VC_JSON) ? extractVcJsonFromVcJwt((String) selectedCredential.credential()) : fromVpCborToVcJsonReactive((String) selectedCredential.credential());
 
             return vcJsonMono.flatMap(vcJson -> extractVerifiableCredentialIdFromVcJson(vcJson).flatMap(vcId -> {
-                List<VCAttribute> vcAttributes = new ArrayList<>();
+                List<CredentialAttribute> vcAttributes = new ArrayList<>();
                 for (CredentialResponse cred : credentials) {
                     vcAttributes.add(new VCAttribute(vcId, cred.format(), cred.credential()));
                 }
@@ -124,9 +124,9 @@ public class UserDataServiceImpl implements UserDataService {
                 updatedVCs.addAll(vcAttributes);
                 EntityAttribute<List<VCAttribute>> vcs = new EntityAttribute<>(entity.vcs().type(), updatedVCs);
 
-                UserEntity updatedUserEntity = UserEntity.builder().id(entity.id()).type(entity.type()).vcs(vcs).dids(entity.dids()).build();
+                WalletUser updatedWalletUser = WalletUser.builder().id(entity.id()).type(entity.type()).vcs(vcs).dids(entity.dids()).build();
 
-                return deserializeUserEntityToString(updatedUserEntity);
+                return deserializeUserEntityToString(updatedWalletUser);
             }));
         }).doOnSuccess(updatedUserEntity -> log.info("Verifiable Credential saved successfully: {}", updatedUserEntity)).onErrorResume(e -> {
             log.error("Error saving Verifiable Credential: {}", e.getMessage());
@@ -427,8 +427,8 @@ public class UserDataServiceImpl implements UserDataService {
             List<VCAttribute> updatedVCs = entity.vcs().value().stream().filter(vcAttribute -> !vcAttribute.id().equals(vcId)).toList();
 
             // Create a new UserEntity with the updated lists
-            UserEntity updatedUserEntity = new UserEntity(entity.id(), entity.type(), new EntityAttribute<>(entity.dids().type(), updatedDids), new EntityAttribute<>(entity.vcs().type(), updatedVCs));
-            return deserializeUserEntityToString(updatedUserEntity);
+            WalletUser updatedWalletUser = new WalletUser(entity.id(), entity.type(), new EntityAttribute<>(entity.dids().type(), updatedDids), new EntityAttribute<>(entity.vcs().type(), updatedVCs));
+            return deserializeUserEntityToString(updatedWalletUser);
         }).doOnSuccess(updateEntity -> // Log the successful operation and return the updated entity
                 log.info("Verifiable Credential with ID: {} and associated DID deleted successfully: {}", vcId, updateEntity));
     }
@@ -440,10 +440,10 @@ public class UserDataServiceImpl implements UserDataService {
      * @param format     The format of the VCs to retrieve.
      */
     @Override
-    public Mono<List<VCAttribute>> getVerifiableCredentialsByFormat(String userEntity, String format) {
+    public Mono<List<CredentialAttribute>> getVerifiableCredentialsByFormat(String userEntity, String format) {
         return serializeUserEntity(userEntity).flatMap(entity -> {
             // Filter VCAttributes based on the given format
-            List<VCAttribute> filteredVCs = entity.vcs().value().stream().filter(vcAttribute -> vcAttribute.type().equals(format)).toList();
+            List<CredentialAttribute> filteredVCs = entity.vcs().value().stream().filter(vcAttribute -> vcAttribute.type().equals(format)).toList();
 
             // Return the filtered list of VCAttributes wrapped in a Mono
             return Mono.just(filteredVCs);
@@ -542,8 +542,8 @@ public class UserDataServiceImpl implements UserDataService {
             EntityAttribute<List<DidAttribute>> dids = new EntityAttribute<>(PROPERTY_TYPE, updatedDids);
 
             // Create the updated user entity with the new DID
-            UserEntity updatedUserEntity = new UserEntity(entity.id(), entity.type(), dids, entity.vcs());
-            return deserializeUserEntityToString(updatedUserEntity);
+            WalletUser updatedWalletUser = new WalletUser(entity.id(), entity.type(), dids, entity.vcs());
+            return deserializeUserEntityToString(updatedWalletUser);
         }).doOnSuccess(entity -> log.info("DID saved successfully for user: {}", entity)).onErrorResume(e -> {
             log.error("Error while saving DID for user: " + userEntity, e);
             return Mono.error(e); // Re-throw the error to be handled upstream
@@ -588,13 +588,13 @@ public class UserDataServiceImpl implements UserDataService {
             }
 
             // Create an updated UserEntity with the remaining DIDs
-            UserEntity updatedUserEntity = new UserEntity(entity.id(), entity.type(), new EntityAttribute<>(entity.dids().type(), updatedDids), entity.vcs());
+            WalletUser updatedWalletUser = new WalletUser(entity.id(), entity.type(), new EntityAttribute<>(entity.dids().type(), updatedDids), entity.vcs());
 
             // Log the operation result
             log.info("Deleted DID: {} for user: {}", did, entity.id());
 
             // Return the updated UserEntity wrapped in a Mono
-            return deserializeUserEntityToString(updatedUserEntity);
+            return deserializeUserEntityToString(updatedWalletUser);
         });
     }
     

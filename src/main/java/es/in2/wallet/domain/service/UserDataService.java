@@ -1,8 +1,8 @@
 package es.in2.wallet.domain.service;
 
+import es.in2.wallet.domain.model.CredentialAttribute;
 import es.in2.wallet.domain.model.CredentialResponse;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
-import es.in2.wallet.domain.model.VCAttribute;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -13,7 +13,7 @@ public interface UserDataService {
     Mono<String> saveVC(String userEntity, List<CredentialResponse> credentials);
     Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String userEntity);
 
-    Mono<List<VCAttribute>> getVerifiableCredentialsByFormat(String userEntity, String format);
+    Mono<List<CredentialAttribute>> getVerifiableCredentialsByFormat(String userEntity, String format);
 
     Mono<String> getVerifiableCredentialByIdAndFormat(String userEntity, String id, String format);
 
@@ -23,9 +23,4 @@ public interface UserDataService {
 
     Mono<List<CredentialsBasicInfo>> getSelectableVCsByVcTypeList(List<String> vcTypeList, String userEntity);
 
-    Mono<String> saveDid(String userEntity, String did, String didMethod);
-
-    Mono<List<String>> getDidsByUserEntity(String userEntity);
-
-    Mono<String> deleteSelectedDidFromUserEntity(String did, String userEntity);
 }

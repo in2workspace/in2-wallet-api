@@ -6,10 +6,9 @@ import lombok.Builder;
 
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record VCAttribute(
-        @JsonProperty("id") String id,
+public record CredentialStatusAttribute (
         @JsonProperty("type") String type,
-        @JsonProperty("value") Object value
-) {
+        @JsonProperty("value") CredentialStatus credentialStatus
 
+){
 }
