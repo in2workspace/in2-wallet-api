@@ -272,7 +272,7 @@ public class UserDataServiceImpl implements UserDataService {
                 }
 
                 JsonNode jsonCredential = objectMapper.convertValue(credential.jsonCredentialAttribute().value(), JsonNode.class);
-                JsonNode credentialSubject = jsonCredential.get("subject");
+                JsonNode credentialSubject = jsonCredential.get(CREDENTIAL_SUBJECT);
                 ZonedDateTime expirationDate = null;
                 if (jsonCredential.has(EXPIRATION_DATE) && !jsonCredential.get(EXPIRATION_DATE).isNull()) {
                     expirationDate = parseZonedDateTime(jsonCredential.get(EXPIRATION_DATE).asText());
@@ -347,6 +347,9 @@ public class UserDataServiceImpl implements UserDataService {
                         // Extracting the credential attribute based on the requested format
                         CredentialAttribute credentialAttribute;
                         switch (format) {
+                            case VC_JSON:
+                                credentialAttribute = credential.jsonCredentialAttribute();
+                                break;
                             case JWT_VC:
                                 credentialAttribute = credential.jwtCredentialAttribute();
                                 break;
@@ -363,8 +366,13 @@ public class UserDataServiceImpl implements UserDataService {
                             return Mono.error(new NoSuchElementException("Credential format not found or is null: " + format));
                         }
 
-                        // Return the value of the credential attribute, assuming it is a string
-                        return Mono.just(credentialAttribute.value().toString());
+                        Object value = credentialAttribute.value();
+                        if (value instanceof String stringValue) {
+                            return Mono.just(stringValue);
+                        } else {
+                            String jsonValue = objectMapper.writeValueAsString(value);
+                            return Mono.just(jsonValue);
+                        }
                     } catch (JsonProcessingException e) {
                         return Mono.error(new RuntimeException("Error deserializing CredentialEntity from JSON", e));
                     }

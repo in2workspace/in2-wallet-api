@@ -80,7 +80,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     public Mono<String> getCredentialByIdThatBelongToUser(String processId, String userId, String credentialId) {
         return webClient.get()
                 .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
-                        CREDENTIAL_ENTITY_PREFIX + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
+                        "/" + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(String.class)
@@ -91,7 +91,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     public Mono<Void> deleteCredentialByIdThatBelongToUser(String processId, String userId, String credentialId) {
         return webClient.delete()
                 .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
-                        CREDENTIAL_ENTITY_PREFIX + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
+                        "/" + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(Void.class)
