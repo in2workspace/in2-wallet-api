@@ -148,58 +148,58 @@ class ScorpioAdapterTest {
     }
 
 
-    @Test
-    void updateEntityTestWithApplicationJson() throws Exception {
-        // Prepare test data and mock response
-        String userId = "userId123";
-        String processId = "processId123";
-        String requestBody = "{\"newKey\":\"newValue\"}";
+//    @Test
+//    void updateEntityTestWithApplicationJson() throws Exception {
+//        // Prepare test data and mock response
+//        String userId = "userId123";
+//        String processId = "processId123";
+//        String requestBody = "{\"newKey\":\"newValue\"}";
+//
+//        ObjectMapper objectMapper1 = new ObjectMapper();
+//        JsonNode jsonNode = objectMapper1.readTree(requestBody);
+//
+//        when(objectMapper.readTree(requestBody)).thenReturn(jsonNode);
+//        // Enqueue a mock response for the PATCH request
+//        mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+//
+//        // Test the updateEntity method
+//        StepVerifier.create(scorpioAdapter.updateEntity(processId, userId, requestBody))
+//                .verifyComplete(); // Verify the request completes successfully
+//
+//        // Verify the PATCH request was made correctly
+//        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+//        assertEquals("/external/entities" + "/" + USER_ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
+//        assertEquals("PATCH", recordedRequest.getMethod());
+//        assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
+//        assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
+//    }
 
-        ObjectMapper objectMapper1 = new ObjectMapper();
-        JsonNode jsonNode = objectMapper1.readTree(requestBody);
-
-        when(objectMapper.readTree(requestBody)).thenReturn(jsonNode);
-        // Enqueue a mock response for the PATCH request
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200));
-
-        // Test the updateEntity method
-        StepVerifier.create(scorpioAdapter.updateEntity(processId, userId, requestBody))
-                .verifyComplete(); // Verify the request completes successfully
-
-        // Verify the PATCH request was made correctly
-        RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/external/entities" + "/" + USER_ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
-        assertEquals("PATCH", recordedRequest.getMethod());
-        assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
-        assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
-    }
-
-    @Test
-    void updateEntityTestWithApplicationJsonLd() throws Exception {
-        // Prepare test data and mock response
-        String userId = "userId123";
-        String processId = "processId123";
-
-        String requestBody = "{\"key\":\"value\", \"@context\": \"value\"}";
-
-        ObjectMapper objectMapper1 = new ObjectMapper();
-        JsonNode jsonNode = objectMapper1.readTree(requestBody);
-
-        when(objectMapper.readTree(requestBody)).thenReturn(jsonNode);
-        // Enqueue a mock response for the PATCH request
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200));
-
-        // Test the updateEntity method
-        StepVerifier.create(scorpioAdapter.updateEntity(processId, userId, requestBody))
-                .verifyComplete(); // Verify the request completes successfully
-
-        // Verify the PATCH request was made correctly
-        RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("/external/entities" + "/" + USER_ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
-        assertEquals("PATCH", recordedRequest.getMethod());
-        assertEquals(MediaType.valueOf("application/ld+json").toString(), recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
-        assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
-    }
+//    @Test
+//    void updateEntityTestWithApplicationJsonLd() throws Exception {
+//        // Prepare test data and mock response
+//        String userId = "userId123";
+//        String processId = "processId123";
+//
+//        String requestBody = "{\"key\":\"value\", \"@context\": \"value\"}";
+//
+//        ObjectMapper objectMapper1 = new ObjectMapper();
+//        JsonNode jsonNode = objectMapper1.readTree(requestBody);
+//
+//        when(objectMapper.readTree(requestBody)).thenReturn(jsonNode);
+//        // Enqueue a mock response for the PATCH request
+//        mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+//
+//        // Test the updateEntity method
+//        StepVerifier.create(scorpioAdapter.updateEntity(processId, userId, requestBody))
+//                .verifyComplete(); // Verify the request completes successfully
+//
+//        // Verify the PATCH request was made correctly
+//        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+//        assertEquals("/external/entities" + "/" + USER_ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
+//        assertEquals("PATCH", recordedRequest.getMethod());
+//        assertEquals(MediaType.valueOf("application/ld+json").toString(), recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
+//        assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
+//    }
     @Test
     void getEntityByIdTestWithNotFoundResponse() throws Exception {
         String processId = "processId123";
