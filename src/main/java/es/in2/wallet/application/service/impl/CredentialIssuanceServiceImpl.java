@@ -1,12 +1,9 @@
 package es.in2.wallet.application.service.impl;
 
-import es.in2.wallet.domain.service.EbsiAuthorisationService;
-import es.in2.wallet.domain.service.EbsiIdTokenService;
-import es.in2.wallet.domain.service.EbsiVpTokenService;
+import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.service.CredentialIssuanceService;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.*;
-import es.in2.wallet.application.port.BrokerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -71,7 +68,7 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
                         .flatMap(tokenResponse -> getCredentialRecursive(
                                 tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), new ArrayList<>(), 0
                         ))
-                        .flatMap(credentials -> processUserEntity(processId,authorizationToken,credentials,did))
+                        .flatMap(credentials -> processUserEntity(processId,authorizationToken,credentials))
                 );
     }
 
@@ -98,7 +95,7 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
                         .flatMap(tokenResponse -> getCredentialRecursive(
                                  tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), new ArrayList<>(), 0
                         ))
-                        .flatMap(credentials -> processUserEntity(processId, authorizationToken, credentials, did)));
+                        .flatMap(credentials -> processUserEntity(processId, authorizationToken, credentials)));
     }
 
     /**
@@ -132,13 +129,13 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
      * If the user entity exists, it is updated with the new credential.
      * If not, a new user entity is created and then updated with the credential.
      */
-    private Mono<Void> processUserEntity(String processId, String authorizationToken, List<CredentialResponse> credentials, String did) {
+    private Mono<Void> processUserEntity(String processId, String authorizationToken, List<CredentialResponse> credentials) {
         log.info("ProcessId: {} - Processing User Entity", processId);
         return getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> brokerService.getEntityById(processId, userId)
+                .flatMap(userId -> brokerService.getUserEntityById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
-                                .map(entity -> updateEntity(processId, userId, credentials, entity,did))
-                                .orElseGet(() -> createAndUpdateUser(processId, userId, credentials,did))
+                                .map(entity -> persistCredential(processId, userId, credentials))
+                                .orElseGet(() -> createUserEntityAndPersistCredential(processId, userId, credentials))
                         )
                 );
     }
@@ -148,23 +145,11 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
      * Following the update, a second operation is triggered to save the VC (Verifiable Credential) to the entity.
      * This process involves saving the DID, updating the entity, retrieving the updated entity, saving the VC, and finally updating the entity again with the VC information.
      */
-    private Mono<Void> updateEntity(String processId, String userId, List<CredentialResponse> credentials, String entity, String did) {
+    private Mono<Void> persistCredential(String processId, String userId, List<CredentialResponse> credentials) {
         log.info("ProcessId: {} - Updating User Entity", processId);
-        return userDataService.saveDid(entity, did, "did:key")
-                .flatMap(updatedEntity ->
-                        brokerService.updateEntity(processId, userId, updatedEntity)
-                )
-                .then(
-                        brokerService.getEntityById(processId, userId)
-                                .flatMap(optionalEntity ->
-                                        optionalEntity.map(updatedEntity ->
-                                                        userDataService.saveVC(updatedEntity, credentials)
-                                                                .flatMap(vcUpdatedEntity ->
-                                                                        brokerService.updateEntity(processId, userId, vcUpdatedEntity)
-                                                                )
-                                        ).orElseGet(() -> Mono.error(new RuntimeException("Failed to retrieve entity after initial update.")))
-                                )
-                );
+        return userDataService.saveVC(userId, credentials)
+                .flatMap(credentialEntity ->
+                                brokerService.postEntity(processId, credentialEntity));
     }
 
     /**
@@ -172,27 +157,13 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
      * After creation, the entity is updated with the DID information.
      * This involves creating the user, posting the entity, saving the DID to the entity, updating the entity with the DID, retrieving the updated entity, saving the VC, and performing a final update with the VC information.
      */
-    private Mono<Void> createAndUpdateUser(String processId, String userId, List<CredentialResponse> credentials, String did) {
+    private Mono<Void> createUserEntityAndPersistCredential(String processId, String userId, List<CredentialResponse> credentials) {
         log.info("ProcessId: {} - Creating and Updating User Entity", processId);
         return userDataService.createUserEntity(userId)
                 .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
-                .then(brokerService.getEntityById(processId, userId))
-                .flatMap(optionalEntity ->
-                        optionalEntity.map(entity ->
-                                        userDataService.saveDid(entity, did, "did:key")
-                                                .flatMap(didUpdatedEntity -> brokerService.updateEntity(processId, userId, didUpdatedEntity))
-                                                .then(brokerService.getEntityById(processId, userId))
-                                                .flatMap(updatedOptionalEntity ->
-                                                        updatedOptionalEntity.map(updatedEntity ->
-                                                                        userDataService.saveVC(updatedEntity, credentials)
-                                                                                .flatMap(vcUpdatedEntity -> brokerService.updateEntity(processId, userId, vcUpdatedEntity))
-                                                                                .then()
-                                                                )
-                                                                .orElseGet(() -> Mono.error(new RuntimeException("Failed to retrieve entity after update.")))
-                                                )
-                                )
-                                .orElseGet(() -> Mono.error(new RuntimeException("Entity not found after creation.")))
-                );
+                .then(userDataService.saveVC(userId, credentials)
+                        .flatMap(credentialEntity -> brokerService.postEntity(processId, credentialEntity))
+                        .then());
     }
 
     private Mono<List<CredentialResponse>> getCredentialRecursive(TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce, List<CredentialResponse> credentialResponses, int index) {

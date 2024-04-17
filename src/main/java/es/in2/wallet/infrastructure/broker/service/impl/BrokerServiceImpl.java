@@ -21,7 +21,7 @@ public class BrokerServiceImpl implements BrokerService {
         return brokerAdapter.postEntity(processId, requestBody);
     }
 
-    public Mono<Optional<String>>  getEntityById(String processId, String userId) {
+    public Mono<Optional<String>> getUserEntityById(String processId, String userId) {
         return brokerAdapter.getUserEntityById(processId, userId);
     }
 

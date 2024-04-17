@@ -1,17 +1,22 @@
 package es.in2.wallet.application.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.service.AttestationExchangeService;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
-import es.in2.wallet.domain.model.*;
+import es.in2.wallet.domain.model.AuthorizationRequest;
+import es.in2.wallet.domain.model.CredentialsBasicInfo;
+import es.in2.wallet.domain.model.VcSelectorRequest;
+import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.service.*;
-import es.in2.wallet.application.port.BrokerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -31,36 +36,34 @@ public class AttestationExchangeServiceImpl implements AttestationExchangeServic
     private final PresentationService presentationService;
 
     @Override
-    public Mono<VcSelectorRequest> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, String qrContent) {
+    public Mono<VcSelectorRequest> processAuthorizationRequest(String processId, String authorizationToken, String qrContent) {
         log.info("ProcessID: {} - Processing a Verifiable Credential Login Request", processId);
-        // Get Authorization Request executing the VC Login Request
         return authorizationRequestService.getAuthorizationRequestFromVcLoginRequest(processId, qrContent, authorizationToken)
-                // Validate the Verifier which issues the Authorization Request
-                .flatMap(jwtAuthorizationRequest ->
-                        verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest)
-                )
-                // Get the Authorization Request from the JWT Authorization Request Claim
-                .flatMap(jwtAuthorizationRequest ->
-                        authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestClaim(processId, jwtAuthorizationRequest)
-                )
-                // Check which Verifiable Credentials are selectable
-                .flatMap(authorizationRequest -> getUserIdFromToken(authorizationToken)
-                    .flatMap(userId -> brokerService.getEntityById(processId, userId)
-                            .flatMap(optionalEntity -> optionalEntity
-                                    .map(entity ->
-                                            userDataService.getSelectableVCsByVcTypeList(authorizationRequest.scope(), entity)
-                                                    .flatMap(selectableVCs -> {
-                                                        log.debug(selectableVCs.toString());
-                                                        return buildSelectableVCsRequest(authorizationRequest, selectableVCs);
-                                                    })
-                                    )
-                                    .orElseGet(() ->
-                                            Mono.error(new RuntimeException("Entity not found for provided ID."))
-                                    )
-                            )
-                    )
+                .flatMap(jwtAuthorizationRequest -> verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
+                .flatMap(jwtAuthorizationRequest -> authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestClaim(processId, jwtAuthorizationRequest))
+                .flatMap(authorizationRequest -> getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, authorizationRequest.scope())
+                .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
+    }
+
+
+    @Override
+    public Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> scope) {
+        return getUserIdFromToken(authorizationToken)
+                .flatMap(userId -> {
+                                    // Process each credential type in the scope and accumulate results
+                                    return Flux.fromIterable(scope)
+                                            .flatMap(element -> brokerService.getCredentialByCredentialTypeThatBelongToUser(processId, userId,element)
+                                                    .flatMap(userDataService::getUserVCsInJson))
+                                            .collectList()  // This will collect all lists into a single list
+                                            .flatMap(lists -> {
+                                                List<CredentialsBasicInfo> allCredentials = new ArrayList<>();
+                                                lists.forEach(allCredentials::addAll); // Combine all lists into one
+                                                return Mono.just(allCredentials);
+                                            });
+                                }
                 );
     }
+
 
     private Mono<VcSelectorRequest> buildSelectableVCsRequest(AuthorizationRequest authorizationRequest, List<CredentialsBasicInfo> selectableVCs) {
         return Mono.fromCallable(() -> VcSelectorRequest.builder()

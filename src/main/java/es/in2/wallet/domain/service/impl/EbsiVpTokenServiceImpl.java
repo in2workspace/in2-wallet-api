@@ -4,14 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.wallet.domain.service.EbsiVpTokenService;
+import es.in2.wallet.application.service.AttestationExchangeService;
 import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedSerializingException;
 import es.in2.wallet.domain.model.*;
+import es.in2.wallet.domain.service.EbsiVpTokenService;
 import es.in2.wallet.domain.service.PresentationService;
-import es.in2.wallet.domain.service.UserDataService;
 import es.in2.wallet.domain.util.ApplicationUtils;
-import es.in2.wallet.application.port.BrokerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,8 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.*;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.*;
+import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
+import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
 import static es.in2.wallet.domain.util.MessageUtils.*;
 
 @Slf4j
@@ -30,9 +30,8 @@ import static es.in2.wallet.domain.util.MessageUtils.*;
 @RequiredArgsConstructor
 public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
     private final ObjectMapper objectMapper;
-    private final UserDataService userDataService;
-    private final BrokerService brokerService;
     private final PresentationService presentationService;
+    private final AttestationExchangeService attestationExchangeService;
 
     /**
      * Initiates the process to exchange the authorization token and JWT for a VP Token Request,
@@ -105,21 +104,12 @@ public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
      * Builds a signed JWT Verifiable Presentation by extracting user data and credentials based on the VC type list provided.
      */
     private Mono<String> buildSignedJwtVerifiablePresentationByVcTypeList(String processId, String authorizationToken, List<String> vcTypeList, String nonce, AuthorisationServerMetadata authorisationServerMetadata) {
-        return getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> brokerService.getEntityById(processId, userId))
-                .flatMap(optionalEntity -> optionalEntity
-                        .map(entity ->
-                                userDataService.getSelectableVCsByVcTypeList(vcTypeList, entity)
+        return attestationExchangeService.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,vcTypeList)
                                         .flatMap(list -> {
                                             log.debug(list.toString());
                                             VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().selectedVcList(list).build();
                                             return presentationService.createSignedVerifiablePresentation(processId, authorizationToken, vcSelectorResponse, nonce, authorisationServerMetadata.issuer());
-                                        })
-                        )
-                        .orElseGet(() ->
-                                Mono.error(new RuntimeException("Entity not found for provided ID."))
-                        )
-                );
+                                        });
     }
 
     private Mono<List<String>> extractRequiredParamFromJwt(String jwt) {

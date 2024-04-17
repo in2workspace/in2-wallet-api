@@ -45,7 +45,7 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
                         }
                         case VC_LOGIN_REQUEST: {
                             log.info("ProcessID: {} - Processing a Verifiable Credential Login Request", processId);
-                            return attestationExchangeService.getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, qrContent)
+                            return attestationExchangeService.processAuthorizationRequest(processId, authorizationToken, qrContent)
                                     .doOnSuccess(credential -> log.info("ProcessID: {} - Attestation Exchange", processId))
                                     .doOnError(e -> log.error("ProcessID: {} - Error while processing Attestation Exchange: {}", processId, e.getMessage()));
                         }

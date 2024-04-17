@@ -1,12 +1,9 @@
 package es.in2.wallet.application.service.impl;
 
-import es.in2.wallet.domain.service.EbsiAuthorisationService;
-import es.in2.wallet.domain.service.EbsiIdTokenService;
-import es.in2.wallet.domain.service.EbsiVpTokenService;
+import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.service.EbsiCredentialService;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.*;
-import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.infrastructure.ebsi.config.EbsiConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -119,11 +116,12 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
      * If not, a new user entity is created and then updated with the credential.
      */
     private Mono<Void> processUserEntity(String processId, String authorizationToken, List<CredentialResponse> credentials) {
+        log.info("ProcessId: {} - Processing User Entity", processId);
         return getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> brokerService.getEntityById(processId, userId)
+                .flatMap(userId -> brokerService.getUserEntityById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
-                                .map(entity -> updateEntity(processId, userId, credentials, entity))
-                                .orElseGet(() -> createAndUpdateUser(processId, userId, credentials))
+                                .map(entity -> persistCredential(processId, userId, credentials))
+                                .orElseGet(() -> createUserEntityAndPersistCredential(processId, userId, credentials))
                         )
                 );
     }
@@ -131,31 +129,27 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
     /**
      * Updates the user entity with the DID information.
      * Following the update, a second operation is triggered to save the VC (Verifiable Credential) to the entity.
-     * This process involves saving the VC, and updating the entity with the VC information.
+     * This process involves saving the DID, updating the entity, retrieving the updated entity, saving the VC, and finally updating the entity again with the VC information.
      */
-    private Mono<Void> updateEntity(String processId, String userId, List<CredentialResponse> credentials, String entity) {
-        return userDataService.saveVC(entity, credentials)
-                .flatMap(updatedEntity ->
-                        brokerService.updateEntity(processId, userId, updatedEntity)
-                );
+    private Mono<Void> persistCredential(String processId, String userId, List<CredentialResponse> credentials) {
+        log.info("ProcessId: {} - Updating User Entity", processId);
+        return userDataService.saveVC(userId, credentials)
+                .flatMap(credentialEntity ->
+                        brokerService.postEntity(processId, credentialEntity));
     }
 
     /**
      * Handles the creation of a new user entity if it does not exist.
      * After creation, the entity is updated with the DID information.
-     * This involves creating the user, posting the entity, saving the VC, and performing an update with the VC information.
+     * This involves creating the user, posting the entity, saving the DID to the entity, updating the entity with the DID, retrieving the updated entity, saving the VC, and performing a final update with the VC information.
      */
-    private Mono<Void> createAndUpdateUser(String processId, String userId, List<CredentialResponse> credentials) {
+    private Mono<Void> createUserEntityAndPersistCredential(String processId, String userId, List<CredentialResponse> credentials) {
+        log.info("ProcessId: {} - Creating and Updating User Entity", processId);
         return userDataService.createUserEntity(userId)
                 .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
-                .then(brokerService.getEntityById(processId, userId))
-                .flatMap(optionalEntity ->
-                        optionalEntity.map(entity ->
-                                        userDataService.saveVC(entity, credentials)
-                                                .flatMap(updatedEntity -> brokerService.updateEntity(processId, userId, updatedEntity))
-                                )
-                                .orElseGet(() -> Mono.error(new RuntimeException("Entity not found after creation.")))
-                );
+                .then(userDataService.saveVC(userId, credentials)
+                        .flatMap(credentialEntity -> brokerService.postEntity(processId, credentialEntity))
+                        .then());
     }
 
     /**

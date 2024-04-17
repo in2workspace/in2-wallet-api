@@ -3,8 +3,8 @@ package es.in2.wallet.application.service.impl;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.port.VaultService;
 import es.in2.wallet.application.service.UserDataUseCaseService;
-import es.in2.wallet.domain.exception.NoSuchVerifiableCredentialException;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
+import es.in2.wallet.domain.service.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.util.List;
 public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
 
     private final BrokerService brokerService;
-    private final es.in2.wallet.domain.service.UserDataService userDataService;
+    private final UserDataService userDataService;
     private final VaultService vaultService;
 
     /**
@@ -29,15 +29,14 @@ public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
      */
     @Override
     public Mono<List<CredentialsBasicInfo>> getUserVCs(String processId, String userId) {
-        return brokerService.getEntityById(processId, userId).flatMap(optionalEntity -> optionalEntity.map(userDataService::getUserVCsInJson).orElseGet(() -> {
-            log.error("User with ID {} has no entity or credentials yet.", userId);
-            return Mono.error(new NoSuchVerifiableCredentialException("There is no credential available"));
-        })).doOnSuccess(list -> log.info("Retrieved VCs in JSON for userId: {}", userId)).onErrorResume(Mono::error);
+        return brokerService.getCredentialsThatBelongToUser(processId, userId)
+                .flatMap(userDataService::getUserVCsInJson)
+                .doOnSuccess(list -> log.info("Retrieved VCs in JSON for userId: {}", userId)).onErrorResume(Mono::error);
     }
 
     /**
      * Deletes a specific verifiable credential (VC) by its ID for a given user.
-     * This method first retrieves the entity associated with the user. If the entity is found, it then
+     * This method first retrieves the requested credential associated with the user. If the credential is found, it then
      * extracts the Decentralized Identifier (DID) from the VC, deletes the secret key associated with the DID
      * in the vault, and finally deletes the VC itself.
      *
@@ -48,7 +47,12 @@ public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
 
     @Override
     public Mono<Void> deleteVerifiableCredentialById(String processId, String credentialId, String userId) {
-        return brokerService.getEntityById(processId, userId).flatMap(optionalEntity -> optionalEntity.map(entity -> userDataService.extractDidFromVerifiableCredential(entity, credentialId).flatMap(did -> vaultService.deleteSecretByKey(did).then(userDataService.deleteVerifiableCredential(entity, credentialId, did)).flatMap(updateEntity -> brokerService.updateEntity(processId, userId, updateEntity)))).orElseGet(() -> Mono.error(new RuntimeException("There's no credential available with the id: " + credentialId))));
+        return brokerService.getCredentialByIdThatBelongToUser(processId,userId,credentialId)
+                .flatMap(userDataService::extractDidFromVerifiableCredential)
+                .flatMap(vaultService::deleteSecretByKey)
+                .then(brokerService.deleteCredentialByIdThatBelongToUser(processId,userId,credentialId))
+                .doOnSuccess(list -> log.info("Delete VC with Id: {}", credentialId))
+                .onErrorResume(Mono::error);
     }
 
 }

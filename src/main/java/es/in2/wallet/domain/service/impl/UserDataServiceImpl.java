@@ -1,13 +1,12 @@
 package es.in2.wallet.domain.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jwt.SignedJWT;
 import com.upokecenter.cbor.CBORObject;
-import es.in2.wallet.domain.exception.NoSuchDidException;
 import es.in2.wallet.domain.exception.NoSuchVerifiableCredentialException;
 import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.*;
@@ -20,9 +19,7 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuples;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,82 +54,105 @@ public class UserDataServiceImpl implements UserDataService {
         // Log the creation of the entity
         log.debug("UserEntity created for: {}", id);
 
-        return deserializeUserEntityToString(walletUser);
+        return deserializeEntityToString(walletUser);
     }
 
     /**
-     * Deserializes a UserEntity object to a JSON string.
+     * Deserializes an entity object to a JSON string.
      *
-     * @param walletUser The UserEntity object to be deserialized.
+     * @param entity The entity object to be deserialized.
      */
-    private Mono<String> deserializeUserEntityToString(WalletUser walletUser) {
+    private Mono<String> deserializeEntityToString(Object entity) {
         try {
-            return Mono.just(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(walletUser));
+            return Mono.just(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(entity));
 
         } catch (JsonProcessingException e) {
-            return Mono.error(new ParseErrorException("Error deserializing UserEntity: " + e));
+            return Mono.error(new ParseErrorException("Error deserializing entity: " + e));
         }
     }
 
     /**
-     * Serializes a JSON string to a UserEntity object.
+     * Saves verifiable credentials (VCs) for a user, supporting multiple formats like JWT, CWT, and JSON.
+     * This method consolidates credential formats into a single entity and ensures the `vc_json` format is always present,
+     * extracting it from other formats if necessary. It also determines the credential status based on the presence
+     * of signed formats (JWT or CWT), setting it to ISSUED if any are present, otherwise to GENERATED.
      *
-     * @param userEntity The JSON string representing a UserEntity.
+     * @param userId The ID of the user for whom the credentials are being saved.
+     * @param credentials The list of credential responses which may contain various formats of the same credential.
      */
-    private Mono<WalletUser> serializeUserEntity(String userEntity) {
-        try {
-            // Setting up ObjectMapper for deserialization
-            objectMapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
-
-            // Deserializing the response into a UserEntity
-            WalletUser entity = objectMapper.readValue(userEntity, WalletUser.class);
-            log.debug("User Entity: {}", userEntity);
-
-            // Returning the UserEntity wrapped in a Mono
-            return Mono.just(entity);
-        } catch (JsonProcessingException e) {
-            // Logging and returning an error Mono if deserialization fails
-            log.error("Error while deserializing UserEntity: ", e);
-            return Mono.error(new ParseErrorException("Error deserializing UserEntity: "));
-        }
-    }
-
-    /**
-     * Saves Verifiable Credentials (VCs) for a user entity, handling both JWT and CWT formats.
-     * This method serializes the user entity, processes each credential to extract or convert to JSON,
-     * and updates the user entity with both the original format credentials and their JSON representation.
-     * The JSON is used for displaying purposes, while the original formats are retained for integrity.
-     *
-     * @param userEntity  The serialized user entity to which the credentials are to be saved.
-     * @param credentials The list of CredentialResponse objects containing the VCs in various formats.
-     */
-
     @Override
-    public Mono<String> saveVC(String userEntity, List<CredentialResponse> credentials) {
-        return serializeUserEntity(userEntity).flatMap(entity -> {
-            CredentialResponse selectedCredential = credentials.stream().filter(cred -> VC_JWT.equals(cred.format()) || JWT_VC_JSON.equals(cred.format()) || VC_CWT.equals(cred.format())).findFirst().orElseThrow(() -> new RuntimeException("No suitable credential format found."));
+    public Mono<String> saveVC(String userId, List<CredentialResponse> credentials) {
+        // Create a map to consolidate various credential formats
+        Map<String, CredentialAttribute> formatMap = new HashMap<>();
 
-            Mono<JsonNode> vcJsonMono = selectedCredential.format().equals(VC_JWT) || selectedCredential.format().equals(JWT_VC_JSON) ? extractVcJsonFromVcJwt((String) selectedCredential.credential()) : fromVpCborToVcJsonReactive((String) selectedCredential.credential());
-
-            return vcJsonMono.flatMap(vcJson -> extractVerifiableCredentialIdFromVcJson(vcJson).flatMap(vcId -> {
-                List<CredentialAttribute> vcAttributes = new ArrayList<>();
-                for (CredentialResponse cred : credentials) {
-                    vcAttributes.add(new VCAttribute(vcId, cred.format(), cred.credential()));
-                }
-                vcAttributes.add(new VCAttribute(vcId, VC_JSON, vcJson));
-                List<VCAttribute> updatedVCs = new ArrayList<>(entity.vcs().value());
-                updatedVCs.addAll(vcAttributes);
-                EntityAttribute<List<VCAttribute>> vcs = new EntityAttribute<>(entity.vcs().type(), updatedVCs);
-
-                WalletUser updatedWalletUser = WalletUser.builder().id(entity.id()).type(entity.type()).vcs(vcs).dids(entity.dids()).build();
-
-                return deserializeUserEntityToString(updatedWalletUser);
-            }));
-        }).doOnSuccess(updatedUserEntity -> log.info("Verifiable Credential saved successfully: {}", updatedUserEntity)).onErrorResume(e -> {
-            log.error("Error saving Verifiable Credential: {}", e.getMessage());
-            return Mono.error(new RuntimeException("Error processing Verifiable Credential", e));
+        credentials.forEach(cred -> {
+            // Handle different credential formats and store them in a map
+            switch (cred.format()) {
+                case JWT_VC, JWT_VC_JSON:
+                    formatMap.put(JWT_VC, new CredentialAttribute(PROPERTY_TYPE, cred.credential()));
+                    break;
+                case VC_CWT:
+                    formatMap.put(VC_CWT, new CredentialAttribute(PROPERTY_TYPE, cred.credential()));
+                    break;
+                case VC_JSON:
+                    formatMap.put(VC_JSON, new CredentialAttribute(PROPERTY_TYPE, cred.credential()));
+                    break;
+            }
         });
+
+        // Determine the credential's status based on the presence of signed formats
+        CredentialStatus status = (formatMap.containsKey(JWT_VC) || formatMap.containsKey(VC_CWT))
+                ? CredentialStatus.ISSUED
+                : CredentialStatus.GENERATED;
+
+        // Ensure the vc_json format is present; extract it if necessary
+        return Mono.justOrEmpty(formatMap.get(VC_JSON))
+                .switchIfEmpty(Mono.defer(() -> {
+                    // Extract vc_json from JWT or CWT if not directly available
+                    if (formatMap.containsKey(JWT_VC)) {
+                        return extractVcJsonFromVcJwt(formatMap.get(JWT_VC).value().toString())
+                                .map(jsonNode -> new CredentialAttribute(PROPERTY_TYPE, jsonNode));
+                    } else if (formatMap.containsKey(VC_CWT)) {
+                        return fromVpCborToVcJsonReactive(formatMap.get(VC_CWT).value().toString())
+                                .map(jsonNode -> new CredentialAttribute(PROPERTY_TYPE, jsonNode));
+                    }
+                    return Mono.error(new RuntimeException("No suitable format available to extract vc_json"));
+                }))
+                .flatMap(vcJsonAttribute -> extractVerifiableCredentialIdFromVcJson((JsonNode) vcJsonAttribute.value())
+                        .flatMap(vcId -> {
+                            // Extract credential types from the JSON format
+                            JsonNode typesNode = ((JsonNode) vcJsonAttribute.value()).get("type");
+                            List<String> types = new ArrayList<>();
+                            if (typesNode.isArray()) {
+                                typesNode.forEach(typeNode -> types.add(typeNode.asText()));
+                            }
+                            // Build the CredentialEntity with all available formats
+                            CredentialEntity.CredentialEntityBuilder builder = CredentialEntity.builder()
+                                    .id(vcId)
+                                    .type(CREDENTIAL_TYPE)
+                                    .jsonCredentialAttribute(vcJsonAttribute)
+                                    .credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, status))
+                                    .credentialTypeAttribute(new CredentialTypeAttribute(PROPERTY_TYPE, types))
+                                    .relationshipAttribute(new RelationshipAttribute(RELATIONSHIP_TYPE, USER_ENTITY_PREFIX + userId));
+
+                            // Add supported formats conditionally
+                            if (formatMap.containsKey(JWT_VC)) {
+                                builder.jwtCredentialAttribute(formatMap.get(JWT_VC));
+                            }
+                            if (formatMap.containsKey(VC_CWT)) {
+                                builder.cwtCredentialAttribute(formatMap.get(VC_CWT));
+                            }
+
+                            return deserializeEntityToString(builder.build());
+                        }))
+                .doOnSuccess(entity -> log.info("Verifiable Credential saved successfully: {}", entity))
+                .onErrorResume(e -> {
+                    log.error("Error saving Verifiable Credential: {}", e.getMessage());
+                    return Mono.error(new RuntimeException("Error processing Verifiable Credential", e));
+                });
     }
+
+
 
 
     private Mono<JsonNode> fromVpCborToVcJsonReactive(String qrData) {
@@ -228,47 +248,56 @@ public class UserDataServiceImpl implements UserDataService {
     }
 
     /**
-     * Retrieves the user's Verifiable Credentials in JSON format.
+     * Retrieves the user's Verifiable Credentials in JSON format from a list of credential JSON strings.
+     * This method processes each JSON string to extract credential data and constructs a list of basic credential info.
      *
-     * @param userEntity The user entity whose VCs are to be retrieved.
+     * @param credentialsJson The JSON list of credentials as a string.
+     * @return A list of basic credential info extracted from the provided JSON strings.
      */
     @Override
-    public Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String userEntity) {
-        return serializeUserEntity(userEntity).flatMapMany(user -> Flux.fromIterable(user.vcs().value()))
-                .filter(vcAttribute -> VC_JSON.equals(vcAttribute.type()))
-                .flatMap(item -> {
+    public Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String credentialsJson) {
+        try {
+            List<CredentialEntity> credentials = objectMapper.readValue(credentialsJson, new TypeReference<>() {
+            });
 
-                    LinkedHashMap<?, ?> vcDataValue = (LinkedHashMap<?, ?>) item.value();
-                    JsonNode jsonNode = objectMapper.convertValue(vcDataValue, JsonNode.class);
+            List<CredentialsBasicInfo> credentialsInfo = new ArrayList<>();
+            for (CredentialEntity credential : credentials) {
+                List<String> availableFormats = new ArrayList<>();
+                availableFormats.add(VC_JSON);
+                if (credential.jwtCredentialAttribute() != null) {
+                    availableFormats.add(JWT_VC);
+                }
+                if (credential.cwtCredentialAttribute() != null) {
+                    availableFormats.add(VC_CWT);
+                }
 
-                    return Mono.zip(
-                            getVcTypeListFromVcJson(jsonNode),
-                            getAvailableFormatListById(item.id(),userEntity),
-                            Mono.just(jsonNode)
-                    )
-                            .flatMap(tuple -> {
-                                List<String> vcTypeList = tuple.getT1();
-                                List<String> availableFormats = tuple.getT2();
-                                JsonNode credentialSubject = tuple.getT3().get(CREDENTIAL_SUBJECT);
+                JsonNode jsonCredential = objectMapper.convertValue(credential.jsonCredentialAttribute().value(), JsonNode.class);
+                JsonNode credentialSubject = jsonCredential.get("subject");
+                ZonedDateTime expirationDate = null;
+                if (jsonCredential.has(EXPIRATION_DATE) && !jsonCredential.get(EXPIRATION_DATE).isNull()) {
+                    expirationDate = parseZonedDateTime(jsonCredential.get(EXPIRATION_DATE).asText());
+                }
 
-                                ZonedDateTime expirationDate = null;
-                                if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
-                                    expirationDate = parseZonedDateTime(jsonNode.get(EXPIRATION_DATE).asText());
-                                }
-                            return Mono.just(CredentialsBasicInfo.builder()
-                                .id(item.id())
-                                .vcType(vcTypeList)
-                                .availableFormats(availableFormats)
-                                .credentialSubject(credentialSubject)
-                                .expirationDate(expirationDate)
-                                .build());
+                CredentialsBasicInfo info = CredentialsBasicInfo.builder()
+                        .id(credential.id())
+                        .vcType(credential.credentialTypeAttribute().value())
+                        .availableFormats(availableFormats)
+                        .credentialSubject(credentialSubject)
+                        .expirationDate(expirationDate)
+                        .build();
 
-                            });
-                }).collectList()
-                .onErrorResume(
-                        NoSuchVerifiableCredentialException.class, Mono::error
-                );
+                credentialsInfo.add(info);
+            }
+
+            return Mono.just(credentialsInfo);
+        } catch (JsonProcessingException e) {
+            log.error("Error deserializing Credential list: ", e);
+            return Mono.error(new RuntimeException("Error processing credentials JSON: " + e));
+        }
     }
+
+
+
 
 
     /**
@@ -301,301 +330,83 @@ public class UserDataServiceImpl implements UserDataService {
         }
     }
 
-
-
-
     /**
-     * Retrieves a list of user's Verifiable Credentials (VCs) that match a given list of VC types.
-     * This method filters the user's VCs based on the specified VC types and returns a list of
-     * CredentialsBasicInfo objects representing the matching VCs.
+     * Retrieves the specified format of a Verifiable Credential from a given CredentialEntity.
+     * Throws an error if the requested format is not available or not supported (only jwt_vc and cwt_vc are supported).
      *
-     * TODO: Instead of using JsonNode directly to extract VC type, map the VC type to its schema to ensure
-     * better type safety and schema validation. This could involve creating a model class for the VCs and
-     * using a more structured approach to parsing and validating VCs based on their defined schemas.
-     *
-     * @param vcTypeList A list of VC types to filter the user's VCs by.
-     * @param userEntity The identifier for the user entity whose VCs are to be filtered.
-     * @return A Mono emitting a list of CredentialsBasicInfo objects representing the user's VCs
-     * that match the specified types.
+     * @param format The format of the Verifiable Credential to retrieve (e.g., "jwt_vc", "cwt_vc").
+     * @return A Mono<String> containing the credential in the requested format or an error if the format is not available.
      */
     @Override
-    public Mono<List<CredentialsBasicInfo>> getSelectableVCsByVcTypeList(List<String> vcTypeList, String userEntity) {
-        // First, retrieve all VCs for the user in the VC_JSON format.
-        return getVerifiableCredentialsByFormat(userEntity, VC_JSON)
-                .flatMapMany(Flux::fromIterable) // Convert the list of VCs to a Flux stream for further processing.
-                .flatMap(vcAttribute -> {
-                    // Convert each VC attribute value to a JsonNode for easier data extraction.
-                    JsonNode jsonNode = objectMapper.convertValue(vcAttribute.value(), JsonNode.class);
-
-                    // Fetch the available formats asynchronously.
-                    Mono<List<String>> availableFormatsMono = getAvailableFormatListById(vcAttribute.id(), userEntity);
-
-
-                    // Since expiration date is handled synchronously, only zip the asynchronous operations.
-                    return availableFormatsMono.map(availableFormats -> Tuples.of(vcAttribute.id(), availableFormats, jsonNode));
-                })
-                .filter(tuple -> {
-                    // Extract VC types list from the JSON node.
-                    JsonNode jsonNode = tuple.getT3();
-                    List<String> vcDataTypeList = new ArrayList<>();
-                    jsonNode.withArray("type").elements().forEachRemaining(node -> vcDataTypeList.add(node.asText()));
-                    // Ensure the VC matches at least one of the specified types.
-                    return vcTypeList.stream().anyMatch(vcDataTypeList::contains);
-                })
-                .map(tuple -> {
-                    // Map the tuple to a CredentialsBasicInfo object.
-                    String vcId = tuple.getT1();
-                    List<String> availableFormats = tuple.getT2();
-                    JsonNode jsonNode = tuple.getT3();
-
-                    ZonedDateTime expirationDate = null;
-                    if (jsonNode.has(EXPIRATION_DATE) && !jsonNode.get(EXPIRATION_DATE).isNull()) {
-                        expirationDate = parseZonedDateTime(jsonNode.get(EXPIRATION_DATE).asText());
-                    }
-
-                    List<String> vcDataTypeList = new ArrayList<>();
-                    jsonNode.withArray("type").elements().forEachRemaining(node -> vcDataTypeList.add(node.asText()));
-                    JsonNode credentialSubject = jsonNode.path(CREDENTIAL_SUBJECT);
-
-
-                    // Construct and return the CredentialsBasicInfo object.
-                    return CredentialsBasicInfo.builder()
-                            .id(vcId)
-                            .vcType(vcDataTypeList)
-                            .availableFormats(availableFormats)
-                            .credentialSubject(credentialSubject)
-                            .expirationDate(expirationDate)
-                            .build();
-                })
-                .collectList(); // Collect the stream of CredentialsBasicInfo objects into a list.
-    }
-
-
-
-    /**
-     * Extracts the DID from a Verifiable Credential.
-     *
-     * @param userEntity The user entity containing the VC.
-     * @param vcId       The ID of the Verifiable Credential.
-     */
-    @Override
-    public Mono<String> extractDidFromVerifiableCredential(String userEntity, String vcId) {
-        // Defer the execution until subscription
-        return serializeUserEntity(userEntity).flatMap(entity -> {
-
-            List<VCAttribute> vcAttributes = entity.vcs().value();
-
-            // Find the specified VC by ID and type, then wrap it in a Mono
-            return Mono.justOrEmpty(vcAttributes.stream().filter(vc -> vc.id().equals(vcId) && vc.type().equals(VC_JSON)).findFirst())
-                    // If the VC is not found, return an error Mono
-                    .switchIfEmpty(Mono.error(new NoSuchVerifiableCredentialException("VC not found: " + vcId)))
-                    // Extract the DID from the VC
-                    .flatMap(vcToExtract -> {
-                        try {
-                            JsonNode credentialNode = objectMapper.convertValue(vcToExtract.value(), JsonNode.class);
-                            JsonNode didNode = credentialNode.path(CREDENTIAL_SUBJECT).path("id");
-
-                            // If the DID is missing in the VC, return an error Mono
-                            if (didNode.isMissingNode()) {
-                                return Mono.error(new NoSuchVerifiableCredentialException("DID not found in VC: " + vcId));
-                            }
-
-                            // Return the DID as a Mono<String>
-                            return Mono.just(didNode.asText());
-                        } catch (Exception e) {
-                            // If an error occurs during processing, return an error Mono
-                            return Mono.error(new RuntimeException("Error processing VC: " + vcId, e));
+    public Mono<String> getVerifiableCredentialOnRequestedFormat(String credentialEntityJson, String format) {
+        return Mono.just(credentialEntityJson)
+                .flatMap(credentialJson -> {
+                    // Deserializing the JSON string to a CredentialEntity object
+                    try {
+                        CredentialEntity credential = objectMapper.readValue(credentialJson, CredentialEntity.class);
+                        // Extracting the credential attribute based on the requested format
+                        CredentialAttribute credentialAttribute;
+                        switch (format) {
+                            case JWT_VC:
+                                credentialAttribute = credential.jwtCredentialAttribute();
+                                break;
+                            case VC_CWT:
+                                credentialAttribute = credential.cwtCredentialAttribute();
+                                break;
+                            default:
+                                // If the format is not supported, return an error Mono
+                                return Mono.error(new IllegalArgumentException("Unsupported credential format requested: " + format));
                         }
-                    });
-        });
+
+                        // Check if the format attribute is available
+                        if (credentialAttribute == null || credentialAttribute.value() == null) {
+                            return Mono.error(new NoSuchElementException("Credential format not found or is null: " + format));
+                        }
+
+                        // Return the value of the credential attribute, assuming it is a string
+                        return Mono.just(credentialAttribute.value().toString());
+                    } catch (JsonProcessingException e) {
+                        return Mono.error(new RuntimeException("Error deserializing CredentialEntity from JSON", e));
+                    }
+                });
     }
 
+
     /**
-     * Deletes a Verifiable Credential and its associated DID from a user entity.
+     * Extracts the DID from a Verifiable Credential based on its type.
+     * If the credential type includes "LEARCredentialEmployee", the DID is extracted from a nested structure within credentialSubject.
+     * Otherwise, the DID is extracted directly from the credentialSubject.
      *
-     * @param userEntity The user entity from which the VC and DID will be deleted.
-     * @param vcId       The ID of the Verifiable Credential to be deleted.
-     * @param did        The DID associated with the VC to be deleted.
+     * @param credentialJson The JSON string representing a CredentialEntity.
+     * @return A Mono<String> containing the DID or an error if the DID cannot be found.
      */
     @Override
-    public Mono<String> deleteVerifiableCredential(String userEntity, String vcId, String did) {
-        return serializeUserEntity(userEntity).flatMap(entity -> {
-            // Remove the associated DID from the user entity's DID list
-            List<DidAttribute> updatedDids = entity.dids().value().stream().filter(didAttr -> !didAttr.value().equals(did)).toList();
+    public Mono<String> extractDidFromVerifiableCredential(String credentialJson) {
+        return Mono.fromCallable(() -> {
+            // Deserialize the credential JSON into a CredentialEntity object
+            CredentialEntity credential = objectMapper.readValue(credentialJson, CredentialEntity.class);
 
-            // Remove the credential from the user entity's VC list
-            List<VCAttribute> updatedVCs = entity.vcs().value().stream().filter(vcAttribute -> !vcAttribute.id().equals(vcId)).toList();
+            // Check if any of the credential types include "LEARCredentialEmployee"
+            boolean isLearCredentialEmployee = credential.credentialTypeAttribute().value().stream()
+                    .anyMatch("LEARCredentialEmployee"::equals);
 
-            // Create a new UserEntity with the updated lists
-            WalletUser updatedWalletUser = new WalletUser(entity.id(), entity.type(), new EntityAttribute<>(entity.dids().type(), updatedDids), new EntityAttribute<>(entity.vcs().type(), updatedVCs));
-            return deserializeUserEntityToString(updatedWalletUser);
-        }).doOnSuccess(updateEntity -> // Log the successful operation and return the updated entity
-                log.info("Verifiable Credential with ID: {} and associated DID deleted successfully: {}", vcId, updateEntity));
-    }
+            JsonNode vcNode = objectMapper.convertValue(credential.jsonCredentialAttribute().value(), JsonNode.class);
+            JsonNode didNode;
 
-    /**
-     * Retrieves Verifiable Credentials by format for a user entity.
-     *
-     * @param userEntity The user entity whose VCs are to be retrieved.
-     * @param format     The format of the VCs to retrieve.
-     */
-    @Override
-    public Mono<List<CredentialAttribute>> getVerifiableCredentialsByFormat(String userEntity, String format) {
-        return serializeUserEntity(userEntity).flatMap(entity -> {
-            // Filter VCAttributes based on the given format
-            List<CredentialAttribute> filteredVCs = entity.vcs().value().stream().filter(vcAttribute -> vcAttribute.type().equals(format)).toList();
-
-            // Return the filtered list of VCAttributes wrapped in a Mono
-            return Mono.just(filteredVCs);
-        });
-    }
-
-    /**
-     * Extracts a list of VC types from a VC's JSON representation.
-     *
-     * @param jsonNode The JSON node representing the VC.
-     */
-    private Mono<List<String>> getVcTypeListFromVcJson(JsonNode jsonNode) {
-        // Initialize an empty list to store the types.
-        List<String> result = new ArrayList<>();
-
-        // Check if the "type" field is present and is an array.
-        if (jsonNode.has("type") && jsonNode.get("type").isArray()) {
-            // Iterate through the array elements and add them to the result list.
-            jsonNode.get("type").forEach(node -> result.add(node.asText()));
-            // Return the result list wrapped in a Mono.
-            return Mono.just(result);
-        } else {
-            // Log a warning or throw an exception if the "type" field is not present or is not an array.
-            return Mono.error(new IllegalStateException("The 'type' field is missing or is not an array in the provided JSON node."));
-        }
-    }
-
-    /**
-     * Extracts a list of VC available format from a VC id.
-     *
-     * @param credentialId The id of the VC.
-     */
-    private Mono<List<String>> getAvailableFormatListById(String credentialId,String userEntity) {
-        return serializeUserEntity(userEntity).flatMap(user -> {
-            List<VCAttribute> vcAttributeList = user.vcs().value().stream().filter(vc -> vc.id().equals(credentialId)&& !vc.type().equals(VC_JSON)).toList();
-            List<String> availableFormats = new ArrayList<>();
-            vcAttributeList.forEach(cred -> availableFormats.add(cred.type()));
-            return Mono.just(availableFormats);
-        });
-    }
-
-    /**
-     * Retrieves a specific Verifiable Credential by its ID and format for a user entity.
-     *
-     * @param userEntity The user entity whose VC is to be retrieved.
-     * @param id         The ID of the Verifiable Credential to retrieve.
-     * @param format     The format of the Verifiable Credential to retrieve.
-     */
-    @Override
-    public Mono<String> getVerifiableCredentialByIdAndFormat(String userEntity, String id, String format) {
-        return serializeUserEntity(userEntity).flatMap(entity -> {
-
-            Optional<VCAttribute> optionalVcAttribute = entity.vcs().value().stream().filter(vc -> vc.id().equals(id) && vc.type().equals(format)).findFirst();
-
-            if (optionalVcAttribute.isEmpty()) {
-                String errorMessage = "No VCAttribute found for id " + id + " and format " + format;
-                log.error(errorMessage);
-                return Mono.error(new NoSuchElementException(errorMessage));
-            }
-
-            VCAttribute vcAttribute = optionalVcAttribute.get();
-
-            Object value = vcAttribute.value();
-            if (value instanceof String) {
-                return Mono.just(value.toString());
+            if (isLearCredentialEmployee) {
+                // For LEARCredentialEmployee, the DID is located under credentialSubject.mandate.mandatee.id
+                didNode = vcNode.path(CREDENTIAL_SUBJECT).path("mandate").path("mandatee").path("id");
             } else {
-                try {
-                    String jsonValue = objectMapper.writeValueAsString(value);
-                    return Mono.just(jsonValue);
-                } catch (JsonProcessingException e) {
-                    log.error("Error processing VCAttribute value to JSON string", e);
-                    return Mono.error(e);
-                }
-            }
-        });
-    }
-
-
-    /**
-     * Saves a Decentralized Identifier (DID) for a user entity.
-     *
-     * @param userEntity The user entity for which the DID will be saved.
-     * @param did        The DID to be saved.
-     * @param didMethod  The method of the DID to be saved.
-     */
-    @Override
-    public Mono<String> saveDid(String userEntity, String did, String didMethod) {
-        return serializeUserEntity(userEntity).flatMap(entity -> {
-            DidAttribute newDid = new DidAttribute(didMethod, did);
-
-            // Add the new DID to the list of existing DIDs
-            List<DidAttribute> updatedDids = new ArrayList<>(entity.dids().value());
-            updatedDids.add(newDid);
-
-            // Construct the updated EntityAttribute for DIDs
-            EntityAttribute<List<DidAttribute>> dids = new EntityAttribute<>(PROPERTY_TYPE, updatedDids);
-
-            // Create the updated user entity with the new DID
-            WalletUser updatedWalletUser = new WalletUser(entity.id(), entity.type(), dids, entity.vcs());
-            return deserializeUserEntityToString(updatedWalletUser);
-        }).doOnSuccess(entity -> log.info("DID saved successfully for user: {}", entity)).onErrorResume(e -> {
-            log.error("Error while saving DID for user: " + userEntity, e);
-            return Mono.error(e); // Re-throw the error to be handled upstream
-        });
-    }
-
-    /**
-     * Retrieves the Decentralized Identifiers (DIDs) for a user entity.
-     *
-     * @param userEntity The user entity whose DIDs are to be retrieved.
-     * @return A Mono emitting a list of DIDs associated with the user entity.
-     */
-    @Override
-    public Mono<List<String>> getDidsByUserEntity(String userEntity) {
-        return serializeUserEntity(userEntity).flatMap(entity -> {
-            // Extract the DIDs from the UserEntity
-            List<String> dids = entity.dids().value().stream().map(DidAttribute::value).toList(); // Use Stream.toList() for an unmodifiable list
-
-            // Log the operation result
-            log.info("Fetched DIDs for user: {}", entity.id());
-            // Return the list of DIDs
-            return Mono.just(dids);
-        });
-    }
-
-    /**
-     * Deletes a selected Decentralized Identifier (DID) from a user entity.
-     *
-     * @param did        The DID to be deleted.
-     * @param userEntity The user entity from which the DID will be deleted.
-     */
-    @Override
-    public Mono<String> deleteSelectedDidFromUserEntity(String did, String userEntity) {
-        return serializeUserEntity(userEntity).flatMap(entity -> {
-            // Create a list of DIDs without the one to be deleted
-            List<DidAttribute> originalDids = entity.dids().value();
-            List<DidAttribute> updatedDids = originalDids.stream().filter(didAttr -> !didAttr.value().equals(did)).toList(); // Use Stream.toList() for an unmodifiable list
-
-            // Check if the DID was found and deleted
-            if (originalDids.size() == updatedDids.size()) {
-                return Mono.error(new NoSuchDidException("DID not found: " + did));
+                // For other types, the DID is directly under credentialSubject.id
+                didNode = vcNode.path(CREDENTIAL_SUBJECT).path("id");
             }
 
-            // Create an updated UserEntity with the remaining DIDs
-            WalletUser updatedWalletUser = new WalletUser(entity.id(), entity.type(), new EntityAttribute<>(entity.dids().type(), updatedDids), entity.vcs());
+            if (didNode.isMissingNode() || didNode.asText().isEmpty()) {
+                throw new NoSuchVerifiableCredentialException("DID not found in VC");
+            }
 
-            // Log the operation result
-            log.info("Deleted DID: {} for user: {}", did, entity.id());
-
-            // Return the updated UserEntity wrapped in a Mono
-            return deserializeUserEntityToString(updatedWalletUser);
-        });
+            return didNode.asText();
+        }).onErrorMap(JsonProcessingException.class, e -> new RuntimeException("Error processing VC JSON", e));
     }
-    
+
 }
