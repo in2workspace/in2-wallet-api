@@ -70,7 +70,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<String> getCredentialByIdThatBelongToUser(String processId, String userId, String credentialId) {
         return webClient.get()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + CREDENTIAL_ENTITY_PREFIX + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(String.class)
@@ -80,7 +80,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<Void> deleteCredentialByIdThatBelongToUser(String processId, String userId, String credentialId) {
         return webClient.delete()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + CREDENTIAL_ENTITY_PREFIX + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(Void.class)

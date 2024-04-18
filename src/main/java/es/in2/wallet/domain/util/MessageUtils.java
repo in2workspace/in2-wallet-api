@@ -20,6 +20,7 @@ public class MessageUtils {
     public static final String PROPERTY_TYPE = "Property";
     public static final String RELATIONSHIP_TYPE = "Relationship";
     public static final String CREDENTIAL_ENTITY_PREFIX = "urn:entities:credential:";
+    public static final String TRANSACTION_ENTITY_PREFIX = "urn:entities:transaction:";
     public static final String ATTRIBUTES = "/attrs";
     public static final String PROCESS_ID = "ProcessId";
     public static final String PRIVATE_KEY_TYPE = "privateKey";

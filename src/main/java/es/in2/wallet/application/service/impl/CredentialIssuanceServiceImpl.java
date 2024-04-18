@@ -1,5 +1,8 @@
 package es.in2.wallet.application.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.service.CredentialIssuanceService;
 import es.in2.wallet.domain.model.*;
@@ -11,6 +14,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static es.in2.wallet.domain.util.ApplicationUtils.extractResponseType;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
@@ -33,6 +37,7 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
     private final EbsiIdTokenService ebsiIdTokenService;
     private final EbsiVpTokenService ebsiVpTokenService;
     private final EbsiAuthorisationService ebsiAuthorisationService;
+    private final ObjectMapper objectMapper;
 
     @Override
     public Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent) {
@@ -43,7 +48,10 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
                         //get Authorisation Server Metadata
                         .flatMap(credentialIssuerMetadata -> authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId,credentialIssuerMetadata)
                                 .flatMap(authorisationServerMetadata -> {
-                                    if (credentialOffer.grant().preAuthorizedCodeGrant() != null){
+                                    if (credentialOffer.credentialConfigurationsIds() != null){
+                                        return getCredentialWithPreAuthorizedCodeDomeProfile(processId,authorizationToken,credentialOffer,authorisationServerMetadata,credentialIssuerMetadata);
+                                    }
+                                    else if (credentialOffer.grant().preAuthorizedCodeGrant() != null){
                                         return getCredentialWithPreAuthorizedCode(processId,authorizationToken,credentialOffer,authorisationServerMetadata, credentialIssuerMetadata);
                                     }
                                     else {
@@ -70,6 +78,20 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
                         ))
                         .flatMap(credentials -> processUserEntity(processId,authorizationToken,credentials))
                 );
+    }
+
+    /**
+     * Orchestrates the flow to obtain a credential with a pre-authorized code.
+     */
+    private Mono<Void> getCredentialWithPreAuthorizedCodeDomeProfile(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
+        log.info("ProcessId: {} - Getting Credential with Pre-Authorized Code", processId);
+        return generateDid().flatMap(did ->
+                getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
+                .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0),credentialIssuerMetadata)
+                        .flatMap( format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
+                                .flatMap(jwt -> credentialService.getCredential(jwt,tokenResponse,credentialIssuerMetadata,format,null))
+                                .flatMap(credentialResponse -> persistTransactionIdAndProcessUserEntityForDomeProfile(processId,authorizationToken,credentialResponse,tokenResponse,credentialIssuerMetadata))
+                )));
     }
 
     /**
@@ -181,4 +203,28 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
                     );
                 });
     }
+
+    private Mono<String> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(String credentialConfigurationId, CredentialIssuerMetadata credentialIssuerMetadata){
+        return Mono.justOrEmpty(credentialIssuerMetadata.credentialsConfigurationsSupported())
+                .map(configurationsSupported -> configurationsSupported.get(credentialConfigurationId))
+                .map(CredentialIssuerMetadata.CredentialsConfigurationsSupported::format)
+                .switchIfEmpty(Mono.error(new NoSuchElementException("No configuration found for ID: " + credentialConfigurationId)));
+    }
+
+    private Mono<Void> persistTransactionIdAndProcessUserEntityForDomeProfile(String processId, String authorizationToken, CredentialResponse credential, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata) {
+        return processUserEntity(processId, authorizationToken, List.of(credential))
+                .then(Mono.defer(() -> {
+                    try {
+                        JsonNode credentialJson = objectMapper.readTree(credential.credential().toString());
+                        String credentialId = credentialJson.get("id").asText();
+                        return userDataService.saveTransaction(credentialId, credential.transactionId(), tokenResponse.accessToken(), credentialIssuerMetadata.deferredCredentialEndpoint());
+                    } catch (JsonProcessingException e) {
+                        log.error("Error deserializing credential for transaction saving", e);
+                        return Mono.error(new RuntimeException("Failed to deserialize credential JSON", e));
+                    }
+                }))
+                .flatMap(transactionEntity -> brokerService.postEntity(processId, transactionEntity));
+    }
+
+
 }

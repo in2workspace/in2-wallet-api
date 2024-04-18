@@ -84,6 +84,7 @@ public class UserDataServiceImpl implements UserDataService {
     public Mono<String> saveVC(String userId, List<CredentialResponse> credentials) {
         // Create a map to consolidate various credential formats
         Map<String, CredentialAttribute> formatMap = new HashMap<>();
+        List<String> errors = new ArrayList<>();
 
         credentials.forEach(cred -> {
             // Handle different credential formats and store them in a map
@@ -97,8 +98,15 @@ public class UserDataServiceImpl implements UserDataService {
                 case VC_JSON:
                     formatMap.put(VC_JSON, new CredentialAttribute(PROPERTY_TYPE, cred.credential()));
                     break;
+                default:
+                    errors.add("Unsupported credential format: " + cred.format());
+                    break;
             }
         });
+
+        if (!errors.isEmpty()) {
+            return Mono.error(new IllegalArgumentException(String.join(", ", errors)));
+        }
 
         // Determine the credential's status based on the presence of signed formats
         CredentialStatus status = (formatMap.containsKey(JWT_VC) || formatMap.containsKey(VC_CWT))
@@ -128,7 +136,7 @@ public class UserDataServiceImpl implements UserDataService {
                             }
                             // Build the CredentialEntity with all available formats
                             CredentialEntity.CredentialEntityBuilder builder = CredentialEntity.builder()
-                                    .id(vcId)
+                                    .id(CREDENTIAL_ENTITY_PREFIX + vcId)
                                     .type(CREDENTIAL_TYPE)
                                     .jsonCredentialAttribute(vcJsonAttribute)
                                     .credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, status))
@@ -415,6 +423,31 @@ public class UserDataServiceImpl implements UserDataService {
 
             return didNode.asText();
         }).onErrorMap(JsonProcessingException.class, e -> new RuntimeException("Error processing VC JSON", e));
+    }
+
+    @Override
+    public Mono<String> saveTransaction(String credentialId, String transactionId, String accessToken, String deferredEndpoint) {
+        // Construct the Transaction Entity
+        TransactionEntity transactionEntity = TransactionEntity.builder()
+                .id(TRANSACTION_ENTITY_PREFIX + UUID.randomUUID())
+                .type(TRANSACTION_TYPE)
+                .transactionDataAttribute(EntityAttribute.<TransactionDataAttribute>builder()
+                        .type(PROPERTY_TYPE)
+                        .value(TransactionDataAttribute.builder()
+                                .transactionId(transactionId)
+                                .accessToken(accessToken)
+                                .deferredEndpoint(deferredEndpoint)
+                                .build()).build())
+                .relationshipAttribute(RelationshipAttribute.builder()
+                        .type(RELATIONSHIP_TYPE)
+                        .object(CREDENTIAL_ENTITY_PREFIX + credentialId)
+                        .build())
+                .build();
+
+        // Log the creation of the entity
+        log.debug("Transaction Entity created for: {}", credentialId);
+
+        return deserializeEntityToString(transactionEntity);
     }
 
 }

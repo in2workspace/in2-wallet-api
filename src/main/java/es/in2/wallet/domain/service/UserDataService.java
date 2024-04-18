@@ -1,7 +1,5 @@
 package es.in2.wallet.domain.service;
 
-import es.in2.wallet.domain.model.CredentialAttribute;
-import es.in2.wallet.domain.model.CredentialEntity;
 import es.in2.wallet.domain.model.CredentialResponse;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import reactor.core.publisher.Mono;
@@ -15,5 +13,7 @@ public interface UserDataService {
     Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String userEntity);
     Mono<String> getVerifiableCredentialOnRequestedFormat(String credentialEntityJson, String format);
     Mono<String> extractDidFromVerifiableCredential(String credentialJson);
+
+    Mono<String> saveTransaction(String credentialId, String transactionId, String accessToken, String deferredEndpoint);
 
 }

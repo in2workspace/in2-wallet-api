@@ -1,6 +1,5 @@
 package es.in2.wallet.application.service;
 
-import es.in2.wallet.domain.model.AuthorizationRequest;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.model.VcSelectorResponse;

@@ -1,9 +1,7 @@
 package es.in2.wallet.infrastructure.broker.service;
 
-import es.in2.wallet.domain.model.CredentialEntity;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Optional;
 
 

@@ -49,18 +49,15 @@ public class AttestationExchangeServiceImpl implements AttestationExchangeServic
     @Override
     public Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> scope) {
         return getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> {
-                                    // Process each credential type in the scope and accumulate results
-                                    return Flux.fromIterable(scope)
-                                            .flatMap(element -> brokerService.getCredentialByCredentialTypeThatBelongToUser(processId, userId,element)
-                                                    .flatMap(userDataService::getUserVCsInJson))
-                                            .collectList()  // This will collect all lists into a single list
-                                            .flatMap(lists -> {
-                                                List<CredentialsBasicInfo> allCredentials = new ArrayList<>();
-                                                lists.forEach(allCredentials::addAll); // Combine all lists into one
-                                                return Mono.just(allCredentials);
-                                            });
-                                }
+                .flatMap(userId -> Flux.fromIterable(scope)
+                        .flatMap(element -> brokerService.getCredentialByCredentialTypeThatBelongToUser(processId, userId,element)
+                                .flatMap(userDataService::getUserVCsInJson))
+                        .collectList()  // This will collect all lists into a single list
+                        .flatMap(lists -> {
+                            List<CredentialsBasicInfo> allCredentials = new ArrayList<>();
+                            lists.forEach(allCredentials::addAll); // Combine all lists into one
+                            return Mono.just(allCredentials);
+                        })
                 );
     }
 

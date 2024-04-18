@@ -75,10 +75,16 @@ public class CredentialServiceImpl implements CredentialService {
                         if (credentialResponse.acceptanceToken() != null && !credentialResponse.acceptanceToken().equals(acceptanceToken)) {
                             // New acceptance token received, call recursively
                             return handleDeferredCredential(credentialResponse.acceptanceToken(), credentialIssuerMetadata);
-                        } else if (credentialResponse.credential() != null) {
+                        }
+                        //Handle deferred issuance for DOME profile
+                        else if (credentialResponse.transactionId() != null && credentialResponse.credential() != null){
+                            return Mono.just(credentialResponse);
+                        }
+                        else if (credentialResponse.credential() != null) {
                             // Credential received, return the response
                             return Mono.just(credentialResponse);
-                        } else {
+                        }
+                        else {
                             // No credential and no new token, throw an error
                             return Mono.error(new IllegalStateException("No credential or new acceptance token received"));
                         }

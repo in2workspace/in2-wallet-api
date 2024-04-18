@@ -24,6 +24,7 @@ public record CredentialResponse(
                 example = "86400",
                 description = "Lifetime in seconds of the c_nonce")
         @JsonProperty("c_nonce_expires_in") Integer c_nonce_expires_in,
-        @JsonProperty("acceptance_token") String acceptanceToken
+        @JsonProperty("acceptance_token") String acceptanceToken,
+        @JsonProperty("transaction_id") String transactionId
 ) {
 }
