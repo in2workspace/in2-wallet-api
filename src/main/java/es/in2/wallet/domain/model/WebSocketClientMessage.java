@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 
 @Builder
-public record ClientMessage(
+public record WebSocketClientMessage(
         @JsonProperty("id")
         String id,
         @JsonProperty("pin")

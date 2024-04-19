@@ -1,7 +1,9 @@
 package es.in2.wallet.infrastructure.core.config;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.domain.model.ClientMessage;
+import es.in2.wallet.domain.model.WebSocketClientMessage;
+import es.in2.wallet.domain.model.WebSocketServerMessage;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -36,11 +38,11 @@ public class PinRequestWebSocketHandler implements WebSocketHandler {
                 .flatMap(message -> {
                     try {
                         // Deserialize the incoming message to a ClientMessage object
-                        ClientMessage clientMessage = objectMapper.readValue(message.getPayloadAsText(), ClientMessage.class);
+                        WebSocketClientMessage webSocketClientMessage = objectMapper.readValue(message.getPayloadAsText(), WebSocketClientMessage.class);
                         String sessionId = session.getId();
                         // Case for handling JWT user token for session linkage
-                        if (clientMessage.id() != null) {
-                            return getUserIdFromToken(clientMessage.id())
+                        if (webSocketClientMessage.id() != null) {
+                            return getUserIdFromToken(webSocketClientMessage.id())
                                     .doOnSuccess(userId -> {
                                         // Register the session with the extracted user ID
                                         sessionManager.registerSession(userId, session);
@@ -52,7 +54,7 @@ public class PinRequestWebSocketHandler implements WebSocketHandler {
                                     .thenReturn(message.getPayloadAsText());
                         }
                         // Case for handling PIN messages
-                        else if (clientMessage.pin() != null) {
+                        else if (webSocketClientMessage.pin() != null) {
                             // Retrieve the user ID associated with the session ID
                             String userId = sessionToUserIdMap.get(sessionId);
                             if (userId != null) {
@@ -60,7 +62,7 @@ public class PinRequestWebSocketHandler implements WebSocketHandler {
                                 Sinks.Many<String> sink = pinSinks.get(userId);
                                 if (sink != null) {
                                     // Emit the received PIN into the sink
-                                    sink.tryEmitNext(clientMessage.pin());
+                                    sink.tryEmitNext(webSocketClientMessage.pin());
                                 } else {
                                     log.error("Sink not found for user ID: " + userId);
                                 }
@@ -79,12 +81,18 @@ public class PinRequestWebSocketHandler implements WebSocketHandler {
                 .doFinally(signalType -> cleanUpResources(session));
     }
 
-    public void sendPinRequest(WebSocketSession session) {
-        // Message to request the PIN from the client
-        String requestMessage = "Pin required";
-        // Send the message to the client via the WebSocket session
-        session.send(Mono.just(session.textMessage(requestMessage))).subscribe();
+    public void sendPinRequest(WebSocketSession session, WebSocketServerMessage message) {
+        try {
+            // Serialize the message object to JSON
+            String jsonMessage = objectMapper.writeValueAsString(message);
+
+            // Send the message to the client via the WebSocket session
+            session.send(Mono.just(session.textMessage(jsonMessage))).subscribe();
+        } catch (JsonProcessingException e) {
+            log.error("Error serializing WebSocketServerMessage", e);
+        }
     }
+
 
     public Flux<String> getPinResponses(String id) {
         // Retrieve the sink corresponding to the user ID and return its flux

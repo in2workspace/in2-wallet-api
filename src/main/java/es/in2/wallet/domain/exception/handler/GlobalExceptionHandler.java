@@ -120,4 +120,16 @@ public class GlobalExceptionHandler {
                 .path(path)
                 .build());
     }
+
+    @ExceptionHandler(CredentialNotAvailableException.class)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ResponseBody
+    public Mono<GlobalErrorMessage> credentialNotAvailableException(CredentialNotAvailableException ex, ServerHttpRequest request) {
+        String path = String.valueOf(request.getPath());
+        return Mono.just(GlobalErrorMessage.builder()
+                .title("CredentialNotAvailableException")
+                .message(ex.getMessage())
+                .path(path)
+                .build());
+    }
 }

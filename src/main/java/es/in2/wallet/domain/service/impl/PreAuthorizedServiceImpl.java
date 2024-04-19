@@ -5,6 +5,7 @@ import es.in2.wallet.domain.exception.InvalidPinException;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
 import es.in2.wallet.domain.model.CredentialOffer;
 import es.in2.wallet.domain.model.TokenResponse;
+import es.in2.wallet.domain.model.WebSocketServerMessage;
 import es.in2.wallet.domain.service.PreAuthorizedService;
 import es.in2.wallet.infrastructure.core.config.PinRequestWebSocketHandler;
 import es.in2.wallet.infrastructure.core.config.WebSocketSessionManager;
@@ -54,23 +55,34 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
         if (credentialOffer.grant().preAuthorizedCodeGrant().userPinRequired()) {
             // If a user PIN is required, extract the user ID from the token,
             // send a PIN request, wait for the PIN response, and then proceed to get access token.
-            return getUserIdFromToken(authorizationToken)
-                    .flatMap(id -> sessionManager.getSession(id)
-                            .flatMap(session -> {
-                                pinRequestWebSocketHandler.sendPinRequest(session);
-                                return waitForPinResponse(id);
-                            })
-                            .switchIfEmpty(Mono.error(new RuntimeException("WebSocket session not found")))
-                            .flatMap(pin -> getAccessToken(tokenURL, credentialOffer, pin))
-                            .flatMap(this::parseTokenResponse)
-                    );
-        } else {
+            return sendPinRequestAndRetrieveResponse
+                    (authorizationToken,tokenURL,credentialOffer,WebSocketServerMessage.builder().pinRequired(true).build());
+        }
+        else if (credentialOffer.grant().preAuthorizedCodeGrant().txCode() != null){
+            // If a tx_code is required, extract the user ID from the token,
+            // send a PIN request, wait for the PIN response, and then proceed to get access token.
+            return sendPinRequestAndRetrieveResponse
+                    (authorizationToken,tokenURL,credentialOffer,
+                            WebSocketServerMessage.builder().txCode(credentialOffer.grant().preAuthorizedCodeGrant().txCode()).build());
+        }
+        else {
             // If no PIN is required, directly proceed to get the access token.
             return getAccessToken(tokenURL, credentialOffer, null)
                     .flatMap(this::parseTokenResponse);
         }
     }
-
+    private Mono<TokenResponse> sendPinRequestAndRetrieveResponse(String authorizationToken,String tokenURL, CredentialOffer credentialOffer,WebSocketServerMessage webSocketServerMessage){
+        return getUserIdFromToken(authorizationToken)
+                .flatMap(id  -> sessionManager.getSession(id)
+                        .flatMap(session -> {
+                            pinRequestWebSocketHandler.sendPinRequest(session, webSocketServerMessage);
+                            return waitForPinResponse(id);
+                        }
+                        ))
+                .switchIfEmpty(Mono.error(new RuntimeException("WebSocket session not found")))
+                .flatMap(pin -> getAccessToken(tokenURL, credentialOffer, pin))
+                .flatMap(this::parseTokenResponse);
+    }
     /**
      * Waits for the PIN response from the user for a given user ID.
      *

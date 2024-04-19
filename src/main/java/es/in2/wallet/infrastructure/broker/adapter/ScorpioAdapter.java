@@ -112,7 +112,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     @Override
     public Mono<String> getTransactionThatIsLinkedToACredential(String processId, String credentialId) {
         return webClient.get()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "?type=Transaction&q=linkedTo==" + CREDENTIAL_ENTITY_PREFIX + credentialId)
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "?type=Transaction&q=linkedTo==" + credentialId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(String.class)

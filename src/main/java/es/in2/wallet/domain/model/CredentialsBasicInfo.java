@@ -14,6 +14,7 @@ import static es.in2.wallet.domain.util.MessageUtils.*;
 public record CredentialsBasicInfo(
         @JsonProperty("id") String id,
         @JsonProperty("type") List<String> vcType,
+        @JsonProperty("status") CredentialStatus credentialStatus,
         @JsonProperty(AVAILABLE_FORMATS) List<String> availableFormats,
         @JsonProperty(CREDENTIAL_SUBJECT) JsonNode credentialSubject,
         @JsonProperty(EXPIRATION_DATE)

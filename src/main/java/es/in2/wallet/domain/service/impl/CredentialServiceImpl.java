@@ -32,11 +32,29 @@ public class CredentialServiceImpl implements CredentialService {
         return buildCredentialRequest(jwt,format,types)
                 .doOnSuccess(credentialRequest -> log.info("ProcessID: {} - CredentialRequest: {}", processId, credentialRequest))
                 // post CredentialRequest
-                .flatMap(credentialRequest -> postCredential(tokenResponse, credentialIssuerMetadata, credentialRequest))
+                .flatMap(credentialRequest -> postCredential(tokenResponse.accessToken(), credentialIssuerMetadata.credentialEndpoint(), credentialRequest))
                 .doOnSuccess(response -> log.info("ProcessID: {} - Credential Post Response: {}", processId, response))
                 // handle CredentialResponse or deferred response
                 .flatMap(response -> handleCredentialResponse(response, credentialIssuerMetadata))
                 .doOnSuccess(credentialResponse -> log.info("ProcessID: {} - CredentialResponse: {}", processId, credentialResponse));
+    }
+
+    @Override
+    public Mono<CredentialResponse> getCredentialDomeDeferredCase(String transactionId, String accessToken, String deferredEndpoint) {
+        String processId = MDC.get(MessageUtils.PROCESS_ID);
+        DeferredCredentialRequest deferredCredentialRequest = DeferredCredentialRequest.builder().transactionId(transactionId).build();
+        return postCredential(accessToken,deferredEndpoint,deferredCredentialRequest)
+                .flatMap(response -> {
+                    try {
+                    CredentialResponse credentialResponse = objectMapper.readValue(response, CredentialResponse.class);
+                    return Mono.just(credentialResponse);
+                    }
+                    catch (Exception e) {
+                        log.error("Error while processing deferred CredentialResponse", e);
+                        return Mono.error(new FailedDeserializingException("Error processing deferred CredentialResponse: " + response));
+                    }
+                }
+                ).doOnSuccess(credentialResponse -> log.info("ProcessID: {} - CredentialResponse: {}", processId, credentialResponse));
     }
 
     /**
@@ -96,13 +114,13 @@ public class CredentialServiceImpl implements CredentialService {
     }
 
 
-    private Mono<String> postCredential(TokenResponse tokenResponse,
-                                        CredentialIssuerMetadata credentialIssuerMetadata,
+    private Mono<String> postCredential(String accessToken,
+                                        String credentialEndpoint,
                                         Object credentialRequest) {
         try {
             List<Map.Entry<String, String>> headers = List.of(Map.entry(MessageUtils.CONTENT_TYPE, MessageUtils.CONTENT_TYPE_APPLICATION_JSON),
-                    Map.entry(MessageUtils.HEADER_AUTHORIZATION, MessageUtils.BEARER + tokenResponse.accessToken()));
-            return ApplicationUtils.postRequest(credentialIssuerMetadata.credentialEndpoint(), headers, objectMapper.writeValueAsString(credentialRequest))
+                    Map.entry(MessageUtils.HEADER_AUTHORIZATION, MessageUtils.BEARER + accessToken));
+            return ApplicationUtils.postRequest(credentialEndpoint, headers, objectMapper.writeValueAsString(credentialRequest))
                     .onErrorResume(e -> {
                         log.error("Error while fetching Credential from Issuer: {}", e.getMessage());
                         return Mono.error(new FailedCommunicationException("Error while fetching  Credential from Issuer"));

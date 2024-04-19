@@ -15,6 +15,6 @@ public interface BrokerService {
     Mono<String> getCredentialByCredentialTypeThatBelongToUser(String processId, String  userId, String credentialType);
     Mono<String> getTransactionThatIsLinkedToACredential(String processId, String credentialId);
 
-    Mono<Void> updateEntity(String processId,  String userId, String requestBody);
+    Mono<Void> updateEntity(String processId,  String entityId, String requestBody);
 
 }

@@ -289,6 +289,7 @@ public class UserDataServiceImpl implements UserDataService {
                 CredentialsBasicInfo info = CredentialsBasicInfo.builder()
                         .id(credential.id())
                         .vcType(credential.credentialTypeAttribute().value())
+                        .credentialStatus(credential.credentialStatusAttribute().credentialStatus())
                         .availableFormats(availableFormats)
                         .credentialSubject(credentialSubject)
                         .expirationDate(expirationDate)
@@ -449,5 +450,82 @@ public class UserDataServiceImpl implements UserDataService {
 
         return deserializeEntityToString(transactionEntity);
     }
+
+    @Override
+    public Mono<String> updateVCEntityWithSignedFormat(String credentialEntityJson, CredentialResponse signedCredential) {
+        return Mono.just(credentialEntityJson)
+                .flatMap(json -> {
+                    try {
+                        // Deserialize the credential entity from JSON.
+                        CredentialEntity credentialEntity = objectMapper.readValue(json, CredentialEntity.class);
+                        // Start building a new credential entity with unchanged properties.
+                        CredentialEntity.CredentialEntityBuilder updatedCredentialEntity = CredentialEntity.builder()
+                                .id(credentialEntity.id())
+                                .type(credentialEntity.type())
+                                .jsonCredentialAttribute(credentialEntity.jsonCredentialAttribute())
+                                .relationshipAttribute(credentialEntity.relationshipAttribute());
+
+                        // Check the format of the signed credential and update the entity accordingly.
+                        switch (signedCredential.format()) {
+                            case JWT_VC:
+                                // Set the JWT credential attribute if the format is JWT.
+                                updatedCredentialEntity.jwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, signedCredential.credential()));
+                                break;
+                            case VC_CWT:
+                                // Set the CWT credential attribute if the format is CWT.
+                                updatedCredentialEntity.cwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, signedCredential.credential()));
+                                break;
+                            default:
+                                // Return an error if the credential format is unsupported.
+                                return Mono.error(new IllegalArgumentException("Unsupported credential format: " + signedCredential.format()));
+                        }
+
+                        // Change the credential status to ISSUED since it is now signed.
+                        updatedCredentialEntity.credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, CredentialStatus.ISSUED));
+
+                        // Serialize the updated credential entity back to JSON and convert to string.
+                        return deserializeEntityToString(updatedCredentialEntity.build());
+                    } catch (JsonProcessingException e) {
+                        // Handle JSON parsing errors.
+                        return Mono.error(new ParseErrorException("Error processing credential entity: " + e));
+                    }
+                });
+    }
+
+
+
+    @Override
+    public Mono<String> updateTransactionWithNewTransactionId(String transactionEntityJson, String transactionId) {
+        return Mono.just(transactionEntityJson)
+                .flatMap(json -> {
+                    try {
+                        // Deserialize the transaction entity from JSON.
+                        TransactionEntity transactionEntity = objectMapper.readValue(json, TransactionEntity.class);
+
+                        // Build a new transaction entity using the builder pattern with updated transactionId
+                        TransactionEntity updatedTransactionEntity = TransactionEntity.builder()
+                                .id(transactionEntity.id()) // Preserve the original ID
+                                .type(transactionEntity.type()) // Preserve the original type
+                                .transactionDataAttribute(EntityAttribute.<TransactionDataAttribute>builder()
+                                        .type(transactionEntity.transactionDataAttribute().type()) // Preserve the original attribute type
+                                        .value(TransactionDataAttribute.builder() // Build new transaction data
+                                                .transactionId(transactionId) // Update with new transaction ID
+                                                .accessToken(transactionEntity.transactionDataAttribute().value().accessToken()) // Preserve the original access token
+                                                .deferredEndpoint(transactionEntity.transactionDataAttribute().value().deferredEndpoint()) // Preserve the original deferred endpoint
+                                                .build())
+                                        .build())
+                                .relationshipAttribute(transactionEntity.relationshipAttribute()) // Preserve the original relationship attribute
+                                .build();
+
+                        // Serialize the updated transaction entity back to JSON
+                        return deserializeEntityToString(updatedTransactionEntity);
+                    } catch (JsonProcessingException e) {
+                        // Handle JSON parsing errors
+                        return Mono.error(new ParseErrorException("Error processing transaction entity: " + e));
+                    }
+                });
+    }
+
+
 
 }

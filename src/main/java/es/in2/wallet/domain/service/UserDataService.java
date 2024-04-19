@@ -15,5 +15,6 @@ public interface UserDataService {
     Mono<String> extractDidFromVerifiableCredential(String credentialJson);
 
     Mono<String> saveTransaction(String credentialId, String transactionId, String accessToken, String deferredEndpoint);
-
+    Mono<String> updateVCEntityWithSignedFormat(String credentialEntity, CredentialResponse signedCredential);
+    Mono<String> updateTransactionWithNewTransactionId(String transactionEntity, String transactionId);
 }
