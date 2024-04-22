@@ -1,5 +1,6 @@
 package es.in2.wallet.application.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.service.RequestSignedLEARCredentialService;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -26,7 +29,11 @@ public class RequestSignedLEARCredentialServiceImpl implements RequestSignedLEAR
         return brokerService.getTransactionThatIsLinkedToACredential(processId,credentialId)
                 .flatMap(transactionEntity -> {
                             try {
-                                TransactionEntity transaction = objectMapper.readValue(transactionEntity, TransactionEntity.class);
+                                //Although the response is a list of transactions, we obtain the first position since we know that a credential
+                                // cannot be linked to more than one transaction. Therefore, we know that even though a list is returned,
+                                // it will always contain one element.
+                                List<TransactionEntity> transactions = objectMapper.readValue(transactionEntity, new TypeReference<>() {});
+                                TransactionEntity transaction = transactions.get(0);
                                 return credentialService.getCredentialDomeDeferredCase(
                                         transaction.transactionDataAttribute().value()
                                                 .transactionId(),

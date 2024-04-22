@@ -24,7 +24,7 @@ public class RequestSignedLEARCredentialController {
 
     private final RequestSignedLEARCredentialService requestSignedLEARCredentialService;
 
-    @PostMapping
+    @GetMapping
     @ResponseStatus(HttpStatus.OK)
     @Operation(
             summary = "Request a signed credential",
@@ -34,6 +34,7 @@ public class RequestSignedLEARCredentialController {
     @ApiResponse(responseCode = "200", description = "Request completed.")
     @ApiResponse(responseCode = "400", description = "Invalid request.")
     @ApiResponse(responseCode = "500", description = "Internal server error.")
+
     public Mono<Void> getSignedCredential(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestParam String credentialId) {
         log.debug("VerifiableCredentialController.getVerifiableCredential()");
 
