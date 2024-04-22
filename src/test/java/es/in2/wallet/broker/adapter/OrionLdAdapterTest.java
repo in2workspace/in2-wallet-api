@@ -19,6 +19,8 @@ import reactor.test.StepVerifier;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import static es.in2.wallet.domain.util.MessageUtils.ATTRIBUTES;
 import static es.in2.wallet.domain.util.MessageUtils.USER_ENTITY_PREFIX;
@@ -114,27 +116,130 @@ class OrionLdAdapterTest {
         assertEquals("GET", recordedRequest.getMethod());
     }
 
-//    @Test
-//    void updateEntityTest() throws Exception {
-//        // Prepare test data and mock response
-//        String userId = "userId123";
-//        String processId = "processId123";
-//        String requestBody = "{\"newKey\":\"newValue\"}";
-//
-//        // Enqueue a mock response for the PATCH request
-//        mockWebServer.enqueue(new MockResponse().setResponseCode(200));
-//
-//        // Test the updateEntity method
-//        StepVerifier.create(orionLdAdapter.updateEntity(processId, userId, requestBody))
-//                .verifyComplete(); // Verify the request completes successfully
-//
-//        // Verify the PATCH request was made correctly
-//        RecordedRequest recordedRequest = mockWebServer.takeRequest();
-//        assertEquals("/external/entities" + "/" + USER_ENTITY_PREFIX + userId + ATTRIBUTES, recordedRequest.getPath());
-//        assertEquals("PATCH", recordedRequest.getMethod());
-//        assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
-//        assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
-//    }
+    @Test
+    void updateEntityTest() throws Exception {
+        // Prepare test data and mock response
+        String entityId = USER_ENTITY_PREFIX +  "123";
+        String processId = "processId123";
+        String requestBody = "{\"newKey\":\"newValue\"}";
+
+        // Enqueue a mock response for the PATCH request
+        mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+
+        // Test the updateEntity method
+        StepVerifier.create(orionLdAdapter.updateEntity(processId, entityId, requestBody))
+                .verifyComplete(); // Verify the request completes successfully
+
+        // Verify the PATCH request was made correctly
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/external/entities" + "/" + entityId + ATTRIBUTES, recordedRequest.getPath());
+        assertEquals("PATCH", recordedRequest.getMethod());
+        assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
+        assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
+    }
+    @Test
+    void getCredentialsThatBelongToUserTest() throws Exception {
+        String processId = "processId123";
+        String userId = "userId123";
+        String entityId = USER_ENTITY_PREFIX + userId;
+
+        String queryValue = URLEncoder.encode("belongsTo==",StandardCharsets.UTF_8);
+        String path = queryValue + entityId;
+
+        String expectedResponse = "[{\"id\":\"credentialId1\"}, {\"id\":\"credentialId2\"}]";
+
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody(expectedResponse));
+
+        StepVerifier.create(orionLdAdapter.getCredentialsThatBelongToUser(processId, userId))
+                .expectNext(expectedResponse)
+                .verifyComplete();
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/external/entities?type=Credential&q=" + path, recordedRequest.getPath());
+    }
+    @Test
+    void getCredentialByIdThatBelongToUserTest() throws Exception {
+        String processId = "processId123";
+        String userId = "userId123";
+        String credentialId = "credentialId123";
+        String entityId = USER_ENTITY_PREFIX + userId;
+        String encodedQuery = URLEncoder.encode("belongsTo==", StandardCharsets.UTF_8) + entityId;
+
+        String expectedResponse = "{\"id\":\"" + credentialId + "\", \"belongsTo\":\"" + entityId + "\"}";
+
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody(expectedResponse));
+
+        StepVerifier.create(orionLdAdapter.getCredentialByIdThatBelongToUser(processId, userId, credentialId))
+                .expectNext(expectedResponse)
+                .verifyComplete();
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/external/entities/" + credentialId + "?q=" + encodedQuery, recordedRequest.getPath());
+    }
+
+    @Test
+    void deleteCredentialByIdThatBelongToUserTest() throws Exception {
+        String processId = "processId123";
+        String userId = "userId123";
+        String credentialId = "credentialId123";
+        String entityId = USER_ENTITY_PREFIX + userId;
+        String encodedQuery = URLEncoder.encode("belongsTo==", StandardCharsets.UTF_8) + entityId;
+
+        mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+        StepVerifier.create(orionLdAdapter.deleteCredentialByIdThatBelongToUser(processId, userId, credentialId))
+                .verifyComplete();
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/external/entities/" + credentialId + "?q=" + encodedQuery, recordedRequest.getPath());
+        assertEquals("DELETE", recordedRequest.getMethod());
+    }
+
+    @Test
+    void getCredentialByCredentialTypeThatBelongToUserTest() throws Exception {
+        String processId = "processId123";
+        String userId = "userId123";
+        String credentialType = "Type123";
+        String entityId = USER_ENTITY_PREFIX + userId;
+        String encodedQuery = URLEncoder.encode("belongsTo==", StandardCharsets.UTF_8) + entityId +
+                ";" + URLEncoder.encode("credentialType==", StandardCharsets.UTF_8) + credentialType;
+
+        String expectedResponse = "[{\"type\":\"" + credentialType + "\", \"belongsTo\":\"" + entityId + "\"}]";
+
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody(expectedResponse));
+
+        StepVerifier.create(orionLdAdapter.getCredentialByCredentialTypeThatBelongToUser(processId, userId, credentialType))
+                .expectNext(expectedResponse)
+                .verifyComplete();
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/external/entities?type=Credential&q=" + encodedQuery, recordedRequest.getPath());
+    }
+    @Test
+    void getTransactionThatIsLinkedToACredentialTest() throws Exception {
+        String processId = "processId123";
+        String credentialId = "credentialId123";
+        String encodedQuery = URLEncoder.encode("linkedTo==", StandardCharsets.UTF_8) + credentialId;
+        String expectedResponse = "[{\"transactionId\":\"tx123\", \"linkedTo\":\"" + credentialId + "\"}]";
+
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody(expectedResponse));
+
+        StepVerifier.create(orionLdAdapter.getTransactionThatIsLinkedToACredential(processId, credentialId))
+                .expectNext(expectedResponse)
+                .verifyComplete();
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("/external/entities?type=Transaction&q=" + encodedQuery, recordedRequest.getPath());
+    }
+
 }
 
 

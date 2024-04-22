@@ -56,7 +56,7 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
             // If a user PIN is required, extract the user ID from the token,
             // send a PIN request, wait for the PIN response, and then proceed to get access token.
             return sendPinRequestAndRetrieveResponse
-                    (authorizationToken,tokenURL,credentialOffer,WebSocketServerMessage.builder().pinRequired(true).build());
+                    (authorizationToken,tokenURL,credentialOffer,WebSocketServerMessage.builder().pin(true).build());
         }
         else if (credentialOffer.grant().preAuthorizedCodeGrant().txCode() != null){
             // If a tx_code is required, extract the user ID from the token,
