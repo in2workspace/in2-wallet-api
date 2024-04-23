@@ -5,10 +5,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.impl.UserDataServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,10 +21,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import static es.in2.wallet.domain.util.MessageUtils.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserDataUseCaseServiceImplTest {
@@ -258,6 +259,7 @@ class UserDataUseCaseServiceImplTest {
     @Test
     void testGetUserVCsInJson() throws Exception {
         String credentialsJson = "credentialsJson";
+        String userEntityId = "urn:walletUser:f517af8f-954e-47c2-a778-dd312154dc2d";
 
         String jwtCredential = "eysdasda";
         String jsonCredential = """
@@ -300,6 +302,7 @@ class UserDataUseCaseServiceImplTest {
                         .type(PROPERTY_TYPE)
                         .credentialStatus(CredentialStatus.VALID).build())
                 .jwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE,jwtCredential))
+                .relationshipAttribute(new RelationshipAttribute(RELATIONSHIP_TYPE,userEntityId))
                 .build();
 
         List<CredentialEntity> credentials = List.of(credentialEntity);
@@ -319,6 +322,7 @@ class UserDataUseCaseServiceImplTest {
                     assertEquals(CredentialStatus.VALID, credentialsInfo.credentialStatus());
                     assertEquals("did:example:123", credentialsInfo.credentialSubject().get("id").asText());
                     assertEquals(ZonedDateTime.parse("2023-11-23T08:07:35Z"), credentialsInfo.expirationDate());
+                    assertEquals(userEntityId, credentialEntity.relationshipAttribute().object());
                 })
                 .verifyComplete();
     }
@@ -427,6 +431,163 @@ class UserDataUseCaseServiceImplTest {
                         throwable.getMessage().contains("Error deserializing CredentialEntity from JSON"))
                 .verify();
     }
+    @Test
+    void testSaveTransaction() throws JsonProcessingException {
+        String credentialId = "cred123";
+        String transactionId = "trans456";
+        String accessToken = "access789";
+        String deferredEndpoint = "https://example.com/callback";
+
+        ObjectWriter mockWriter = mock(ObjectWriter.class);
+        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
+        when(mockWriter.writeValueAsString(any(TransactionEntity.class))).thenReturn("transaction entity");
+
+        StepVerifier.create(userDataServiceImpl.saveTransaction(credentialId, transactionId, accessToken, deferredEndpoint))
+                .expectNext("transaction entity")
+                .verifyComplete();
+
+        ArgumentCaptor<TransactionEntity> captor = ArgumentCaptor.forClass(TransactionEntity.class);
+        verify(mockWriter).writeValueAsString(captor.capture());
+        TransactionEntity capturedEntity = captor.getValue();
+        assertNotNull(capturedEntity.id());
+        assertTrue(capturedEntity.id().startsWith(TRANSACTION_ENTITY_PREFIX));
+        assertEquals(TRANSACTION_TYPE, capturedEntity.type());
+        assertEquals(transactionId, capturedEntity.transactionDataAttribute().value().transactionId());
+        assertEquals(accessToken, capturedEntity.transactionDataAttribute().value().accessToken());
+        assertEquals(deferredEndpoint, capturedEntity.transactionDataAttribute().value().deferredEndpoint());
+        assertEquals(CREDENTIAL_ENTITY_PREFIX + credentialId, capturedEntity.relationshipAttribute().object());
+    }
+
+    @Test
+    void testUpdateVCEntityWithSignedJWTFormat() throws JsonProcessingException {
+        String credentialEntityJson = "{\"id\":\"cred123\", \"type\":\"Credential\"}";
+        String signedJwt = "signedJwtExample";
+        CredentialResponse signedCredential = CredentialResponse.builder().credential(signedJwt).format(JWT_VC).build();
+
+        CredentialEntity credentialEntity = CredentialEntity.builder()
+                .id("cred123")
+                .type("Credential")
+                .build();
+
+        when(objectMapper.readValue(credentialEntityJson, CredentialEntity.class)).thenReturn(credentialEntity);
+        ObjectWriter mockWriter = mock(ObjectWriter.class);
+        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
+        when(mockWriter.writeValueAsString(any(CredentialEntity.class))).thenReturn("updatedEntityJson");
+
+        StepVerifier.create(userDataServiceImpl.updateVCEntityWithSignedFormat(credentialEntityJson, signedCredential))
+                .expectNext("updatedEntityJson")
+                .verifyComplete();
+
+        verify(objectMapper).readValue(credentialEntityJson, CredentialEntity.class);
+    }
+
+    @Test
+    void testUpdateVCEntityWithSignedCWTFormat() throws JsonProcessingException {
+        String credentialEntityJson = "{\"id\":\"cred123\", \"type\":\"Credential\"}";
+        String signedCwt = "signedCwtExample";
+        CredentialResponse signedCredential = CredentialResponse.builder().credential(signedCwt).format(VC_CWT).build();
+
+        CredentialEntity credentialEntity = CredentialEntity.builder()
+                .id("cred123")
+                .type("Credential")
+                .build();
+
+        when(objectMapper.readValue(credentialEntityJson, CredentialEntity.class)).thenReturn(credentialEntity);
+        ObjectWriter mockWriter = mock(ObjectWriter.class);
+        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
+        when(mockWriter.writeValueAsString(any(CredentialEntity.class))).thenReturn("updatedEntityJson");
+
+        StepVerifier.create(userDataServiceImpl.updateVCEntityWithSignedFormat(credentialEntityJson, signedCredential))
+                .expectNext("updatedEntityJson")
+                .verifyComplete();
+
+        verify(objectMapper).readValue(credentialEntityJson, CredentialEntity.class);
+    }
+
+    @Test
+    void testUpdateVCEntityWithUnsupportedFormat() throws JsonProcessingException {
+        String credentialEntityJson = "{\"id\":\"cred123\", \"type\":\"Credential\"}";
+        String unsupportedCredential = "unsupportedCredentialExample";
+        CredentialResponse signedCredential = CredentialResponse.builder().credential(unsupportedCredential).format("invalid format").build();
+
+        CredentialEntity credentialEntity = CredentialEntity.builder()
+                .id("cred123")
+                .type("Credential")
+                .build();
+
+        when(objectMapper.readValue(credentialEntityJson, CredentialEntity.class)).thenReturn(credentialEntity);
+
+        StepVerifier.create(userDataServiceImpl.updateVCEntityWithSignedFormat(credentialEntityJson, signedCredential))
+                .expectError(IllegalArgumentException.class)
+                .verify();
+
+        verify(objectMapper).readValue(credentialEntityJson, CredentialEntity.class);
+    }
+
+    @Test
+    void testUpdateTransactionWithNewTransactionId() throws JsonProcessingException {
+        String transactionEntityJson = "{\"id\":\"trans123\", \"type\":\"Transaction\", \"transactionDataAttribute\":{\"type\":\"Property\", \"value\":{\"transactionId\":\"oldTransId\", \"accessToken\":\"access123\", \"deferredEndpoint\":\"https://example.com/callback\"}}, \"relationshipAttribute\":{\"type\":\"Relationship\", \"object\":\"cred123\"}}";
+        String newTransactionId = "newTransId";
+        TransactionEntity transactionEntity = TransactionEntity.builder()
+                .id("trans123")
+                .type("Transaction")
+                .transactionDataAttribute(EntityAttribute.<TransactionDataAttribute>builder()
+                        .type("Property")
+                        .value(TransactionDataAttribute.builder()
+                                .transactionId("oldTransId")
+                                .accessToken("access123")
+                                .deferredEndpoint("https://example.com/callback")
+                                .build())
+                        .build())
+                .relationshipAttribute(RelationshipAttribute.builder()
+                        .type("Relationship")
+                        .object("cred123")
+                        .build())
+                .build();
+
+        TransactionEntity updatedTransactionEntity = TransactionEntity.builder()
+                .id("trans123")
+                .type("Transaction")
+                .transactionDataAttribute(EntityAttribute.<TransactionDataAttribute>builder()
+                        .type("Property")
+                        .value(TransactionDataAttribute.builder()
+                                .transactionId(newTransactionId)
+                                .accessToken("access123")
+                                .deferredEndpoint("https://example.com/callback")
+                                .build())
+                        .build())
+                .relationshipAttribute(RelationshipAttribute.builder()
+                        .type("Relationship")
+                        .object("cred123")
+                        .build())
+                .build();
+
+        when(objectMapper.readValue(transactionEntityJson, TransactionEntity.class)).thenReturn(transactionEntity);
+        ObjectWriter mockWriter = mock(ObjectWriter.class);
+        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
+        when(mockWriter.writeValueAsString(updatedTransactionEntity)).thenReturn("updatedTransactionJson");
+
+        StepVerifier.create(userDataServiceImpl.updateTransactionWithNewTransactionId(transactionEntityJson, newTransactionId))
+                .expectNext("updatedTransactionJson")
+                .verifyComplete();
+
+        verify(objectMapper).readValue(transactionEntityJson, TransactionEntity.class);
+    }
+
+    @Test
+    void testUpdateTransactionWithNewTransactionIdJsonProcessingException() throws JsonProcessingException {
+        String transactionEntityJson = "{\"id\":\"trans123\"}";
+        String newTransactionId = "newTransId";
+
+        when(objectMapper.readValue(transactionEntityJson, TransactionEntity.class)).thenThrow(new JsonProcessingException("Error processing JSON") {});
+
+        StepVerifier.create(userDataServiceImpl.updateTransactionWithNewTransactionId(transactionEntityJson, newTransactionId))
+                .expectError(ParseErrorException.class)
+                .verify();
+
+        verify(objectMapper).readValue(transactionEntityJson, TransactionEntity.class);
+    }
+
 //    @Test
 //    void testGetUserVCsInJsonDateTimeParseException() throws Exception {
 //        String credentialsJson = "credentialsJson";
