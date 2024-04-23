@@ -110,8 +110,8 @@ public class UserDataServiceImpl implements UserDataService {
 
         // Determine the credential's status based on the presence of signed formats
         CredentialStatus status = (formatMap.containsKey(JWT_VC) || formatMap.containsKey(VC_CWT))
-                ? CredentialStatus.ISSUED
-                : CredentialStatus.GENERATED;
+                ? CredentialStatus.VALID
+                : CredentialStatus.ISSUED;
 
         // Ensure the vc_json format is present; extract it if necessary
         return Mono.justOrEmpty(formatMap.get(VC_JSON))
@@ -481,7 +481,7 @@ public class UserDataServiceImpl implements UserDataService {
                         }
 
                         // Change the credential status to ISSUED since it is now signed.
-                        updatedCredentialEntity.credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, CredentialStatus.ISSUED));
+                        updatedCredentialEntity.credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, CredentialStatus.VALID));
 
                         // Serialize the updated credential entity back to JSON and convert to string.
                         return deserializeEntityToString(updatedCredentialEntity.build());

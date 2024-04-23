@@ -112,10 +112,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidPinException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
-    public Mono<GlobalErrorMessage> invalidCredentialsException(InvalidPinException ex, ServerHttpRequest request) {
+    public Mono<GlobalErrorMessage> invalidPinException(InvalidPinException ex, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
-                .title("InvalidCredentialsException")
+                .title("InvalidPinException")
                 .message(ex.getMessage())
                 .path(path)
                 .build());

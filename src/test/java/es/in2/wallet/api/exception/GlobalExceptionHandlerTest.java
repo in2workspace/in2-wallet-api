@@ -38,7 +38,9 @@ class GlobalExceptionHandlerTest {
                 NoSuchQrContentException.class,
                 ParseErrorException.class,
                 NoSuchVerifiableCredentialException.class,
-                InvalidPinException.class
+                NoSuchTransactionException.class,
+                InvalidPinException.class,
+                CredentialNotAvailableException.class
         ));
 
         List<String> messages = new ArrayList<>(Arrays.asList(
@@ -49,7 +51,9 @@ class GlobalExceptionHandlerTest {
                 "NoSuchQrContent",
                 "ParseError",
                 "NoSuchVerifiableCredential",
-                "InvalidCredentials"
+                "NoSuchTransaction",
+                "InvalidPin",
+                "CredentialNotAvailable"
         ));
 
         List<BiFunction<Exception, ServerHttpRequest, Mono<GlobalErrorMessage>>> methods = new ArrayList<>(Arrays.asList(
@@ -60,7 +64,9 @@ class GlobalExceptionHandlerTest {
                 (ex, req) -> globalExceptionHandler.noSuchQrContentException((NoSuchQrContentException) ex, req),
                 (ex, req) -> globalExceptionHandler.parseErrorException((ParseErrorException) ex, req),
                 (ex, req) -> globalExceptionHandler.noSuchVerifiableCredentialException((NoSuchVerifiableCredentialException) ex, req),
-                (ex, req) -> globalExceptionHandler.invalidCredentialsException((InvalidPinException) ex, req)
+                (ex, req) -> globalExceptionHandler.noSuchTransactionException((NoSuchTransactionException) ex, req),
+                (ex, req) -> globalExceptionHandler.invalidPinException((InvalidPinException) ex, req),
+                (ex, req) -> globalExceptionHandler.credentialNotAvailableException((CredentialNotAvailableException) ex, req)
 
         ));
 
@@ -72,7 +78,9 @@ class GlobalExceptionHandlerTest {
         exceptionMethodNames.put(NoSuchQrContentException.class, "NoSuchQrContentException");
         exceptionMethodNames.put(ParseErrorException.class, "ParseErrorException");
         exceptionMethodNames.put(NoSuchVerifiableCredentialException.class, "NoSuchVerifiableCredentialException");
-        exceptionMethodNames.put(InvalidPinException.class, "InvalidCredentialsException");
+        exceptionMethodNames.put(NoSuchTransactionException.class, "NoSuchTransactionException");
+        exceptionMethodNames.put(InvalidPinException.class, "InvalidPinException");
+        exceptionMethodNames.put(CredentialNotAvailableException.class, "CredentialNotAvailableException");
 
         return IntStream.range(0, classes.size())
                 .mapToObj(i -> Arguments.of(classes.get(i), messages.get(i), methods.get(i % methods.size()), exceptionMethodNames));

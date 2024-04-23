@@ -49,7 +49,7 @@ class UserDataUseCaseServiceImplTest {
         ObjectMapper objectMapper2 = new ObjectMapper();
         JsonNode credentialSubject = objectMapper2.readTree(jsonSubject);
 
-        List<CredentialsBasicInfo> expectedCredentials = List.of(new CredentialsBasicInfo("id1", List.of("type"), CredentialStatus.ISSUED,List.of("jwt_vc","cwt_vc"),credentialSubject, ZonedDateTime.now()));
+        List<CredentialsBasicInfo> expectedCredentials = List.of(new CredentialsBasicInfo("id1", List.of("type"), CredentialStatus.VALID,List.of("jwt_vc","cwt_vc"),credentialSubject, ZonedDateTime.now()));
 
         when(brokerService.getCredentialsThatBelongToUser(processId, userId)).thenReturn(Mono.just(credentials));
         when(userDataService.getUserVCsInJson(credentials)).thenReturn(Mono.just(expectedCredentials));

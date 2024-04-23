@@ -1,57 +1,52 @@
-//package es.in2.wallet.api.service;
-//
-//import com.fasterxml.jackson.core.JsonProcessingException;
-//import com.fasterxml.jackson.databind.JsonNode;
-//import com.fasterxml.jackson.databind.ObjectMapper;
-//import com.fasterxml.jackson.databind.ObjectWriter;
-//import es.in2.wallet.domain.model.*;
-//import es.in2.wallet.domain.service.impl.UserDataServiceImpl;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.extension.ExtendWith;
-//import org.mockito.InjectMocks;
-//import org.mockito.Mock;
-//import org.mockito.junit.jupiter.MockitoExtension;
-//import reactor.test.StepVerifier;
-//
-//import java.time.ZonedDateTime;
-//import java.util.*;
-//
-//import static es.in2.wallet.domain.util.MessageUtils.*;
-//import static org.junit.jupiter.api.Assertions.assertEquals;
-//import static org.junit.jupiter.api.Assertions.assertTrue;
-//import static org.mockito.ArgumentMatchers.*;
-//import static org.mockito.Mockito.mock;
-//import static org.mockito.Mockito.when;
-//
-//@ExtendWith(MockitoExtension.class)
-//class UserDataUseCaseServiceImplTest {
-//
-//    @Mock
-//    private ObjectMapper objectMapper;
-//
-//    @InjectMocks
-//    private UserDataServiceImpl userDataServiceImpl;
-//
-//    @Test
-//    void testRegisterUserInContextBroker() throws JsonProcessingException {
-//        String id = "123";
-//
-//        WalletUser expectedWalletUser = new WalletUser(
-//                "urn:entities:userId:" + id,
-//                "userEntity",
-//                new EntityAttribute<>(PROPERTY_TYPE, new ArrayList<>()),
-//                new EntityAttribute<>(PROPERTY_TYPE, new ArrayList<>())
-//        );
-//
-//        ObjectWriter mockWriter = mock(ObjectWriter.class);
-//        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
-//        when(mockWriter.writeValueAsString(expectedWalletUser)).thenReturn("user entity");
-//
-//        // Executing the method under test
-//        StepVerifier.create(userDataServiceImpl.createUserEntity(id))
-//                .expectNext("user entity")
-//                .verifyComplete();
-//    }
+package es.in2.wallet.api.service;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import es.in2.wallet.domain.model.*;
+import es.in2.wallet.domain.service.impl.UserDataServiceImpl;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.test.StepVerifier;
+
+import java.time.ZonedDateTime;
+import java.util.*;
+
+import static es.in2.wallet.domain.util.MessageUtils.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class UserDataUseCaseServiceImplTest {
+
+    @Mock
+    private ObjectMapper objectMapper;
+
+    @InjectMocks
+    private UserDataServiceImpl userDataServiceImpl;
+
+    @Test
+    void testRegisterUserInContextBroker() throws JsonProcessingException {
+        String id = "123";
+
+        WalletUser expectedWalletUser = WalletUser.builder().id(USER_ENTITY_PREFIX + id).type(WALLET_USER_TYPE).build();
+
+        ObjectWriter mockWriter = mock(ObjectWriter.class);
+        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
+        when(mockWriter.writeValueAsString(expectedWalletUser)).thenReturn("user entity");
+
+        // Executing the method under test
+        StepVerifier.create(userDataServiceImpl.createUserEntity(id))
+                .expectNext("user entity")
+                .verifyComplete();
+    }
 //    @Test
 //    void testSaveVCWithJwtFormat() throws JsonProcessingException {
 //        // Sample JWT token for a verifiable credential
@@ -466,5 +461,5 @@
 //                })
 //                .verifyComplete();
 //    }
-//
-//}
+
+}
