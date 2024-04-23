@@ -282,6 +282,7 @@ public class UserDataServiceImpl implements UserDataService {
                 JsonNode jsonCredential = objectMapper.convertValue(credential.jsonCredentialAttribute().value(), JsonNode.class);
                 JsonNode credentialSubject = jsonCredential.get(CREDENTIAL_SUBJECT);
                 ZonedDateTime expirationDate = null;
+
                 if (jsonCredential.has(EXPIRATION_DATE) && !jsonCredential.get(EXPIRATION_DATE).isNull()) {
                     expirationDate = parseZonedDateTime(jsonCredential.get(EXPIRATION_DATE).asText());
                 }
