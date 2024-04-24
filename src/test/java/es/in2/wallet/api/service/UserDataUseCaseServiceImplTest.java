@@ -645,47 +645,4 @@ class UserDataUseCaseServiceImplTest {
 //                .expectError()
 //                .verify();
 //    }
-//
-//    @Test
-//    void testGetVerifiableCredentialByIdAndFormat() throws Exception {
-//        String userEntityString = "userEntityJsonString";
-//        String vcId = "vc1";
-//        String format = VC_JSON;
-//        String expectedVCValue = "{\"id\":\"vc1\",\"type\":\"VC_JSON\",\"credentialSubject\":{\"id\":\"subjectId\"}}";
-//
-//        VCAttribute vcAttribute = new VCAttribute(vcId, format, expectedVCValue);
-//
-//        WalletUser walletUser = new WalletUser(
-//                "user123",
-//                "userEntity",
-//                new EntityAttribute<>("Property", List.of()),
-//                new EntityAttribute<>("Property", List.of(vcAttribute))
-//        );
-//
-//        when(objectMapper.readValue(anyString(), eq(WalletUser.class))).thenReturn(walletUser);
-//
-//        StepVerifier.create(userDataServiceImpl.getVerifiableCredentialByIdAndFormat(userEntityString, vcId, format))
-//                .expectNext(expectedVCValue)
-//                .verifyComplete();
-//    }
-//
-//    @Test
-//    void testGetVerifiableCredentialByIdAndFormat_NotFound() throws JsonProcessingException {
-//        String userEntityString = "userEntityJsonString";
-//        String vcId = "vcNonExistent";
-//
-//        WalletUser walletUser = new WalletUser(
-//                "user123",
-//                "userEntity",
-//                new EntityAttribute<>("Property", List.of()),
-//                new EntityAttribute<>("Property", List.of()) // Without VCs
-//        );
-//
-//        when(objectMapper.readValue(any(String.class), eq(WalletUser.class))).thenReturn(walletUser);
-//
-//        StepVerifier.create(userDataServiceImpl.getVerifiableCredentialByIdAndFormat(userEntityString, vcId, VC_JSON))
-//                .expectError(NoSuchElementException.class)
-//                .verify();
-//    }
-//
 }
