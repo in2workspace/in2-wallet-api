@@ -38,3 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Change the return value from a exception to an empty list when the user don't have any credential
 - Added the logic for selecting the credential that is wanted to be presented during the DOME presentation flow.
+
+## [v1.2.0](https://github.com/in2workspace/wallet-server/releases/tag/v1.2.0) - 2024-04-24
+### Added
+- Refactoring of the context broker entities that the application works with and the methods of the broker interface.
+- Endpoint and logic for requesting a signed credential, once this is obtained unsigned
+- Added logic to manage the status of the credentials base on the returned format
