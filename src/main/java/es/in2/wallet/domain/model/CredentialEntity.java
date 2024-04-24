@@ -3,9 +3,7 @@ package es.in2.wallet.domain.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-import org.springframework.lang.Nullable;
 
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)

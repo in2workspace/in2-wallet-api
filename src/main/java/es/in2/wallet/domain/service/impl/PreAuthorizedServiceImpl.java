@@ -106,8 +106,10 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
         Map<String, String> formDataMap = new HashMap<>();
         formDataMap.put("grant_type", PRE_AUTH_CODE_GRANT_TYPE);
         formDataMap.put("pre-authorized_code", credentialOffer.grant().preAuthorizedCodeGrant().preAuthorizedCode());
-        if (pin != null && !pin.isEmpty()) {
+        if (credentialOffer.grant().preAuthorizedCodeGrant().userPinRequired() && pin != null && !pin.isEmpty()) {
             formDataMap.put("user_pin", pin);
+        }else if (credentialOffer.grant().preAuthorizedCodeGrant().txCode() != null){
+            formDataMap.put("tx_code", pin);
         }
 
         String xWwwFormUrlencodedBody = formDataMap.entrySet().stream()
