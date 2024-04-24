@@ -1,6 +1,7 @@
 package es.in2.wallet.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
@@ -11,6 +12,7 @@ import java.util.List;
 import static es.in2.wallet.domain.util.MessageUtils.*;
 
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record CredentialsBasicInfo(
         @JsonProperty("id") String id,
         @JsonProperty("type") List<String> vcType,

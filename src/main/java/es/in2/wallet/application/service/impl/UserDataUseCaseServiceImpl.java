@@ -31,7 +31,8 @@ public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
     public Mono<List<CredentialsBasicInfo>> getUserVCs(String processId, String userId) {
         return brokerService.getCredentialsThatBelongToUser(processId, userId)
                 .flatMap(userDataService::getUserVCsInJson)
-                .doOnSuccess(list -> log.info("Retrieved VCs in JSON for userId: {}", userId)).onErrorResume(Mono::error);
+                .doOnSuccess(list -> log.info("Retrieved VCs in JSON for userId: {}", userId))
+                .onErrorResume(Mono::error);
     }
 
     /**

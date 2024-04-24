@@ -3,8 +3,9 @@ package es.in2.wallet.domain.service.impl;
 import COSE.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEObject;
-import com.nimbusds.jose.shaded.json.JSONArray;
-import com.nimbusds.jose.shaded.json.JSONObject;
+import com.nimbusds.jose.shaded.gson.JsonArray;
+import com.nimbusds.jose.shaded.gson.JsonObject;
+import com.nimbusds.jose.shaded.gson.JsonParser;
 import com.upokecenter.cbor.CBORObject;
 import es.in2.wallet.domain.service.CborGenerationService;
 import lombok.RequiredArgsConstructor;
@@ -45,18 +46,24 @@ public class CborGenerationServiceImpl implements CborGenerationService {
     }
 
     private Mono<String> modifyPayload(String token) throws ParseException {
-        // Parse the token and get the payload
-        JSONObject vpJsonObject = (JSONObject) JOSEObject.parse(token).getPayload().toJSONObject();
-        // Parse the payload and get the VP
-        JSONObject vpContent = (JSONObject) vpJsonObject.get("vp");
-        JSONArray verifiableCredentialArray = (JSONArray) vpContent.get("verifiableCredential");
-        // Get the first element of the array
+        String vcPayload = JOSEObject.parse(token).getPayload().toString();
+
+        // Parse the original VP JSON
+        JsonObject vpJsonObject = JsonParser.parseString(vcPayload).getAsJsonObject();
+
+        // Select the VC from the VP
+        JsonObject vpContent = vpJsonObject.getAsJsonObject("vp");
+
+        JsonArray verifiableCredentialArray = vpContent.getAsJsonArray("verifiableCredential");
+
         if (!verifiableCredentialArray.isEmpty()) {
             // Get the first element as a string
-            String firstCredential = verifiableCredentialArray.get(0).toString();
+            String firstCredential = verifiableCredentialArray.get(0).getAsString();
+
             // Replace "verifiableCredential" in vpContent with the first credential
-            vpContent.appendField("verifiableCredential", firstCredential);
+            vpContent.addProperty("verifiableCredential", firstCredential);
         }
+
         return Mono.just(vpJsonObject.toString());
     }
 

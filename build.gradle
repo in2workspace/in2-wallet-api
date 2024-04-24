@@ -67,9 +67,8 @@ dependencies {
 	implementation 'org.apache.commons:commons-compress:1.26.1'
 
 	// JSON
-	implementation 'com.fasterxml.jackson.core:jackson-databind'
-	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-	implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.2'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.2'
 	implementation 'org.json:json:20231013'
 
 	// Resilience
@@ -85,8 +84,8 @@ dependencies {
 	implementation 'com.github.sthagen:erdtman-java-json-canonicalization:v1.1'
 
 	// Azure
-	implementation 'com.azure.spring:spring-cloud-azure-starter-appconfiguration:6.0.0-beta.4'
-	implementation 'com.azure.spring:spring-cloud-azure-starter-keyvault-secrets:6.0.0-beta.4'
+	implementation 'com.azure.spring:spring-cloud-azure-starter-appconfiguration:5.11.0'
+	implementation 'com.azure.spring:spring-cloud-azure-starter-keyvault-secrets:5.11.0'
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
@@ -117,7 +116,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 	testImplementation 'org.testcontainers:junit-jupiter'
 	testImplementation 'org.testcontainers:vault'
-	testImplementation 'com.squareup.okhttp3:mockwebserver:5.0.0-alpha.13'
+	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 }
 
 tasks.named('compileJava') {

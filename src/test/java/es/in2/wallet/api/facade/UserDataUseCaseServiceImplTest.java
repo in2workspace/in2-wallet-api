@@ -3,6 +3,7 @@ package es.in2.wallet.api.facade;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.port.VaultService;
 import es.in2.wallet.application.service.impl.UserDataUseCaseServiceImpl;
@@ -45,7 +46,13 @@ class UserDataUseCaseServiceImplTest {
         String credentials = "user credentials";
 
 
-        String jsonSubject = "{\"id\":\"subjectId\"}";
+        String jsonSubject = """
+            {
+                "credentialSubject": {
+                    "id": "did:example:123"
+                }
+            }
+        """;
         ObjectMapper objectMapper2 = new ObjectMapper();
         JsonNode credentialSubject = objectMapper2.readTree(jsonSubject);
 
