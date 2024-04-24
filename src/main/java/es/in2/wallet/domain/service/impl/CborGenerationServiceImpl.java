@@ -1,10 +1,10 @@
 package es.in2.wallet.domain.service.impl;
 
 import COSE.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEObject;
-import com.nimbusds.jose.shaded.gson.JsonArray;
-import com.nimbusds.jose.shaded.gson.JsonObject;
-import com.nimbusds.jose.shaded.gson.JsonParser;
+import com.nimbusds.jose.shaded.json.JSONArray;
+import com.nimbusds.jose.shaded.json.JSONObject;
 import com.upokecenter.cbor.CBORObject;
 import es.in2.wallet.domain.service.CborGenerationService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +23,8 @@ import java.util.zip.DeflaterInputStream;
 @RequiredArgsConstructor
 @Slf4j
 public class CborGenerationServiceImpl implements CborGenerationService {
+    private final ObjectMapper objectMapper;
+
     @Override
     public Mono<String> generateCbor(String processId, String content) throws ParseException {
         return generateCborFromJson(content)
@@ -40,28 +42,21 @@ public class CborGenerationServiceImpl implements CborGenerationService {
     private Mono<byte[]> generateCborFromJson(String content) throws ParseException {
         return modifyPayload(content)
                 .flatMap(modifiedPayload -> Mono.just((CBORObject.FromJSONString(modifiedPayload)).EncodeToBytes()));
-
     }
 
     private Mono<String> modifyPayload(String token) throws ParseException {
-        String vcPayload = JOSEObject.parse(token).getPayload().toString();
-
-        // Parse the original VP JSON
-        JsonObject vpJsonObject = JsonParser.parseString(vcPayload).getAsJsonObject();
-
-        // Select the VC from the VP
-        JsonObject vpContent = vpJsonObject.getAsJsonObject("vp");
-
-        JsonArray verifiableCredentialArray = vpContent.getAsJsonArray("verifiableCredential");
-
+        // Parse the token and get the payload
+        JSONObject vpJsonObject = (JSONObject) JOSEObject.parse(token).getPayload().toJSONObject();
+        // Parse the payload and get the VP
+        JSONObject vpContent = (JSONObject) vpJsonObject.get("vp");
+        JSONArray verifiableCredentialArray = (JSONArray) vpContent.get("verifiableCredential");
+        // Get the first element of the array
         if (!verifiableCredentialArray.isEmpty()) {
             // Get the first element as a string
-            String firstCredential = verifiableCredentialArray.get(0).getAsString();
-
+            String firstCredential = verifiableCredentialArray.get(0).toString();
             // Replace "verifiableCredential" in vpContent with the first credential
-            vpContent.addProperty("verifiableCredential", firstCredential);
+            vpContent.appendField("verifiableCredential", firstCredential);
         }
-
         return Mono.just(vpJsonObject.toString());
     }
 

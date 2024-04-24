@@ -14,8 +14,9 @@ import es.in2.wallet.domain.service.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.minvws.encoding.Base45;
+import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -202,18 +203,17 @@ public class UserDataServiceImpl implements UserDataService {
     private String decodeToJSONstring(String qrData) {
         String rawStringData = removeQuotes(qrData);
         byte[] zip = Base45.getDecoder().decode(rawStringData);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(zip);
-            CompressorStreamFactory factory = new CompressorStreamFactory();
-            IOUtils.copy(factory.createCompressorInputStream(CompressorStreamFactory.DEFLATE, bais), baos);
-            byte[] cose = baos.toByteArray();
-
+        CompressorStreamFactory compressorStreamFactory = new CompressorStreamFactory();
+        try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(zip);
+            CompressorInputStream compressorInputStream =
+                    compressorStreamFactory.createCompressorInputStream(CompressorStreamFactory.DEFLATE, byteArrayInputStream)
+            ) {
+            IOUtils.copy(compressorInputStream, byteArrayOutputStream);
+            byte[] cose = byteArrayOutputStream.toByteArray();
             CBORObject cborObject = CBORObject.DecodeFromBytes(cose);
             ByteArrayOutputStream jsonOut = new ByteArrayOutputStream();
             cborObject.WriteJSONTo(jsonOut);
-
             return jsonOut.toString(StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new ParseErrorException("Error processing data: " + e);
