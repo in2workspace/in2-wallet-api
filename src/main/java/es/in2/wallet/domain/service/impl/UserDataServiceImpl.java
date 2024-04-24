@@ -82,12 +82,28 @@ public class UserDataServiceImpl implements UserDataService {
      */
     @Override
     public Mono<String> saveVC(String userId, List<CredentialResponse> credentials) {
-        // Create a map to consolidate various credential formats
         Map<String, CredentialAttribute> formatMap = new HashMap<>();
         List<String> errors = new ArrayList<>();
 
+        // Process each credential format and handle errors
+        processCredentialFormats(credentials, formatMap, errors);
+        if (!errors.isEmpty()) {
+            return Mono.error(new IllegalArgumentException(String.join(", ", errors)));
+        }
+
+        // Determine the status of the credential based on the presence of signed formats
+        CredentialStatus status = determineCredentialStatus(formatMap);
+        // Build and save the credential entity based on the processed data
+        return buildAndSaveCredentialEntity(formatMap, status, userId)
+                .doOnSuccess(entity -> log.info("Verifiable Credential saved successfully: {}", entity))
+                .onErrorResume(e -> {
+                    log.error("Error saving Verifiable Credential: {}", e.getMessage());
+                    return Mono.error(new RuntimeException("Error processing Verifiable Credential", e));
+                });
+    }
+
+    private void processCredentialFormats(List<CredentialResponse> credentials, Map<String, CredentialAttribute> formatMap, List<String> errors) {
         credentials.forEach(cred -> {
-            // Handle different credential formats and store them in a map
             switch (cred.format()) {
                 case JWT_VC, JWT_VC_JSON:
                     formatMap.put(JWT_VC, new CredentialAttribute(PROPERTY_TYPE, cred.credential()));
@@ -103,65 +119,60 @@ public class UserDataServiceImpl implements UserDataService {
                     break;
             }
         });
-
-        if (!errors.isEmpty()) {
-            return Mono.error(new IllegalArgumentException(String.join(", ", errors)));
-        }
-
-        // Determine the credential's status based on the presence of signed formats
-        CredentialStatus status = (formatMap.containsKey(JWT_VC) || formatMap.containsKey(VC_CWT))
-                ? CredentialStatus.VALID
-                : CredentialStatus.ISSUED;
-
-        // Ensure the vc_json format is present; extract it if necessary
-        return Mono.justOrEmpty(formatMap.get(VC_JSON))
-                .switchIfEmpty(Mono.defer(() -> {
-                    // Extract vc_json from JWT or CWT if not directly available
-                    if (formatMap.containsKey(JWT_VC)) {
-                        return extractVcJsonFromVcJwt(formatMap.get(JWT_VC).value().toString())
-                                .map(jsonNode -> new CredentialAttribute(PROPERTY_TYPE, jsonNode));
-                    } else if (formatMap.containsKey(VC_CWT)) {
-                        return fromVpCborToVcJsonReactive(formatMap.get(VC_CWT).value().toString())
-                                .map(jsonNode -> new CredentialAttribute(PROPERTY_TYPE, jsonNode));
-                    }
-                    return Mono.error(new RuntimeException("No suitable format available to extract vc_json"));
-                }))
-                .flatMap(vcJsonAttribute -> extractVerifiableCredentialIdFromVcJson((JsonNode) vcJsonAttribute.value())
-                        .flatMap(vcId -> {
-                            // Extract credential types from the JSON format
-                            JsonNode typesNode = ((JsonNode) vcJsonAttribute.value()).get("type");
-                            List<String> types = new ArrayList<>();
-                            if (typesNode.isArray()) {
-                                typesNode.forEach(typeNode -> types.add(typeNode.asText()));
-                            }
-                            // Build the CredentialEntity with all available formats
-                            CredentialEntity.CredentialEntityBuilder builder = CredentialEntity.builder()
-                                    .id(CREDENTIAL_ENTITY_PREFIX + vcId)
-                                    .type(CREDENTIAL_TYPE)
-                                    .jsonCredentialAttribute(vcJsonAttribute)
-                                    .credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, status))
-                                    .credentialTypeAttribute(new CredentialTypeAttribute(PROPERTY_TYPE, types))
-                                    .relationshipAttribute(new RelationshipAttribute(RELATIONSHIP_TYPE, USER_ENTITY_PREFIX + userId));
-
-                            // Add supported formats conditionally
-                            if (formatMap.containsKey(JWT_VC)) {
-                                builder.jwtCredentialAttribute(formatMap.get(JWT_VC));
-                            }
-                            if (formatMap.containsKey(VC_CWT)) {
-                                builder.cwtCredentialAttribute(formatMap.get(VC_CWT));
-                            }
-
-                            return deserializeEntityToString(builder.build());
-                        }))
-                .doOnSuccess(entity -> log.info("Verifiable Credential saved successfully: {}", entity))
-                .onErrorResume(e -> {
-                    log.error("Error saving Verifiable Credential: {}", e.getMessage());
-                    return Mono.error(new RuntimeException("Error processing Verifiable Credential", e));
-                });
     }
 
+    private CredentialStatus determineCredentialStatus(Map<String, CredentialAttribute> formatMap) {
+        return (formatMap.containsKey(JWT_VC) || formatMap.containsKey(VC_CWT)) ? CredentialStatus.VALID : CredentialStatus.ISSUED;
+    }
 
+    private Mono<String> buildAndSaveCredentialEntity(Map<String, CredentialAttribute> formatMap, CredentialStatus status, String userId) {
+        return Mono.justOrEmpty(formatMap.get(VC_JSON))
+                .switchIfEmpty(extractVcJsonIfNecessary(formatMap))
+                .flatMap(vcJsonAttribute -> extractVerifiableCredentialIdFromVcJson((JsonNode) vcJsonAttribute.value())
+                        .flatMap(vcId -> {
+                            List<String> types = extractCredentialTypes((JsonNode) vcJsonAttribute.value());
+                            CredentialEntity credentialEntity = buildCredentialEntity(formatMap, status, userId, vcJsonAttribute, vcId, types);
+                            return deserializeEntityToString(credentialEntity);
+                        }));
+    }
 
+    private Mono<CredentialAttribute> extractVcJsonIfNecessary(Map<String, CredentialAttribute> formatMap) {
+        if (formatMap.containsKey(JWT_VC)) {
+            return extractVcJsonFromVcJwt(formatMap.get(JWT_VC).value().toString())
+                    .map(jsonNode -> new CredentialAttribute(PROPERTY_TYPE, jsonNode));
+        } else if (formatMap.containsKey(VC_CWT)) {
+            return fromVpCborToVcJsonReactive(formatMap.get(VC_CWT).value().toString())
+                    .map(jsonNode -> new CredentialAttribute(PROPERTY_TYPE, jsonNode));
+        }
+        return Mono.error(new RuntimeException("No suitable format available to extract vc_json"));
+    }
+
+    private List<String> extractCredentialTypes(JsonNode vcJson) {
+        List<String> types = new ArrayList<>();
+        JsonNode typesNode = vcJson.get("type");
+        if (typesNode != null && typesNode.isArray()) {
+            typesNode.forEach(typeNode -> types.add(typeNode.asText()));
+        }
+        return types;
+    }
+
+    private CredentialEntity buildCredentialEntity(Map<String, CredentialAttribute> formatMap, CredentialStatus status, String userId, CredentialAttribute vcJsonAttribute, String vcId, List<String> types) {
+        CredentialEntity.CredentialEntityBuilder builder = CredentialEntity.builder()
+                .id(CREDENTIAL_ENTITY_PREFIX + vcId)
+                .type(CREDENTIAL_TYPE)
+                .jsonCredentialAttribute(vcJsonAttribute)
+                .credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, status))
+                .credentialTypeAttribute(new CredentialTypeAttribute(PROPERTY_TYPE, types))
+                .relationshipAttribute(new RelationshipAttribute(RELATIONSHIP_TYPE, USER_ENTITY_PREFIX + userId));
+
+        if (formatMap.containsKey(JWT_VC)) {
+            builder.jwtCredentialAttribute(formatMap.get(JWT_VC));
+        }
+        if (formatMap.containsKey(VC_CWT)) {
+            builder.cwtCredentialAttribute(formatMap.get(VC_CWT));
+        }
+        return builder.build();
+    }
 
     private Mono<JsonNode> fromVpCborToVcJsonReactive(String qrData) {
         return Mono.fromCallable(() -> {
