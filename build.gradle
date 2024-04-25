@@ -67,6 +67,8 @@ dependencies {
 	implementation 'org.apache.commons:commons-compress:1.26.1'
 
 	// JSON
+	//We will use version 2.16.2 of Jackson, as updating to 2.17.0 causes various errors with the use of ObjectMapper.
+	//The issue remains to be investigated and the version needs to be updated.
 	implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.2'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.2'
 	implementation 'org.json:json:20231013'
