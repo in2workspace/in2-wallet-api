@@ -52,6 +52,7 @@ sonar {
 						"src/main/java/es/in2/wallet/vault/adapter/hashicorp/config/**, " +
 						"src/main/java/es/in2/wallet/vault/adapter/hashicorp/model/**, " +
 						"src/main/java/es/in2/wallet/vault/util/**, " +
+						"src/main/java/es/in2/wallet/infrastructure/core/config/**, " +
 						"src/main/java/es/in2/wallet/vault/model/**"
 	}
 }
