@@ -3,8 +3,6 @@ package es.in2.wallet.domain.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.jose.JOSEObject;
-import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
@@ -12,8 +10,10 @@ import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.AuthorizationResponseService;
 import es.in2.wallet.domain.util.MessageUtils;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -36,6 +36,8 @@ import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FO
 public class AuthorizationResponseServiceImpl implements AuthorizationResponseService {
 
     private final ObjectMapper objectMapper;
+
+    private final WebClientConfig webClient;
 
     @Override
     public Mono<String> buildAndPostAuthorizationResponseWithVerifiablePresentation(String processId, VcSelectorResponse vcSelectorResponse, String verifiablePresentation, String authorizationToken) throws JsonProcessingException {
@@ -192,22 +194,23 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                     .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
                     .collect(Collectors.joining("&"));
             // Post request
-            return postRequest(vcSelectorResponse.redirectUri(), headers, xWwwFormUrlencodedBody)
-                    .flatMap(response -> {
-                        if (isJwtToken(response)) {
-                            log.info("ProcessID: {} - Authorization Response: {}", processId, response);
-                            return Mono.just(response);
-                        } else {
+
+            return webClient.centralizedWebClient()
+                    .post()
+                    .uri(vcSelectorResponse.redirectUri())
+                    .headers(httpHeaders -> headers.forEach(entry -> httpHeaders.add(entry.getKey(), entry.getValue())))
+                    .bodyValue(xWwwFormUrlencodedBody)
+                    .exchangeToMono(response -> {
+                        if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
                             return Mono.error(new RuntimeException("There was an error during the attestation exchange, error" + response));
                         }
+                        else if (response.statusCode().is3xxRedirection()) {
+                            return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
+                        }
+                        else {
+                            log.info("ProcessID: {} - Authorization Response: {}", processId, response);
+                            return response.bodyToMono(String.class);
+                        }
                     });
-    }
-    private boolean isJwtToken(String token) {
-        try {
-            Base64URL[] parts = JOSEObject.split(token);
-            return parts.length == 3;
-        } catch (ParseException e) {
-            return false;
-        }
     }
 }
