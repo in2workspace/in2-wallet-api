@@ -194,20 +194,20 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
             // Post request
             return postRequest(vcSelectorResponse.redirectUri(), headers, xWwwFormUrlencodedBody)
                     .flatMap(response -> {
-                        try {
-                            if (isJwtToken(response)) {
-                                log.info("ProcessID: {} - Authorization Response: {}", processId, response);
-                                return Mono.just(response);
-                            } else {
-                                return Mono.error(new RuntimeException("There was an error during the attestation exchange, token does not have 3 parts"));
-                            }
-                        } catch (ParseException e) {
-                            return Mono.error(new RuntimeException("There was an error during the attestation exchange, error: " + response));
+                        if (isJwtToken(response)) {
+                            log.info("ProcessID: {} - Authorization Response: {}", processId, response);
+                            return Mono.just(response);
+                        } else {
+                            return Mono.error(new RuntimeException("There was an error during the attestation exchange, error" + response));
                         }
                     });
     }
-    private boolean isJwtToken(String token) throws ParseException {
-        Base64URL[] parts = JOSEObject.split(token);
-        return parts.length == 3;
+    private boolean isJwtToken(String token) {
+        try {
+            Base64URL[] parts = JOSEObject.split(token);
+            return parts.length == 3;
+        } catch (ParseException e) {
+            return false;
+        }
     }
 }
