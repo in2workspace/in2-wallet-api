@@ -115,6 +115,32 @@ class AuthorizationResponseServiceImplTest {
     }
 
     @Test
+    void buildAndPostAuthorizationResponseWithVerifiablePresentationTest_RunTimeExceptionInvalidToken() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
+            String processId = "123";
+            VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().redirectUri("redirectUri").state("state").build();
+            String verifiablePresentation = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2cCI6eyJpZCI6InMiLCJ0eXBlIjpbInMiXSwiaG9sZGVyIjoicyIsIkBjb250ZXh0IjpbInMiXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOiJleUpoYkdjaU9pSklVekkxTmlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKemRXSWlPaUl4TWpNME5UWTNPRGt3SWl3aWJtRnRaU0k2SWtwdmFHNGdSRzlsSWl3aWFXRjBJam94TlRFMk1qTTVNREl5ZlEuU2ZsS3h3UkpTTWVLS0YyUVQ0ZndwTWVKZjM2UE9rNnlKVl9hZFFzc3c1YyJ9LCJleHAiOjE3MDg3NTA2MTYsImlhdCI6MTcwODY5MDYxNiwiaXNzIjoicyIsImp0aSI6InMiLCJuYmYiOjE3MDg2OTA2MTYsInN1YiI6InMiLCJub25jZSI6InMifQ.vYJRlyEAu_DQikMv1M1avqorFE37LQhi7o49mgCLroA";
+            String authorizationToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+            String vc = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+            VerifiablePresentation expectedVerifiablePresentation = VerifiablePresentation.builder().id("id").verifiableCredential(List.of(vc, vc)).build();
+            VerifiableCredential expectedVerifiableCredential = VerifiableCredential.builder().id("id").build();
+            String expectedPresentationSubmission = "mockPresentationSubmission";
+
+            JsonNode rootNodeMock = Mockito.mock(JsonNode.class);
+            when(objectMapper.valueToTree(any())).thenReturn(rootNodeMock);
+            when(objectMapper.treeToValue(rootNodeMock, VerifiablePresentation.class)).thenReturn(expectedVerifiablePresentation);
+            when(objectMapper.treeToValue(rootNodeMock, VerifiableCredential.class)).thenReturn(expectedVerifiableCredential);
+
+            when(objectMapper.writeValueAsString(any())).thenReturn(expectedPresentationSubmission);
+            when(postRequest(any(), any(), any())).thenReturn(Mono.just("ok"));
+            StepVerifier.create(authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation, authorizationToken))
+                    .expectError(RuntimeException.class)
+                    .verify();
+        }
+
+    }
+
+    @Test
     void sendDomeAuthorizationResponse_Success() {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String vpToken = "vpToken123";
