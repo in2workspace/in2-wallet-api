@@ -3,7 +3,6 @@ package es.in2.wallet.api.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.model.VerifiableCredential;
@@ -107,9 +106,9 @@ class AuthorizationResponseServiceImplTest {
             when(objectMapper.treeToValue(rootNodeMock, VerifiableCredential.class)).thenReturn(expectedVerifiableCredential);
 
             when(objectMapper.writeValueAsString(any())).thenReturn(expectedPresentationSubmission);
-            when(postRequest(any(), any(), any())).thenReturn(Mono.just("ok"));
+            when(postRequest(any(), any(), any())).thenReturn(Mono.just(authorizationToken));
             StepVerifier.create(authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation, authorizationToken))
-                    .expectNext("ok")
+                    .expectNext(authorizationToken)
                     .verifyComplete();
         }
 

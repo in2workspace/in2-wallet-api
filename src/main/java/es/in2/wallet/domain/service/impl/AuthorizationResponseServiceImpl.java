@@ -3,10 +3,11 @@ package es.in2.wallet.domain.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.JOSEObject;
+import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
-import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.AuthorizationResponseService;
@@ -176,23 +177,37 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
     }
 
     private Mono<String> postAuthorizationResponse(String processId, VcSelectorResponse vcSelectorResponse,
-                                                   String verifiablePresentation, String presentationSubmissionString, String authorizationToken) {
-        // Headers
-        List<Map.Entry<String, String>> headers = List.of(
-                Map.entry(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM),
-                Map.entry(MessageUtils.HEADER_AUTHORIZATION, MessageUtils.BEARER + authorizationToken));
-        // Build URL encoded form data request body
-        Map<String, String> formDataMap = Map.of(
-                "state", vcSelectorResponse.state(),
-                "vp_token", verifiablePresentation,
-                "presentation_submission", presentationSubmissionString);
-        // Build the request body
-        String xWwwFormUrlencodedBody = formDataMap.entrySet().stream()
-                .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
-                .collect(Collectors.joining("&"));
-        // Post request
-        return postRequest(vcSelectorResponse.redirectUri(), headers, xWwwFormUrlencodedBody)
-                .doOnSuccess(response -> log.info("ProcessID: {} - Authorization Response: {}", processId, response))
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching Credential Issuer Metadata from the Issuer")));
+                String verifiablePresentation, String presentationSubmissionString, String authorizationToken) {
+            // Headers
+            List<Map.Entry<String, String>> headers = List.of(
+                    Map.entry(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM),
+                    Map.entry(MessageUtils.HEADER_AUTHORIZATION, MessageUtils.BEARER + authorizationToken));
+            // Build URL encoded form data request body
+            Map<String, String> formDataMap = Map.of(
+                    "state", vcSelectorResponse.state(),
+                    "vp_token", verifiablePresentation,
+                    "presentation_submission", presentationSubmissionString);
+            // Build the request body
+            String xWwwFormUrlencodedBody = formDataMap.entrySet().stream()
+                    .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
+                    .collect(Collectors.joining("&"));
+            // Post request
+            return postRequest(vcSelectorResponse.redirectUri(), headers, xWwwFormUrlencodedBody)
+                    .flatMap(response -> {
+                        try {
+                            if (isJwtToken(response)) {
+                                log.info("ProcessID: {} - Authorization Response: {}", processId, response);
+                                return Mono.just(response);
+                            } else {
+                                return Mono.error(new RuntimeException("There was an error during the attestation exchange, token does not have 3 parts"));
+                            }
+                        } catch (ParseException e) {
+                            return Mono.error(new RuntimeException("There was an error during the attestation exchange, error: " + response));
+                        }
+                    });
+    }
+    private boolean isJwtToken(String token) throws ParseException {
+        Base64URL[] parts = JOSEObject.split(token);
+        return parts.length == 3;
     }
 }

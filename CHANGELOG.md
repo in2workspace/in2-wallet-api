@@ -38,3 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Change the return value from a exception to an empty list when the user don't have any credential
 - Added the logic for selecting the credential that is wanted to be presented during the DOME presentation flow.
+
+## [v1.1.3] - 2024-04-25
+### Fixed
+- Check if the response obtained from sending the authorization response during the standard presentation flow is a jwt token, otherwise raise an exception 
