@@ -122,5 +122,15 @@ public class OrionLdAdapter implements GenericBrokerService {
                 .doOnError(e -> log.error(ERROR_UPDATING_RESOURCE_MESSAGE, e.getMessage()));
     }
 
+    @Override
+    public Mono<Void> deleteTransactionByTransactionId(String processId, String transactionId) {
+        return webClient.delete()
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
+                        "/" + transactionId)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .onErrorResume(e -> Mono.error(new NoSuchVerifiableCredentialException("Error deleting transaction with id: " + transactionId)));
+    }
 
 }

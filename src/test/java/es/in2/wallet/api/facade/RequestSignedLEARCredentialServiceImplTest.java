@@ -86,6 +86,8 @@ class RequestSignedLEARCredentialServiceImplTest {
 
         when(brokerService.updateEntity(processId, credentialId, "UpdatedCredentialEntity"))
                 .thenReturn(Mono.empty());
+        when(brokerService.deleteTransactionByTransactionId(processId,transactionEntity.id()))
+                .thenReturn(Mono.empty());
 
         StepVerifier.create(service.requestSignedLEARCredentialServiceByCredentialId(processId, userId, credentialId))
                 .verifyComplete();

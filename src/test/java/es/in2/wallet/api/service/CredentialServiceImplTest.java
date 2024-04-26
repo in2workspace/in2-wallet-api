@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.exception.FailedSerializingException;
-import es.in2.wallet.domain.model.CredentialIssuerMetadata;
-import es.in2.wallet.domain.model.CredentialOffer;
-import es.in2.wallet.domain.model.CredentialResponse;
-import es.in2.wallet.domain.model.TokenResponse;
+import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.impl.CredentialServiceImpl;
 import es.in2.wallet.domain.util.ApplicationUtils;
 import org.junit.jupiter.api.Test;
@@ -256,6 +253,35 @@ class CredentialServiceImplTest {
                     .thenAwait(Duration.ofSeconds(10))
                     .expectError(FailedDeserializingException.class)
                     .verify();
+        }
+    }
+    @Test
+    void getCredentialDomeDeferredCaseTest() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
+            String transactionId = "trans123";
+            String accessToken = "access-token";
+            String deferredEndpoint = "/deferred/endpoint";
+
+            // Expected CredentialResponse to be returned
+            CredentialResponse expectedCredentialResponse = CredentialResponse.builder().credential("credentialData").build();
+
+            List<Map.Entry<String, String>> headersForCredentialRequest  = new ArrayList<>();
+            headersForCredentialRequest.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
+            headersForCredentialRequest.add(new AbstractMap.SimpleEntry<>(HEADER_AUTHORIZATION, BEARER + accessToken));
+
+            when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
+            // Mock the response of the postCredential method
+            when(postRequest(deferredEndpoint, headersForCredentialRequest, "credentialRequest"))
+                    .thenReturn(Mono.just("response from server"));
+
+            // Configure ObjectMapper to parse the mocked response
+            when(objectMapper.readValue("response from server", CredentialResponse.class)).thenReturn(expectedCredentialResponse);
+
+            // Execute the method and verify the results
+            StepVerifier.create(credentialService.getCredentialDomeDeferredCase(transactionId, accessToken, deferredEndpoint))
+                    .expectNext(expectedCredentialResponse)
+                    .verifyComplete();
+
         }
     }
 }

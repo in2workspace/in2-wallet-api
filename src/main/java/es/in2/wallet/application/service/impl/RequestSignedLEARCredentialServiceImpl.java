@@ -47,7 +47,8 @@ public class RequestSignedLEARCredentialServiceImpl implements RequestSignedLEAR
                                             if (credentialResponse.transactionId() == null){
                                                 return brokerService.getCredentialByIdThatBelongToUser(processId,userId,credentialId)
                                                         .flatMap(credentialEntity -> userDataService.updateVCEntityWithSignedFormat(credentialEntity,credentialResponse))
-                                                        .flatMap(updatedEntity -> brokerService.updateEntity(processId,credentialId,updatedEntity));
+                                                        .flatMap(updatedEntity -> brokerService.updateEntity(processId,credentialId,updatedEntity))
+                                                        .then(brokerService.deleteTransactionByTransactionId(processId,transaction.id()));
                                             }
                                             else {
                                                 try {

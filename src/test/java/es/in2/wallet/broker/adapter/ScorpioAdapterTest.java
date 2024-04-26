@@ -322,4 +322,20 @@ class ScorpioAdapterTest {
         assertEquals("/external/entities?type=Transaction&q=" + encodedQuery, recordedRequest.getPath());
     }
 
+    @Test
+    void deleteTransactionByTransactionIdTest() throws Exception {
+        mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+        String processId = "process1";
+        String transactionId = "trans1";
+
+        StepVerifier.create(scorpioAdapter.deleteTransactionByTransactionId(processId, transactionId))
+                .verifyComplete();
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("DELETE", recordedRequest.getMethod());
+        assertEquals("/external/entities/" + transactionId, recordedRequest.getPath());
+    }
+
+
 }

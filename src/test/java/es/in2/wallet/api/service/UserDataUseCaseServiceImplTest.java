@@ -568,6 +568,61 @@ class UserDataUseCaseServiceImplTest {
         verify(objectMapper).readValue(transactionEntityJson, TransactionEntity.class);
     }
 
+    @Test
+    void testSaveDOMEUnsignedCredential() throws JsonProcessingException {
+        String userId = "123";
+        String jsonCredential = """
+                        {
+                            "type": [
+                                "VerifiableCredential",
+                                "LEARCredentialEmployee"
+                            ],
+                            "@context": [
+                                "https://www.w3.org/2018/credentials/v1",
+                                "https://dome-marketplace.eu//2022/credentials/learcredential/v1"
+                            ],
+                            "id": "vc1",
+                            "issuer": "did:key:zQ3shtcEQP3yuxbkZ1SjN51T8fQmRyXnjrXm8E84WLXKDQbRn",
+                            "issuanceDate": "2023-10-24T08:07:35Z",
+                            "issued": "2023-10-24T08:07:35Z",
+                            "validFrom": "2023-10-24T08:07:35Z",
+                            "expirationDate": "2023-11-23T08:07:35Z",
+                            "credentialSubject": {
+                                "id": "did:example:123"
+                            }
+                        }
+                """;
+
+        JsonNode jsonNode = new ObjectMapper().readTree(jsonCredential);
+
+        CredentialEntity credentialEntity = CredentialEntity.builder()
+                .id(CREDENTIAL_ENTITY_PREFIX + "vc1")
+                .type(CREDENTIAL_TYPE)
+                .credentialTypeAttribute(CredentialTypeAttribute.builder()
+                        .type(PROPERTY_TYPE)
+                        .value(List.of("VerifiableCredential","LEARCredentialEmployee"))
+                        .build())
+                .jsonCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE,jsonNode))
+                .credentialStatusAttribute(CredentialStatusAttribute.builder()
+                        .type(PROPERTY_TYPE)
+                        .credentialStatus(CredentialStatus.ISSUED).build())
+                .jwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE,""))
+                .relationshipAttribute(new RelationshipAttribute(RELATIONSHIP_TYPE, USER_ENTITY_PREFIX + userId))
+                .build();
+
+        when(objectMapper.readTree(jsonCredential)).thenReturn(jsonNode);
+
+        ObjectWriter mockWriter = mock(ObjectWriter.class);
+        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
+        when(mockWriter.writeValueAsString(credentialEntity)).thenReturn("CredentialEntity");
+
+        StepVerifier.create(userDataServiceImpl.saveDOMEUnsignedCredential(userId, jsonCredential))
+                .expectNext("CredentialEntity")
+                .verifyComplete();
+
+    }
+
+
 //    @Test
 //    void testGetUserVCsInJsonDateTimeParseException() throws Exception {
 //        String credentialsJson = "credentialsJson";

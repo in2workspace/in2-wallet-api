@@ -20,7 +20,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
-import static es.in2.wallet.domain.util.MessageUtils.*;
+import static es.in2.wallet.domain.util.MessageUtils.ATTRIBUTES;
+import static es.in2.wallet.domain.util.MessageUtils.USER_ENTITY_PREFIX;
 
 @Slf4j
 @Component
@@ -134,6 +135,18 @@ public class ScorpioAdapter implements GenericBrokerService {
                 .doOnError(e -> log.debug("Error updating entity"))
                 .onErrorResume(Exception.class, Mono::error);
     }
+
+    @Override
+    public Mono<Void> deleteTransactionByTransactionId(String processId, String transactionId) {
+        return webClient.delete()
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
+                        "/" + transactionId)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .onErrorResume(e -> Mono.error(new NoSuchVerifiableCredentialException("Error deleting transaction with id: " + transactionId)));
+    }
+
     private MediaType getContentTypeAndAcceptMediaType(String requestBody) {
         try {
             JsonNode jsonNode = objectMapper.readTree(requestBody);

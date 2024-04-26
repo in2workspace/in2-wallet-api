@@ -43,5 +43,8 @@ public class BrokerServiceImpl implements BrokerService {
     public Mono<String> getTransactionThatIsLinkedToACredential(String processId, String credentialId) {
         return brokerAdapter.getTransactionThatIsLinkedToACredential(processId,credentialId);
     }
+    public Mono<Void> deleteTransactionByTransactionId(String processId, String transactionId){
+        return brokerAdapter.deleteTransactionByTransactionId(processId,transactionId);
+    }
     
 }
