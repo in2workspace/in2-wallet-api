@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 @ConfigurationPropertiesScan
-public class WalletServerApplication {
+public class WalletApiApplication {
 
 	private static final ObjectMapper OBJECT_MAPPER =
 			JsonMapper.builder()
@@ -20,7 +20,7 @@ public class WalletServerApplication {
 					.build();
 
 	public static void main(String[] args) {
-		SpringApplication.run(WalletServerApplication.class, args);
+		SpringApplication.run(WalletApiApplication.class, args);
 	}
 
 	@Bean

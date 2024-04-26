@@ -33,26 +33,12 @@ checkstyleTest {
 
 sonar {
 	properties {
-		property 'sonar.projectName', 'Wallet Server'
+		property 'sonar.projectName', 'Wallet API'
 		property 'sonar.projectKey', 'in2workspace_wallet-server'
 		property 'sonar.organization', 'in2workspace'
 		property 'sonar.host.url', 'https://sonarcloud.io'
 		property 'sonar.coverage.exclusions',
-				"src/main/java/es/in2/wallet/WalletServerApplication.java, " +
-						"src/main/java/es/in2/wallet/api/config/**, " +
-						"src/main/java/es/in2/wallet/api/model/**, " +
-						"src/main/java/es/in2/wallet/api/util/**, " +
-						"src/main/java/es/in2/wallet/api/ebsi/comformance/config/**, " +
-						"src/main/java/es/in2/wallet/broker/config/**, " +
-						"src/main/java/es/in2/wallet/broker/util/**, " +
-						"src/main/java/es/in2/wallet/configuration/adapter/azure/config/**, " +
-						"src/main/java/es/in2/wallet/configuration/model/**, " +
-						"src/main/java/es/in2/wallet/configuration/util/**, " +
-						"src/main/java/es/in2/wallet/vault/adapter/azure/config/**, " +
-						"src/main/java/es/in2/wallet/vault/adapter/hashicorp/config/**, " +
-						"src/main/java/es/in2/wallet/vault/adapter/hashicorp/model/**, " +
-						"src/main/java/es/in2/wallet/vault/util/**, " +
-						"src/main/java/es/in2/wallet/vault/model/**"
+				"src/main/java/es/in2/wallet/WalletApiApplication.java"
 	}
 }
 
@@ -177,14 +163,7 @@ tasks.jacocoTestReport {
 	afterEvaluate {
 		classDirectories.setFrom(files(classDirectories.files.collect {
 			fileTree(dir: it, exclude: [
-					"src/main/java/es/in2/wallet/WalletServerApplication.java",
-					"src/main/java/es/in2/wallet/api/config/**",
-					"src/main/java/es/in2/wallet/api/model/**",
-					"src/main/java/es/in2/wallet/api/util/**",
-					"src/main/java/es/in2/wallet/api/ebsi/comformance/config/**" +
-					"src/main/java/es/in2/wallet/broker/config/properties/**",
-					"**/configuration/**",
-					"**/util/**"
+					"src/main/java/es/in2/wallet/WalletApiApplication.java"
 			])
 		}))
 	}

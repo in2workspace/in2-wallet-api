@@ -18,12 +18,14 @@ public class WebClientConfig {
             .maxLifeTime(Duration.ofSeconds(300))
             .evictInBackground(Duration.ofSeconds(80))
             .build();
+
     @Bean
     public WebClient centralizedWebClient() {
         return WebClient.builder()
                 .clientConnector(new ReactorClientHttpConnector(
-                HttpClient.create(connectionProvider)
-                        .followRedirect(false)
-                )).build();
+                        HttpClient.create(connectionProvider).followRedirect(false))
+                )
+                .build();
     }
+
 }
