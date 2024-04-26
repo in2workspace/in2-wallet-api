@@ -233,7 +233,7 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
         return processUserEntity(processId, authorizationToken, List.of(credential))
                 .then(Mono.defer(() -> {
                     try {
-                        JsonNode credentialJson = objectMapper.readTree(credential.credential().toString());
+                        JsonNode credentialJson = objectMapper.readTree(credential.credential());
                         String credentialId = credentialJson.get("id").asText();
                         return userDataService.saveTransaction(credentialId, credential.transactionId(), tokenResponse.accessToken(), credentialIssuerMetadata.deferredCredentialEndpoint());
                     } catch (JsonProcessingException e) {
