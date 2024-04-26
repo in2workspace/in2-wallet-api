@@ -78,7 +78,7 @@ class CredentialIssuanceServiceImplTest {
             AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().build();
             CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").build();
             TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
-            CredentialResponse credentialResponse = CredentialResponse.builder().build();
+            CredentialResponse credentialResponse = CredentialResponse.builder().credential("ey1234").build();
             String did = "did:ebsi:123";
             String userEntity = "existingUserEntity";
             String credentialEntity = "credentialEntity";
@@ -116,7 +116,7 @@ class CredentialIssuanceServiceImplTest {
             AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().build();
             CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").build();
             TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
-            CredentialResponse credentialResponse = CredentialResponse.builder().build();
+            CredentialResponse credentialResponse = CredentialResponse.builder().credential("ey1234").build();
             String did = "did:ebsi:123";
             String userEntity = "existingUserEntity";
             String credentialEntity = "credentialEntity";
@@ -157,7 +157,7 @@ class CredentialIssuanceServiceImplTest {
             AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().build();
             CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").build();
             TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
-            CredentialResponse credentialResponse = CredentialResponse.builder().build();
+            CredentialResponse credentialResponse = CredentialResponse.builder().credential("ey1234").build();
             String did = "did:ebsi:123";
             String userEntity = "existingUserEntity";
             String credentialEntity = "credentialEntity";
@@ -200,7 +200,7 @@ class CredentialIssuanceServiceImplTest {
             AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().build();
             CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").build();
             TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
-            CredentialResponse credentialResponse = CredentialResponse.builder().build();
+            CredentialResponse credentialResponse = CredentialResponse.builder().credential("ey1234").build();
             String did = "did:ebsi:123";
             String userEntity = "existingUserEntity";
             String credentialEntity = "credentialEntity";
@@ -313,7 +313,7 @@ class CredentialIssuanceServiceImplTest {
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(credentialResponse));
             when(brokerService.getUserEntityById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
-            when(userDataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
+            when(userDataService.saveDOMEUnsignedCredential("userId", credentialResponse.credential())).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
             when(objectMapper.readTree(anyString())).thenReturn(jsonNodeCredential);
             when(userDataService.saveTransaction(

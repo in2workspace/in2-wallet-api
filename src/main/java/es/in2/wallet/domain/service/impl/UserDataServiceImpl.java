@@ -92,8 +92,8 @@ public class UserDataServiceImpl implements UserDataService {
             return Mono.error(new IllegalArgumentException(String.join(", ", errors)));
         }
 
-        // Determine the status of the credential based on the presence of signed formats
-        CredentialStatus status = determineCredentialStatus(formatMap);
+        // Since only signed formats will be processed, the status is always VALID
+        CredentialStatus status = CredentialStatus.VALID;
         // Build and save the credential entity based on the processed data
         return buildAndSaveCredentialEntity(formatMap, status, userId)
                 .doOnSuccess(entity -> log.info("Verifiable Credential saved successfully: {}", entity))
@@ -112,9 +112,6 @@ public class UserDataServiceImpl implements UserDataService {
                 case VC_CWT:
                     formatMap.put(VC_CWT, new CredentialAttribute(PROPERTY_TYPE, cred.credential()));
                     break;
-                case VC_JSON:
-                    formatMap.put(VC_JSON, new CredentialAttribute(PROPERTY_TYPE, cred.credential()));
-                    break;
                 default:
                     errors.add("Unsupported credential format: " + cred.format());
                     break;
@@ -122,13 +119,9 @@ public class UserDataServiceImpl implements UserDataService {
         });
     }
 
-    private CredentialStatus determineCredentialStatus(Map<String, CredentialAttribute> formatMap) {
-        return (formatMap.containsKey(JWT_VC) || formatMap.containsKey(VC_CWT)) ? CredentialStatus.VALID : CredentialStatus.ISSUED;
-    }
-
     private Mono<String> buildAndSaveCredentialEntity(Map<String, CredentialAttribute> formatMap, CredentialStatus status, String userId) {
-        return Mono.justOrEmpty(formatMap.get(VC_JSON))
-                .switchIfEmpty(extractVcJsonIfNecessary(formatMap))
+        // Always extract vc_json from a signed format
+        return extractVcJsonFromSignedFormat(formatMap)
                 .flatMap(vcJsonAttribute -> extractVerifiableCredentialIdFromVcJson((JsonNode) vcJsonAttribute.value())
                         .flatMap(vcId -> {
                             List<String> types = extractCredentialTypes((JsonNode) vcJsonAttribute.value());
@@ -137,7 +130,7 @@ public class UserDataServiceImpl implements UserDataService {
                         }));
     }
 
-    private Mono<CredentialAttribute> extractVcJsonIfNecessary(Map<String, CredentialAttribute> formatMap) {
+    private Mono<CredentialAttribute> extractVcJsonFromSignedFormat(Map<String, CredentialAttribute> formatMap) {
         if (formatMap.containsKey(JWT_VC)) {
             return extractVcJsonFromVcJwt(formatMap.get(JWT_VC).value().toString())
                     .map(jsonNode -> new CredentialAttribute(PROPERTY_TYPE, jsonNode));
@@ -145,7 +138,7 @@ public class UserDataServiceImpl implements UserDataService {
             return fromVpCborToVcJsonReactive(formatMap.get(VC_CWT).value().toString())
                     .map(jsonNode -> new CredentialAttribute(PROPERTY_TYPE, jsonNode));
         }
-        return Mono.error(new RuntimeException("No suitable format available to extract vc_json"));
+        return Mono.error(new RuntimeException("No signed format available to extract vc_json"));
     }
 
     private List<String> extractCredentialTypes(JsonNode vcJson) {
@@ -174,6 +167,7 @@ public class UserDataServiceImpl implements UserDataService {
         }
         return builder.build();
     }
+
 
     private Mono<JsonNode> fromVpCborToVcJsonReactive(String qrData) {
         return Mono.fromCallable(() -> {
@@ -475,25 +469,11 @@ public class UserDataServiceImpl implements UserDataService {
                                 .id(credentialEntity.id())
                                 .type(credentialEntity.type())
                                 .jsonCredentialAttribute(credentialEntity.jsonCredentialAttribute())
-                                .relationshipAttribute(credentialEntity.relationshipAttribute());
-
-                        // Check the format of the signed credential and update the entity accordingly.
-                        switch (signedCredential.format()) {
-                            case JWT_VC:
-                                // Set the JWT credential attribute if the format is JWT.
-                                updatedCredentialEntity.jwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, signedCredential.credential()));
-                                break;
-                            case VC_CWT:
-                                // Set the CWT credential attribute if the format is CWT.
-                                updatedCredentialEntity.cwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, signedCredential.credential()));
-                                break;
-                            default:
-                                // Return an error if the credential format is unsupported.
-                                return Mono.error(new IllegalArgumentException("Unsupported credential format: " + signedCredential.format()));
-                        }
-
-                        // Change the credential status to ISSUED since it is now signed.
-                        updatedCredentialEntity.credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, CredentialStatus.VALID));
+                                .relationshipAttribute(credentialEntity.relationshipAttribute())
+                                // Since only JWT is expected, directly set the JWT credential attribute.
+                                .jwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, signedCredential.credential()))
+                                // Change the credential status to VALID since it is now signed.
+                                .credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, CredentialStatus.VALID));
 
                         // Serialize the updated credential entity back to JSON and convert to string.
                         return deserializeEntityToString(updatedCredentialEntity.build());
@@ -503,6 +483,7 @@ public class UserDataServiceImpl implements UserDataService {
                     }
                 });
     }
+
 
 
 
@@ -537,6 +518,41 @@ public class UserDataServiceImpl implements UserDataService {
                     }
                 });
     }
+
+    @Override
+    public Mono<String> saveDOMEUnsignedCredential(String userId, String credentialJson) {
+        return Mono.just(credentialJson)
+                .flatMap(json -> {
+                    try {
+                        // Parse the JSON to extract necessary information.
+                        JsonNode vcJson = objectMapper.readTree(credentialJson);
+                        String credentialId = vcJson.path("id").asText(); // Extract the ID from the JSON.
+
+                        List<String> types = new ArrayList<>();
+                        JsonNode typesNode = vcJson.get("type");
+                        if (typesNode != null && typesNode.isArray()) {
+                            typesNode.forEach(typeNode -> types.add(typeNode.asText()));
+                        }
+
+                        // Create a new credential entity with the state ISSUED and store it in JSON format.
+                        CredentialEntity newCredentialEntity = CredentialEntity.builder()
+                                .id(CREDENTIAL_ENTITY_PREFIX + credentialId) // Prefix ID to maintain uniqueness.
+                                .type(CREDENTIAL_TYPE) // Set the credential type.
+                                .jsonCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, vcJson)) // Store the entire JSON as the credential.
+                                .credentialTypeAttribute(new CredentialTypeAttribute(PROPERTY_TYPE, types)) // Set the credential types extracted from JSON.
+                                .credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, CredentialStatus.ISSUED)) // Set the credential status to ISSUED.
+                                .relationshipAttribute(new RelationshipAttribute(RELATIONSHIP_TYPE, USER_ENTITY_PREFIX + userId)) // Set the relationship attribute linking the credential to a user.
+                                .build();
+
+                        // Serialize the updated credential entity back to JSON and convert it to a string.
+                        return deserializeEntityToString(newCredentialEntity);
+                    } catch (JsonProcessingException e) {
+                        // Handle any JSON parsing errors that occur during the process.
+                        return Mono.error(new ParseErrorException("Error processing JSON for new credential: " + e));
+                    }
+                });
+    }
+
 
 
 

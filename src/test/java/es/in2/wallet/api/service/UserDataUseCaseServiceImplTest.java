@@ -505,26 +505,6 @@ class UserDataUseCaseServiceImplTest {
     }
 
     @Test
-    void testUpdateVCEntityWithUnsupportedFormat() throws JsonProcessingException {
-        String credentialEntityJson = "{\"id\":\"cred123\", \"type\":\"Credential\"}";
-        String unsupportedCredential = "unsupportedCredentialExample";
-        CredentialResponse signedCredential = CredentialResponse.builder().credential(unsupportedCredential).format("invalid format").build();
-
-        CredentialEntity credentialEntity = CredentialEntity.builder()
-                .id("cred123")
-                .type("Credential")
-                .build();
-
-        when(objectMapper.readValue(credentialEntityJson, CredentialEntity.class)).thenReturn(credentialEntity);
-
-        StepVerifier.create(userDataServiceImpl.updateVCEntityWithSignedFormat(credentialEntityJson, signedCredential))
-                .expectError(IllegalArgumentException.class)
-                .verify();
-
-        verify(objectMapper).readValue(credentialEntityJson, CredentialEntity.class);
-    }
-
-    @Test
     void testUpdateTransactionWithNewTransactionId() throws JsonProcessingException {
         String transactionEntityJson = "{\"id\":\"trans123\", \"type\":\"Transaction\", \"transactionDataAttribute\":{\"type\":\"Property\", \"value\":{\"transactionId\":\"oldTransId\", \"accessToken\":\"access123\", \"deferredEndpoint\":\"https://example.com/callback\"}}, \"relationshipAttribute\":{\"type\":\"Relationship\", \"object\":\"cred123\"}}";
         String newTransactionId = "newTransId";

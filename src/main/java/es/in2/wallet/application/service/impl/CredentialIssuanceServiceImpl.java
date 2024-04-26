@@ -10,6 +10,7 @@ import es.in2.wallet.domain.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -169,24 +170,41 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
      */
     private Mono<Void> persistCredential(String processId, String userId, List<CredentialResponse> credentials) {
         log.info("ProcessId: {} - Updating User Entity", processId);
-        return userDataService.saveVC(userId, credentials)
-                .flatMap(credentialEntity ->
-                                brokerService.postEntity(processId, credentialEntity));
+        return Flux.fromIterable(credentials)
+                .flatMap(cred -> {
+                    // Check if transactionId is present and choose the appropriate method to save the VC
+                    if (cred.transactionId() == null) {
+                        return userDataService.saveVC(userId, credentials);
+                    } else {
+                        return userDataService.saveDOMEUnsignedCredential(userId, cred.credential());
+                    }
+                })
+                .flatMap(credentialEntity -> brokerService.postEntity(processId, credentialEntity))
+                .then();
     }
+
 
     /**
      * Handles the creation of a new user entity if it does not exist.
-     * After creation, the entity is updated with the DID information.
      * This involves creating the user, posting the entity, saving the DID to the entity, updating the entity with the DID, retrieving the updated entity, saving the VC, and performing a final update with the VC information.
      */
     private Mono<Void> createUserEntityAndPersistCredential(String processId, String userId, List<CredentialResponse> credentials) {
         log.info("ProcessId: {} - Creating and Updating User Entity", processId);
         return userDataService.createUserEntity(userId)
                 .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
-                .then(userDataService.saveVC(userId, credentials)
-                        .flatMap(credentialEntity -> brokerService.postEntity(processId, credentialEntity))
-                        .then());
+                .thenMany(Flux.fromIterable(credentials))
+                .flatMap(cred -> {
+                    // Decide the saving method based on the presence of transactionId
+                    if (cred.transactionId() == null) {
+                        return userDataService.saveVC(userId, credentials);
+                    } else {
+                        return userDataService.saveDOMEUnsignedCredential(userId, cred.credential());
+                    }
+                })
+                .flatMap(credentialEntity -> brokerService.postEntity(processId, credentialEntity))
+                .then();
     }
+
 
     private Mono<List<CredentialResponse>> getCredentialRecursive(TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce, List<CredentialResponse> credentialResponses, int index) {
         if (index >= credentialOffer.credentials().size()) {
