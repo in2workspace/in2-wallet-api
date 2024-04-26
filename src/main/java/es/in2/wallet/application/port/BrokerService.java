@@ -1,7 +1,5 @@
 package es.in2.wallet.application.port;
 
-import es.in2.wallet.domain.exception.NoSuchVerifiableCredentialException;
-import org.springframework.http.MediaType;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
