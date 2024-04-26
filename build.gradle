@@ -183,7 +183,6 @@ tasks.jacocoTestReport {
 					"src/main/java/es/in2/wallet/api/util/**",
 					"src/main/java/es/in2/wallet/api/ebsi/comformance/config/**" +
 					"src/main/java/es/in2/wallet/broker/config/properties/**",
-					"**/config/**",
 					"**/configuration/**",
 					"**/util/**"
 			])
