@@ -3,6 +3,7 @@ package es.in2.wallet.api.facade;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.service.impl.RequestSignedLEARCredentialServiceImpl;
 import es.in2.wallet.domain.exception.CredentialNotAvailableException;
@@ -27,6 +28,7 @@ import static es.in2.wallet.domain.util.MessageUtils.JWT_VC;
 import static es.in2.wallet.domain.util.MessageUtils.PROPERTY_TYPE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -120,6 +122,9 @@ class RequestSignedLEARCredentialServiceImplTest {
                 .thenReturn(Mono.just(transactionJson));
         when(objectMapper.readValue(eq(transactionJson), any(TypeReference.class)))
                 .thenReturn(transactions);
+        ObjectWriter mockWriter = mock(ObjectWriter.class);
+        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
+        when(mockWriter.writeValueAsString(transactionEntity)).thenReturn("transaction entity");
         when(credentialService.getCredentialDomeDeferredCase(
                 transactionEntity.transactionDataAttribute().value().transactionId(),
                 transactionEntity.transactionDataAttribute().value().accessToken(),
@@ -127,7 +132,7 @@ class RequestSignedLEARCredentialServiceImplTest {
         ))
                 .thenReturn(Mono.just(credentialResponse));
 
-        when(userDataService.updateTransactionWithNewTransactionId(transactionJson, "newTransId"))
+        when(userDataService.updateTransactionWithNewTransactionId("transaction entity", "newTransId"))
                 .thenReturn(Mono.just(updatedTransactionJson));
         when(brokerService.updateEntity(processId, transactionEntity.id(), updatedTransactionJson))
                 .thenReturn(Mono.empty());

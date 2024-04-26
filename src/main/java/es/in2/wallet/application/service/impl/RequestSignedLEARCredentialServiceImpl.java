@@ -1,5 +1,6 @@
 package es.in2.wallet.application.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.BrokerService;
@@ -49,9 +50,14 @@ public class RequestSignedLEARCredentialServiceImpl implements RequestSignedLEAR
                                                         .flatMap(updatedEntity -> brokerService.updateEntity(processId,credentialId,updatedEntity));
                                             }
                                             else {
-                                                return userDataService.updateTransactionWithNewTransactionId(transactionEntity,credentialResponse.transactionId())
-                                                        .flatMap(updatedEntity -> brokerService.updateEntity(processId,transaction.id(),updatedEntity))
-                                                        .then(Mono.error(new CredentialNotAvailableException("The signed credential it's not available yet")));
+                                                try {
+                                                    return userDataService.updateTransactionWithNewTransactionId(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(transaction),credentialResponse.transactionId())
+                                                            .flatMap(updatedEntity -> brokerService.updateEntity(processId,transaction.id(),updatedEntity))
+                                                            .then(Mono.error(new CredentialNotAvailableException("The signed credential it's not available yet")));
+                                                }
+                                                catch (JsonProcessingException e) {
+                                                    return Mono.error(new RuntimeException("Error processing : " + transactionEntity));
+                                                }
                                             }
                                         });
                             }

@@ -468,6 +468,7 @@ public class UserDataServiceImpl implements UserDataService {
                         CredentialEntity.CredentialEntityBuilder updatedCredentialEntity = CredentialEntity.builder()
                                 .id(credentialEntity.id())
                                 .type(credentialEntity.type())
+                                .credentialTypeAttribute(credentialEntity.credentialTypeAttribute())
                                 .jsonCredentialAttribute(credentialEntity.jsonCredentialAttribute())
                                 .relationshipAttribute(credentialEntity.relationshipAttribute())
                                 // Since only JWT is expected, directly set the JWT credential attribute.
@@ -540,6 +541,7 @@ public class UserDataServiceImpl implements UserDataService {
                                 .type(CREDENTIAL_TYPE) // Set the credential type.
                                 .jsonCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, vcJson)) // Store the entire JSON as the credential.
                                 .credentialTypeAttribute(new CredentialTypeAttribute(PROPERTY_TYPE, types)) // Set the credential types extracted from JSON.
+                                .jwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, "")) // Set the jwt credential empty because we don't have the signed format yet
                                 .credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, CredentialStatus.ISSUED)) // Set the credential status to ISSUED.
                                 .relationshipAttribute(new RelationshipAttribute(RELATIONSHIP_TYPE, USER_ENTITY_PREFIX + userId)) // Set the relationship attribute linking the credential to a user.
                                 .build();
