@@ -17,10 +17,6 @@ java {
 	sourceCompatibility = '17'
 }
 
-jacoco {
-	toolVersion = '0.8.11'
-}
-
 checkstyle {
 	configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
 }
@@ -50,11 +46,6 @@ configurations {
 	}
 }
 
-repositories {
-	mavenCentral()
-	maven { url 'https://jitpack.io' }
-}
-
 // Apply dependency resolution rules to force specific versions
 configurations.configureEach {
 	resolutionStrategy {
@@ -66,21 +57,12 @@ configurations.configureEach {
 	}
 }
 
-def isNonStable = { String version ->
-	def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { it -> version.toUpperCase().contains(it) }
-	def regex = /^[0-9,.v-]+(-r)?$/
-	return !stableKeyword && !(version ==~ regex)
+repositories {
+	mavenCentral()
+	maven { url 'https://jitpack.io' }
 }
-
-tasks.named("dependencyUpdates").configure {
-	rejectVersionIf {
-		isNonStable(it.candidate.version)
-	}
-}
-
 
 dependencies {
-
 	// Spring
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 //	implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -167,6 +149,18 @@ tasks.jacocoTestReport {
 					"src/main/java/es/in2/wallet/WalletApiApplication.java"
 			])
 		}))
+	}
+}
+
+def isNonStable = { String version ->
+	def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { it -> version.toUpperCase().contains(it) }
+	def regex = /^[0-9,.v-]+(-r)?$/
+	return !stableKeyword && !(version ==~ regex)
+}
+
+tasks.named("dependencyUpdates").configure {
+	rejectVersionIf {
+		isNonStable(it.candidate.version)
 	}
 }
 
