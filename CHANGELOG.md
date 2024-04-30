@@ -4,12 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.2.0](https://github.com/in2workspace/wallet-server/releases/tag/v1.2.0) - 2024-04-24
+## [v1.2.0](https://github.com/in2workspace/wallet-server/releases/tag/v1.2.0) - 2024-04-30
 ### Added
 - Feature for requesting the Signed Credential described in the [OIDC4VCI DOME Profile Deferred Flow - 8 February 2024](https://dome-marketplace.github.io/OpenID4VCI-DOMEprofile/openid-4-verifiable-credential-issuance-wg-draft.html).
 - Implement lifecycle status management for the credentials based on [EUDI DOC ARF v1.3.0](https://github.com/eu-digital-identity-wallet/eudi-doc-architecture-and-reference-framework/blob/main/docs/arf.md#422-pid-and-qeaa-lifecycles).
 ### Changed
 - New Context Broker entities model [Wallet Technical Documentation](./docs/wallet-technical-document.md#data-model).
+
+## [v1.1.3](https://github.com/in2workspace/wallet-server/releases/tag/v1.2.0) - 2024-04-25
+### Fixed
+- Added WebClient bean
+- Modify post request in the process of sending the authorization response during the standard presentation flow
 
 ## [v1.1.2](https://github.com/in2workspace/wallet-server/releases/tag/v1.1.2) - 2024-04-04
 ### Fixed
