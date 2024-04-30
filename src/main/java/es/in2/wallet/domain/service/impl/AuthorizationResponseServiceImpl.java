@@ -6,13 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
-import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.AuthorizationResponseService;
 import es.in2.wallet.domain.util.MessageUtils;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -36,11 +37,16 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
 
     private final ObjectMapper objectMapper;
 
+    private final WebClientConfig webClient;
+
     @Override
     public Mono<String> buildAndPostAuthorizationResponseWithVerifiablePresentation(String processId, VcSelectorResponse vcSelectorResponse, String verifiablePresentation, String authorizationToken) throws JsonProcessingException {
         return generateDescriptorMapping(verifiablePresentation)
-                .flatMap(descriptorMapping -> getPresentationSubmissionAsString(processId, descriptorMapping))
-                .flatMap(presentationSubmissionString -> postAuthorizationResponse(processId, vcSelectorResponse, verifiablePresentation, presentationSubmissionString, authorizationToken));
+                .flatMap(descriptorMapping ->
+                        getPresentationSubmissionAsString(processId, descriptorMapping))
+                .flatMap(presentationSubmissionString ->
+                        postAuthorizationResponse(processId, vcSelectorResponse, verifiablePresentation,
+                                presentationSubmissionString, authorizationToken));
     }
 
     @Override
@@ -48,17 +54,14 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
         String body = "vp_token=" + vpToken;
         List<Map.Entry<String, String>> headers = new ArrayList<>();
         headers.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
-
         String urlWithState = vcSelectorResponse.redirectUri() + "?state=" + vcSelectorResponse.state();
-
-        return postRequest(urlWithState, headers,body).flatMap(message ->
-                {
-                    if (!message.equals("{}")) {
-                        return  Mono.error(new RuntimeException("There was an error during the attestation exchange, error: " + message));
-                    } else {
-                        return Mono.empty();
-                    }
-                }).then();
+        return postRequest(urlWithState, headers, body).flatMap(message -> {
+            if (!message.equals("{}")) {
+                return Mono.error(new RuntimeException("There was an error during the attestation exchange, error: " + message));
+            } else {
+                return Mono.empty();
+            }
+        }).then();
     }
 
     private Mono<DescriptorMap> generateDescriptorMapping(String verifiablePresentationString) throws JsonProcessingException {
@@ -90,11 +93,8 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
         try {
             JWT jwt = JWTParser.parse(verifiablePresentationString);
             JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
-
             JsonNode rootNode = objectMapper.valueToTree(claimsSet.getClaim("vp"));
-
             VerifiablePresentation verifiablePresentation = objectMapper.treeToValue(rootNode, VerifiablePresentation.class);
-
             return Mono.just(verifiablePresentation);
         } catch (ParseException e) {
             return Mono.error(new FailedDeserializingException("Error while deserializing Verifiable Presentation: " + e));
@@ -105,11 +105,8 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
         try {
             JWT jwt = JWTParser.parse(verifiableCredentialString);
             JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
-
             JsonNode rootNode = objectMapper.valueToTree(claimsSet.getClaim("vc"));
-
             VerifiableCredential verifiableCredential = objectMapper.treeToValue(rootNode, VerifiableCredential.class);
-
             return Mono.just(verifiableCredential);
         } catch (ParseException e) {
             return Mono.error(new FailedDeserializingException("Error while deserializing Verifiable Credential: " + e));
@@ -177,10 +174,6 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
 
     private Mono<String> postAuthorizationResponse(String processId, VcSelectorResponse vcSelectorResponse,
                                                    String verifiablePresentation, String presentationSubmissionString, String authorizationToken) {
-        // Headers
-        List<Map.Entry<String, String>> headers = List.of(
-                Map.entry(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM),
-                Map.entry(MessageUtils.HEADER_AUTHORIZATION, MessageUtils.BEARER + authorizationToken));
         // Build URL encoded form data request body
         Map<String, String> formDataMap = Map.of(
                 "state", vcSelectorResponse.state(),
@@ -191,8 +184,22 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                 .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
                 .collect(Collectors.joining("&"));
         // Post request
-        return postRequest(vcSelectorResponse.redirectUri(), headers, xWwwFormUrlencodedBody)
-                .doOnSuccess(response -> log.info("ProcessID: {} - Authorization Response: {}", processId, response))
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching Credential Issuer Metadata from the Issuer")));
+        return webClient.centralizedWebClient()
+                .post()
+                .uri(vcSelectorResponse.redirectUri())
+                .contentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED)
+                .header(HttpHeaders.AUTHORIZATION, MessageUtils.BEARER + authorizationToken)
+                .bodyValue(xWwwFormUrlencodedBody)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("There was an error during the attestation exchange, error" + response));
+                    } else if (response.statusCode().is3xxRedirection()) {
+                        return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
+                    } else {
+                        log.info("ProcessID: {} - Authorization Response: {}", processId, response);
+                        return response.bodyToMono(String.class);
+                    }
+                });
     }
+
 }
