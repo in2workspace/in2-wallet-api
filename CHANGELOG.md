@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Feature for requesting the Signed Credential described in the [OIDC4VCI DOME Profile Deferred Flow - 8 February 2024](https://dome-marketplace.github.io/OpenID4VCI-DOMEprofile/openid-4-verifiable-credential-issuance-wg-draft.html).
 - Implement lifecycle status management for the credentials based on [EUDI DOC ARF v1.3.0](https://github.com/eu-digital-identity-wallet/eudi-doc-architecture-and-reference-framework/blob/main/docs/arf.md#422-pid-and-qeaa-lifecycles).
+- Enable automatic update for dependencies.
 ### Changed
 - New Context Broker entities model [Wallet Technical Documentation](./docs/wallet-technical-document.md#data-model).
 

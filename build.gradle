@@ -6,6 +6,8 @@ plugins {
 	id 'jacoco'
 	id 'checkstyle'
 	id 'org.owasp.dependencycheck' version '9.1.0'
+	id 'com.github.ben-manes.versions' version "0.51.0"
+	id 'se.patrikerdes.use-latest-versions' version '0.2.18'
 }
 
 group = 'es.in2'
@@ -64,6 +66,18 @@ configurations.configureEach {
 	}
 }
 
+def isNonStable = { String version ->
+	def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { it -> version.toUpperCase().contains(it) }
+	def regex = /^[0-9,.v-]+(-r)?$/
+	return !stableKeyword && !(version ==~ regex)
+}
+
+tasks.named("dependencyUpdates").configure {
+	rejectVersionIf {
+		isNonStable(it.candidate.version)
+	}
+}
+
 
 dependencies {
 
@@ -73,7 +87,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
 	// CBOR Dependencies
-	implementation 'com.upokecenter:cbor:4.5.2'
+	implementation 'com.upokecenter:cbor:4.5.3'
 	implementation 'io.github.ehn-digital-green-development:base45:0.0.3'
 	implementation 'com.augustcellars.cose:cose-java:1.1.0'
 	implementation 'org.apache.commons:commons-compress:1.26.1'
@@ -81,19 +95,19 @@ dependencies {
 	// JSON
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-	implementation 'org.json:json:20231013'
+	implementation 'org.json:json:20240303'
 
 	// Resilience
 	implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j:3.1.1'
 
 	// Key Vault
-	testImplementation 'org.springframework.data:spring-data-keyvalue:3.2.3'
+	testImplementation 'org.springframework.data:spring-data-keyvalue:3.2.5'
 	implementation 'org.springframework.vault:spring-vault-core:3.1.1'
 
 	// Bounty Castle
-	implementation 'org.bouncycastle:bcprov-jdk18on:1.78'
-	implementation 'com.github.multiformats:java-multibase:v1.1.1'
-	implementation 'com.github.sthagen:erdtman-java-json-canonicalization:v1.1'
+	implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+	implementation 'com.github.multiformats:java-multibase:1.1.1'
+	implementation 'com.github.sthagen:erdtman-java-json-canonicalization:1.1'
 
 	// Azure
 	implementation 'com.azure.spring:spring-cloud-azure-starter-appconfiguration:5.11.0'
