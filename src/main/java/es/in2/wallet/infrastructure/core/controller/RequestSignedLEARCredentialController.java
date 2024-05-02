@@ -17,7 +17,7 @@ import java.util.UUID;
 import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerAndUserIdFromToken;
 
 @RestController
-@RequestMapping("/api/v1/request-singed-credential")
+@RequestMapping("/api/v1/request-signed-credential")
 @Slf4j
 @RequiredArgsConstructor
 public class RequestSignedLEARCredentialController {

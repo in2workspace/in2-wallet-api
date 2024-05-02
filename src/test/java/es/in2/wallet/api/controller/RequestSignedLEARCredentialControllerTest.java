@@ -44,7 +44,7 @@ class RequestSignedLEARCredentialControllerTest {
 
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/api/v1/request-singed-credential")
+                        .path("/api/v1/request-signed-credential")
                         .queryParam("credentialId", credentialId)
                         .build())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " +  token)
@@ -62,7 +62,7 @@ class RequestSignedLEARCredentialControllerTest {
 
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/api/v1/request-singed-credential")
+                        .path("/api/v1/request-signed-credential")
                         .queryParam("credentialId", credentialId)
                         .build())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
