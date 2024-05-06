@@ -192,17 +192,7 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
         log.info("ProcessId: {} - Creating and Updating User Entity", processId);
         return userDataService.createUserEntity(userId)
                 .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
-                .thenMany(Flux.fromIterable(credentials))
-                .flatMap(cred -> {
-                    // Decide the saving method based on the presence of transactionId
-                    if (cred.transactionId() == null) {
-                        return userDataService.saveVC(userId, credentials);
-                    } else {
-                        return userDataService.saveDOMEUnsignedCredential(userId, cred.credential());
-                    }
-                })
-                .flatMap(credentialEntity -> brokerService.postEntity(processId, credentialEntity))
-                .then();
+                .then(persistCredential(processId,userId,credentials));
     }
 
 

@@ -157,7 +157,7 @@ public class EbsiConfig {
 
 
     private Mono<String> getDidForUserCredential(String processId, String userId, String type) {
-        return brokerService.getCredentialByCredentialTypeThatBelongToUser(processId, userId, type)
+        return brokerService.getCredentialByCredentialTypeAndUserId(processId, userId, type)
                 .flatMap(credentialsJson -> {
                     try {
                         List<CredentialEntity> credentials = objectMapper.readValue(credentialsJson, new TypeReference<>() {

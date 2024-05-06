@@ -50,7 +50,7 @@ public class AttestationExchangeServiceImpl implements AttestationExchangeServic
     public Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> scope) {
         return getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> Flux.fromIterable(scope)
-                        .flatMap(element -> brokerService.getCredentialByCredentialTypeThatBelongToUser(processId, userId,element)
+                        .flatMap(element -> brokerService.getCredentialByCredentialTypeAndUserId(processId, userId,element)
                                 .flatMap(userDataService::getUserVCsInJson))
                         .collectList()  // This will collect all lists into a single list
                         .flatMap(lists -> {

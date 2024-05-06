@@ -45,7 +45,7 @@ public class DomeProfileRequestDeferredCredentialServiceImpl implements DomeProf
                                         .flatMap(credentialResponse -> {
 
                                             if (credentialResponse.transactionId() == null){
-                                                return brokerService.getCredentialByIdThatBelongToUser(processId,userId,credentialId)
+                                                return brokerService.getCredentialByAndUserId(processId,userId,credentialId)
                                                         .flatMap(credentialEntity -> userDataService.updateVCEntityWithSignedFormat(credentialEntity,credentialResponse))
                                                         .flatMap(updatedEntity -> brokerService.updateEntity(processId,credentialId,updatedEntity))
                                                         .then(brokerService.deleteTransactionByTransactionId(processId,transaction.id()));

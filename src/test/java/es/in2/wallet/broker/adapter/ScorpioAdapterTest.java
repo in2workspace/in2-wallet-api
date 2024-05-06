@@ -232,7 +232,7 @@ class ScorpioAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(scorpioAdapter.getCredentialsThatBelongToUser(processId, userId))
+        StepVerifier.create(scorpioAdapter.getCredentialsByUserId(processId, userId))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 
@@ -254,7 +254,7 @@ class ScorpioAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(scorpioAdapter.getCredentialByIdThatBelongToUser(processId, userId, credentialId))
+        StepVerifier.create(scorpioAdapter.getCredentialByIdAndUserId(processId, userId, credentialId))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 
@@ -272,7 +272,7 @@ class ScorpioAdapterTest {
 
         mockWebServer.enqueue(new MockResponse().setResponseCode(204));
 
-        StepVerifier.create(scorpioAdapter.deleteCredentialByIdThatBelongToUser(processId, userId, credentialId))
+        StepVerifier.create(scorpioAdapter.deleteCredentialByIdAndUserId(processId, userId, credentialId))
                 .verifyComplete();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
@@ -295,7 +295,7 @@ class ScorpioAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(scorpioAdapter.getCredentialByCredentialTypeThatBelongToUser(processId, userId, credentialType))
+        StepVerifier.create(scorpioAdapter.getCredentialByCredentialTypeAndUserId(processId, userId, credentialType))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 

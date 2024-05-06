@@ -67,7 +67,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<String> getCredentialsThatBelongToUser(String processId, String userId) {
+    public Mono<String> getCredentialsByUserId(String processId, String userId) {
         return webClient.get()
                 .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
                         "?type=Credential&q=belongsTo==" + USER_ENTITY_PREFIX + userId)
@@ -78,7 +78,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<String> getCredentialByIdThatBelongToUser(String processId, String userId, String credentialId) {
+    public Mono<String> getCredentialByIdAndUserId(String processId, String userId, String credentialId) {
         return webClient.get()
                 .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
                         "/" + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
@@ -89,7 +89,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<Void> deleteCredentialByIdThatBelongToUser(String processId, String userId, String credentialId) {
+    public Mono<Void> deleteCredentialByIdAndUserId(String processId, String userId, String credentialId) {
         return webClient.delete()
                 .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
                         "/" + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
@@ -100,7 +100,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<String> getCredentialByCredentialTypeThatBelongToUser(String processId, String userId, String credentialType) {
+    public Mono<String> getCredentialByCredentialTypeAndUserId(String processId, String userId, String credentialType) {
         return webClient.get()
                 .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
                         "?type=Credential&q=belongsTo==" + USER_ENTITY_PREFIX + userId + ";credentialType==" + credentialType)

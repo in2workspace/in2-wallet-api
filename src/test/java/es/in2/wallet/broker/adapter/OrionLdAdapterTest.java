@@ -153,7 +153,7 @@ class OrionLdAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(orionLdAdapter.getCredentialsThatBelongToUser(processId, userId))
+        StepVerifier.create(orionLdAdapter.getCredentialsByUserId(processId, userId))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 
@@ -175,7 +175,7 @@ class OrionLdAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(orionLdAdapter.getCredentialByIdThatBelongToUser(processId, userId, credentialId))
+        StepVerifier.create(orionLdAdapter.getCredentialByIdAndUserId(processId, userId, credentialId))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 
@@ -193,7 +193,7 @@ class OrionLdAdapterTest {
 
         mockWebServer.enqueue(new MockResponse().setResponseCode(204));
 
-        StepVerifier.create(orionLdAdapter.deleteCredentialByIdThatBelongToUser(processId, userId, credentialId))
+        StepVerifier.create(orionLdAdapter.deleteCredentialByIdAndUserId(processId, userId, credentialId))
                 .verifyComplete();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
@@ -216,7 +216,7 @@ class OrionLdAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(orionLdAdapter.getCredentialByCredentialTypeThatBelongToUser(processId, userId, credentialType))
+        StepVerifier.create(orionLdAdapter.getCredentialByCredentialTypeAndUserId(processId, userId, credentialType))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 

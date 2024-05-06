@@ -17,12 +17,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FailedCommunicationException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     @ResponseBody
-    public Mono<GlobalErrorMessage> failedCommunicationException(FailedCommunicationException ex, ServerHttpRequest request) {
+    public Mono<GlobalErrorMessage> failedCommunicationException(FailedCommunicationException failedCommunicationException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
-        log.debug("failedCommunicationException", ex);
+        log.debug("failedCommunicationException", failedCommunicationException);
         return Mono.just(GlobalErrorMessage.builder()
                 .title("FailedCommunicationException")
-                .message(ex.getMessage())
+                .message(failedCommunicationException.getMessage())
                 .path(path)
                 .build());
     }
@@ -30,11 +30,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FailedDeserializingException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
-    public Mono<GlobalErrorMessage> failedDeserializingException(FailedDeserializingException ex, ServerHttpRequest request) {
+    public Mono<GlobalErrorMessage> failedDeserializingException(FailedDeserializingException failedDeserializingException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
                 .title("FailedDeserializingException")
-                .message(ex.getMessage())
+                .message(failedDeserializingException.getMessage())
                 .path(path)
                 .build());
     }
@@ -42,11 +42,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FailedSerializingException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
-    public Mono<GlobalErrorMessage> failedSerializingException(FailedSerializingException ex, ServerHttpRequest request) {
+    public Mono<GlobalErrorMessage> failedSerializingException(FailedSerializingException failedSerializingException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
                 .title("FailedSerializingException")
-                .message(ex.getMessage())
+                .message(failedSerializingException.getMessage())
                 .path(path)
                 .build());
     }
@@ -54,11 +54,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(JwtInvalidFormatException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public Mono<GlobalErrorMessage> jwtInvalidFormatException(JwtInvalidFormatException ex, ServerHttpRequest request) {
+    public Mono<GlobalErrorMessage> jwtInvalidFormatException(JwtInvalidFormatException jwtInvalidFormatException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
                 .title("JwtInvalidFormatException")
-                .message(ex.getMessage())
+                .message(jwtInvalidFormatException.getMessage())
                 .path(path)
                 .build());
     }
@@ -66,11 +66,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoSuchQrContentException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
-    public Mono<GlobalErrorMessage> noSuchQrContentException(NoSuchQrContentException ex, ServerHttpRequest request) {
+    public Mono<GlobalErrorMessage> noSuchQrContentException(NoSuchQrContentException noSuchQrContentException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
                 .title("NoSuchQrContentException")
-                .message(ex.getMessage())
+                .message(noSuchQrContentException.getMessage())
                 .path(path)
                 .build());
     }
@@ -78,22 +78,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ParseErrorException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public Mono<GlobalErrorMessage> parseErrorException(ParseErrorException ex, ServerHttpRequest request) {
+    public Mono<GlobalErrorMessage> parseErrorException(ParseErrorException parseErrorException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
                 .title("ParseErrorException")
-                .message(ex.getMessage())
+                .message(parseErrorException.getMessage())
                 .path(path)
                 .build());
     }
     @ExceptionHandler(NoSuchVerifiableCredentialException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
-    public Mono<GlobalErrorMessage> noSuchVerifiableCredentialException(NoSuchVerifiableCredentialException ex, ServerHttpRequest request) {
+    public Mono<GlobalErrorMessage> noSuchVerifiableCredentialException(NoSuchVerifiableCredentialException noSuchVerifiableCredentialException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
                 .title("NoSuchVerifiableCredentialException")
-                .message(ex.getMessage())
+                .message(noSuchVerifiableCredentialException.getMessage())
                 .path(path)
                 .build());
     }
@@ -101,22 +101,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoSuchTransactionException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
-    public Mono<GlobalErrorMessage> noSuchTransactionException(NoSuchTransactionException ex, ServerHttpRequest request) {
+    public Mono<GlobalErrorMessage> noSuchTransactionException(NoSuchTransactionException noSuchTransactionException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
                 .title("NoSuchTransactionException")
-                .message(ex.getMessage())
+                .message(noSuchTransactionException.getMessage())
                 .path(path)
                 .build());
     }
     @ExceptionHandler(InvalidPinException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
-    public Mono<GlobalErrorMessage> invalidPinException(InvalidPinException ex, ServerHttpRequest request) {
+    public Mono<GlobalErrorMessage> invalidPinException(InvalidPinException invalidPinException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
                 .title("InvalidPinException")
-                .message(ex.getMessage())
+                .message(invalidPinException.getMessage())
                 .path(path)
                 .build());
     }
@@ -124,11 +124,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CredentialNotAvailableException.class)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ResponseBody
-    public Mono<GlobalErrorMessage> credentialNotAvailableException(CredentialNotAvailableException ex, ServerHttpRequest request) {
+    public Mono<GlobalErrorMessage> credentialNotAvailableException(CredentialNotAvailableException credentialNotAvailableException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
                 .title("CredentialNotAvailableException")
-                .message(ex.getMessage())
+                .message(credentialNotAvailableException.getMessage())
                 .path(path)
                 .build());
     }

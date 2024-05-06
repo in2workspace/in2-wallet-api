@@ -78,7 +78,7 @@ class DomeProfileRequestDeferredCredentialServiceImplTest {
                 ))
                 .thenReturn(Mono.just(credentialResponse));
 
-        when(brokerService.getCredentialByIdThatBelongToUser(processId,userId,credentialId))
+        when(brokerService.getCredentialByAndUserId(processId,userId,credentialId))
                 .thenReturn(Mono.just(credentialJson));
 
         when(userDataService.updateVCEntityWithSignedFormat(credentialJson,credentialResponse))

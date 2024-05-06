@@ -57,7 +57,7 @@ class AttestationExchangeServiceImplTest {
             when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(jwtAuthorizationRequest));
             when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestClaim(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(authorizationRequest));
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(brokerService.getCredentialByCredentialTypeThatBelongToUser(processId,"userId",authorizationRequest.scope().get(0))).thenReturn(Mono.just("credentialEntity"));
+            when(brokerService.getCredentialByCredentialTypeAndUserId(processId,"userId",authorizationRequest.scope().get(0))).thenReturn(Mono.just("credentialEntity"));
             when(userDataService.getUserVCsInJson("credentialEntity")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
 
             StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))

@@ -29,7 +29,7 @@ public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
      */
     @Override
     public Mono<List<CredentialsBasicInfo>> getUserVCs(String processId, String userId) {
-        return brokerService.getCredentialsThatBelongToUser(processId, userId)
+        return brokerService.getCredentialsByUserId(processId, userId)
                 .flatMap(userDataService::getUserVCsInJson)
                 .doOnSuccess(list -> log.info("Retrieved VCs in JSON for userId: {}", userId))
                 .onErrorResume(Mono::error);
@@ -48,10 +48,10 @@ public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
 
     @Override
     public Mono<Void> deleteVerifiableCredentialById(String processId, String credentialId, String userId) {
-        return brokerService.getCredentialByIdThatBelongToUser(processId,userId,credentialId)
+        return brokerService.getCredentialByAndUserId(processId,userId,credentialId)
                 .flatMap(userDataService::extractDidFromVerifiableCredential)
                 .flatMap(vaultService::deleteSecretByKey)
-                .then(brokerService.deleteCredentialByIdThatBelongToUser(processId,userId,credentialId))
+                .then(brokerService.deleteCredentialByIdAndUserId(processId,userId,credentialId))
                 .doOnSuccess(list -> log.info("Delete VC with Id: {}", credentialId))
                 .onErrorResume(Mono::error);
     }

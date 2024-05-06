@@ -3,7 +3,6 @@ package es.in2.wallet.api.facade;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.port.VaultService;
 import es.in2.wallet.application.service.impl.UserDataUseCaseServiceImpl;
@@ -58,14 +57,14 @@ class UserDataUseCaseServiceImplTest {
 
         List<CredentialsBasicInfo> expectedCredentials = List.of(new CredentialsBasicInfo("id1", List.of("type"), CredentialStatus.VALID,List.of("jwt_vc","cwt_vc"),credentialSubject, ZonedDateTime.now()));
 
-        when(brokerService.getCredentialsThatBelongToUser(processId, userId)).thenReturn(Mono.just(credentials));
+        when(brokerService.getCredentialsByUserId(processId, userId)).thenReturn(Mono.just(credentials));
         when(userDataService.getUserVCsInJson(credentials)).thenReturn(Mono.just(expectedCredentials));
 
         StepVerifier.create(userDataFacadeService.getUserVCs(processId, userId))
                 .expectNext(expectedCredentials)
                 .verifyComplete();
 
-        verify(brokerService).getCredentialsThatBelongToUser(processId, userId);
+        verify(brokerService).getCredentialsByUserId(processId, userId);
         verify(userDataService).getUserVCsInJson(credentials);
     }
 
@@ -78,18 +77,18 @@ class UserDataUseCaseServiceImplTest {
         String did = "did:example:123";
         String credentialEntity = "credential";
 
-        when(brokerService.getCredentialByIdThatBelongToUser(processId, userId,credentialId)).thenReturn(Mono.just(credentialEntity));
+        when(brokerService.getCredentialByAndUserId(processId, userId,credentialId)).thenReturn(Mono.just(credentialEntity));
         when(userDataService.extractDidFromVerifiableCredential(credentialEntity)).thenReturn(Mono.just(did));
         when(vaultService.deleteSecretByKey(did)).thenReturn(Mono.empty());
-        when(brokerService.deleteCredentialByIdThatBelongToUser(processId, userId, credentialId)).thenReturn(Mono.empty());
+        when(brokerService.deleteCredentialByIdAndUserId(processId, userId, credentialId)).thenReturn(Mono.empty());
 
         StepVerifier.create(userDataFacadeService.deleteVerifiableCredentialById(processId, credentialId, userId))
                 .verifyComplete();
 
-        verify(brokerService).getCredentialByIdThatBelongToUser(processId, userId,credentialId);
+        verify(brokerService).getCredentialByAndUserId(processId, userId,credentialId);
         verify(userDataService).extractDidFromVerifiableCredential(credentialEntity);
         verify(vaultService).deleteSecretByKey(did);
-        verify(brokerService).deleteCredentialByIdThatBelongToUser(processId, userId, credentialId);
+        verify(brokerService).deleteCredentialByIdAndUserId(processId, userId, credentialId);
     }
 
 }
