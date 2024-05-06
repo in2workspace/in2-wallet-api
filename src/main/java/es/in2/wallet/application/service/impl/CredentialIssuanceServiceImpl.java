@@ -85,7 +85,7 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
      * Orchestrates the flow to obtain a credential with a pre-authorized code.
      */
     private Mono<Void> getCredentialWithPreAuthorizedCodeDomeProfile(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
-        log.info("ProcessId: {} - Getting Credential with Pre-Authorized Code", processId);
+        log.info("ProcessId: {} - Getting Dome Profile Credential with Pre-Authorized Code", processId);
         return generateDid().flatMap(did ->
                 getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
                 .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0),credentialIssuerMetadata)
@@ -155,7 +155,7 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
     private Mono<Void> processUserEntity(String processId, String authorizationToken, List<CredentialResponse> credentials) {
         log.info("ProcessId: {} - Processing User Entity", processId);
         return getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> brokerService.getUserEntityById(processId, userId)
+                .flatMap(userId -> brokerService.verifyIfWalletUserExistById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
                                 .map(entity -> persistCredential(processId, userId, credentials))
                                 .orElseGet(() -> createUserEntityAndPersistCredential(processId, userId, credentials))

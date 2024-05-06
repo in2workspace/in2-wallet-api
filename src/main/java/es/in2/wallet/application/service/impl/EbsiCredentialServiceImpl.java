@@ -118,7 +118,7 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
     private Mono<Void> processUserEntity(String processId, String authorizationToken, List<CredentialResponse> credentials) {
         log.info("ProcessId: {} - Processing User Entity", processId);
         return getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> brokerService.getUserEntityById(processId, userId)
+                .flatMap(userId -> brokerService.verifyIfWalletUserExistById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
                                 .map(entity -> persistCredential(processId, userId, credentials))
                                 .orElseGet(() -> createUserEntityAndPersistCredential(processId, userId, credentials))

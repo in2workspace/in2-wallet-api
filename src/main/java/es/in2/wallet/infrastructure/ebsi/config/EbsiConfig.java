@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jboss.logging.MDC;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -48,7 +47,6 @@ public class EbsiConfig {
     private Mono<String> generateEbsiDid() {
 
         String processId = UUID.randomUUID().toString();
-        MDC.put("processId", processId);
         List<Map.Entry<String, String>> headers = new ArrayList<>();
 
         String credentialId = "urn:entities:credential:exampleCredential";
@@ -99,7 +97,7 @@ public class EbsiConfig {
                     return Mono.just(token);
                 })
                 .flatMap(ApplicationUtils::getUserIdFromToken)
-                .flatMap(userId -> brokerService.getUserEntityById(processId, userId)
+                .flatMap(userId -> brokerService.verifyIfWalletUserExistById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
                                 .map(entity -> getDidForUserCredential(processId, userId,vcType))
                                 .orElseGet(() ->

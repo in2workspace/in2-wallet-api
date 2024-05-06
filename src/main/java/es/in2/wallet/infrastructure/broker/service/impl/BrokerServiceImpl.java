@@ -21,8 +21,8 @@ public class BrokerServiceImpl implements BrokerService {
         return brokerAdapter.postEntity(processId, requestBody);
     }
 
-    public Mono<Optional<String>> getUserEntityById(String processId, String userId) {
-        return brokerAdapter.getUserEntityById(processId, userId);
+    public Mono<Optional<String>> verifyIfWalletUserExistById(String processId, String userId) {
+        return brokerAdapter.verifyIfWalletUserExistById(processId, userId);
     }
 
     public Mono<Void> updateEntity(String processId, String userId, String requestBody) {

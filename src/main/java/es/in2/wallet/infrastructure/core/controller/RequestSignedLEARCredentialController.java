@@ -1,12 +1,11 @@
 package es.in2.wallet.infrastructure.core.controller;
 
-import es.in2.wallet.application.service.RequestSignedLEARCredentialService;
+import es.in2.wallet.application.service.DomeProfileRequestDeferredCredentialService;
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +21,7 @@ import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerAndUserId
 @RequiredArgsConstructor
 public class RequestSignedLEARCredentialController {
 
-    private final RequestSignedLEARCredentialService requestSignedLEARCredentialService;
+    private final DomeProfileRequestDeferredCredentialService domeProfileRequestDeferredCredentialService;
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
@@ -40,10 +39,9 @@ public class RequestSignedLEARCredentialController {
 
         String processId = UUID.randomUUID().toString();
 
-        MDC.put("processId", processId);
         return getCleanBearerAndUserIdFromToken(authorizationHeader)
                 .flatMap(userId ->
-                        requestSignedLEARCredentialService.requestSignedLEARCredentialServiceByCredentialId(processId,userId,credentialId));
+                        domeProfileRequestDeferredCredentialService.requestSignedLEARCredentialServiceByCredentialId(processId,userId,credentialId));
     }
 
 }

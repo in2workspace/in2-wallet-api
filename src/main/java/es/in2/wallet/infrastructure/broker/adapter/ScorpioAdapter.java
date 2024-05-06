@@ -53,7 +53,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<Optional<String>> getUserEntityById(String processId, String userId) {
+    public Mono<Optional<String>> verifyIfWalletUserExistById(String processId, String userId) {
         return webClient.get()
                 .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + USER_ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)

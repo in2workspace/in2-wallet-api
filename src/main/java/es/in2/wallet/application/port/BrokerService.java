@@ -8,7 +8,7 @@ public interface BrokerService {
 
     Mono<Void> postEntity(String processId, String requestBody);
 
-    Mono<Optional<String>> getUserEntityById(String processId, String userId);
+    Mono<Optional<String>> verifyIfWalletUserExistById(String processId, String userId);
     Mono<String> getCredentialsThatBelongToUser(String processId, String userId);
     Mono<String> getCredentialByIdThatBelongToUser(String processId, String  userId, String credentialId);
     Mono<Void> deleteCredentialByIdThatBelongToUser(String processId, String  userId, String credentialId);

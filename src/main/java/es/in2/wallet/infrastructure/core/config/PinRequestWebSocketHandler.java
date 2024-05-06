@@ -2,6 +2,7 @@ package es.in2.wallet.infrastructure.core.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.WebSocketClientMessage;
 import es.in2.wallet.domain.model.WebSocketServerMessage;
 import jakarta.validation.constraints.NotNull;
@@ -90,6 +91,7 @@ public class PinRequestWebSocketHandler implements WebSocketHandler {
             session.send(Mono.just(session.textMessage(jsonMessage))).subscribe();
         } catch (JsonProcessingException e) {
             log.error("Error serializing WebSocketServerMessage", e);
+            throw new ParseErrorException("Error serializing WebSocketServerMessage");
         }
     }
 

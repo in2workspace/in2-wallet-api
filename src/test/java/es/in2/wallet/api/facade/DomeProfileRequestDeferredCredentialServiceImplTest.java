@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.service.impl.RequestSignedLEARCredentialServiceImpl;
+import es.in2.wallet.application.service.impl.DomeProfileRequestDeferredCredentialServiceImpl;
 import es.in2.wallet.domain.exception.CredentialNotAvailableException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.CredentialResponse;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class RequestSignedLEARCredentialServiceImplTest {
+class DomeProfileRequestDeferredCredentialServiceImplTest {
 
     @Mock
     private BrokerService brokerService;
@@ -44,7 +44,7 @@ class RequestSignedLEARCredentialServiceImplTest {
     private UserDataService userDataService;
 
     @InjectMocks
-    private RequestSignedLEARCredentialServiceImpl service;
+    private DomeProfileRequestDeferredCredentialServiceImpl service;
 
     @Test
     void requestSignedLEARCredentialService_Success() throws JsonProcessingException {

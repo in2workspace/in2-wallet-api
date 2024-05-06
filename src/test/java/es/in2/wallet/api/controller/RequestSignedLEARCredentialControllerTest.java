@@ -1,6 +1,6 @@
 package es.in2.wallet.api.controller;
 
-import es.in2.wallet.application.service.RequestSignedLEARCredentialService;
+import es.in2.wallet.application.service.DomeProfileRequestDeferredCredentialService;
 import es.in2.wallet.infrastructure.core.controller.RequestSignedLEARCredentialController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,8 +12,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
-import java.util.UUID;
-
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -22,7 +20,7 @@ import static org.mockito.Mockito.when;
 class RequestSignedLEARCredentialControllerTest {
 
     @Mock
-    private RequestSignedLEARCredentialService requestSignedLEARCredentialService;
+    private DomeProfileRequestDeferredCredentialService domeProfileRequestDeferredCredentialService;
 
     @InjectMocks
     private RequestSignedLEARCredentialController requestSignedLEARCredentialController;
@@ -39,7 +37,7 @@ class RequestSignedLEARCredentialControllerTest {
         String credentialId = "cred123";
         String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
 
-        when(requestSignedLEARCredentialService.requestSignedLEARCredentialServiceByCredentialId(anyString(), eq("1234567890"), eq(credentialId)))
+        when(domeProfileRequestDeferredCredentialService.requestSignedLEARCredentialServiceByCredentialId(anyString(), eq("1234567890"), eq(credentialId)))
                 .thenReturn(Mono.empty());
 
         webTestClient.get()
@@ -57,7 +55,7 @@ class RequestSignedLEARCredentialControllerTest {
         String credentialId = "cred123";
         String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
 
-        when(requestSignedLEARCredentialService.requestSignedLEARCredentialServiceByCredentialId(anyString(), eq("1234567890"), eq(credentialId)))
+        when(domeProfileRequestDeferredCredentialService.requestSignedLEARCredentialServiceByCredentialId(anyString(), eq("1234567890"), eq(credentialId)))
                 .thenReturn(Mono.error(new RuntimeException("Internal Server Error")));
 
         webTestClient.get()

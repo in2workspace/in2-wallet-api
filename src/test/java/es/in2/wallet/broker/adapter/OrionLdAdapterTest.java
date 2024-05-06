@@ -104,7 +104,7 @@ class OrionLdAdapterTest {
                 .setBody(expectedResponse));
 
         // Test the getEntityById method
-        StepVerifier.create(orionLdAdapter.getUserEntityById(processId, userId))
+        StepVerifier.create(orionLdAdapter.verifyIfWalletUserExistById(processId, userId))
                 .expectNextMatches(optionalResponse ->
                         optionalResponse.map(response -> response.contains("\"id\":\"entityId\""))
                                 .orElse(false)) // Verify the response content within the Optional
