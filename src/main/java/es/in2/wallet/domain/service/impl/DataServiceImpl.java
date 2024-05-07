@@ -7,10 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jwt.SignedJWT;
 import com.upokecenter.cbor.CBORObject;
+import es.in2.wallet.application.port.BrokerService;
+import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.exception.NoSuchVerifiableCredentialException;
 import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.*;
-import es.in2.wallet.domain.service.UserDataService;
+import es.in2.wallet.domain.service.DataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.minvws.encoding.Base45;
@@ -38,9 +40,10 @@ import static es.in2.wallet.domain.util.MessageUtils.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserDataServiceImpl implements UserDataService {
+public class DataServiceImpl implements DataService {
 
     private final ObjectMapper objectMapper;
+    private final BrokerService brokerService;
 
     /**
      * Creates a new UserEntity.
@@ -79,15 +82,15 @@ public class UserDataServiceImpl implements UserDataService {
      * of signed formats (JWT or CWT), setting it to ISSUED if any are present, otherwise to GENERATED.
      *
      * @param userId The ID of the user for whom the credentials are being saved.
-     * @param credentials The list of credential responses which may contain various formats of the same credential.
+     * @param credential The credential response which contain the credential and te format.
      */
     @Override
-    public Mono<String> saveVC(String userId, List<CredentialResponse> credentials) {
+    public Mono<String> saveVC(String userId, CredentialResponse credential) {
         Map<String, CredentialAttribute> formatMap = new HashMap<>();
         List<String> errors = new ArrayList<>();
 
-        // Process each credential format and handle errors
-        processCredentialFormats(credentials, formatMap, errors);
+        // Process the single credential format and handle errors
+        processCredentialFormat(credential, formatMap, errors);
         if (!errors.isEmpty()) {
             return Mono.error(new IllegalArgumentException(String.join(", ", errors)));
         }
@@ -103,20 +106,18 @@ public class UserDataServiceImpl implements UserDataService {
                 });
     }
 
-    private void processCredentialFormats(List<CredentialResponse> credentials, Map<String, CredentialAttribute> formatMap, List<String> errors) {
-        credentials.forEach(cred -> {
-            switch (cred.format()) {
+    private void processCredentialFormat(CredentialResponse credential, Map<String, CredentialAttribute> formatMap, List<String> errors) {
+            switch (credential.format()) {
                 case JWT_VC, JWT_VC_JSON:
-                    formatMap.put(JWT_VC, new CredentialAttribute(PROPERTY_TYPE, cred.credential()));
+                    formatMap.put(JWT_VC, new CredentialAttribute(PROPERTY_TYPE, credential.credential()));
                     break;
                 case VC_CWT:
-                    formatMap.put(VC_CWT, new CredentialAttribute(PROPERTY_TYPE, cred.credential()));
+                    formatMap.put(VC_CWT, new CredentialAttribute(PROPERTY_TYPE, credential.credential()));
                     break;
                 default:
-                    errors.add("Unsupported credential format: " + cred.format());
+                    errors.add("Unsupported credential format: " + credential.format());
                     break;
             }
-        });
     }
 
     private Mono<String> buildAndSaveCredentialEntity(Map<String, CredentialAttribute> formatMap, CredentialStatus status, String userId) {
@@ -125,10 +126,24 @@ public class UserDataServiceImpl implements UserDataService {
                 .flatMap(vcJsonAttribute -> extractVerifiableCredentialIdFromVcJson((JsonNode) vcJsonAttribute.value())
                         .flatMap(vcId -> {
                             List<String> types = extractCredentialTypes((JsonNode) vcJsonAttribute.value());
-                            CredentialEntity credentialEntity = buildCredentialEntity(formatMap, status, userId, vcJsonAttribute, vcId, types);
-                            return deserializeEntityToString(credentialEntity);
+                            String credentialId = CREDENTIAL_ENTITY_PREFIX + vcId;
+                            return brokerService.getEntityById(userId, credentialId)
+                                    .flatMap(optionalEntity -> {
+                                        if (optionalEntity.isPresent()) {
+                                            // If the entity exists, update it with new format
+                                            String existingEntityJson = optionalEntity.get();
+                                            String format = formatMap.containsKey(JWT_VC) ? JWT_VC : VC_CWT;
+                                            String credential = formatMap.get(format).value().toString();
+                                            return updateCredentialEntityWithNewFormat(existingEntityJson, credential, format);
+                                        } else {
+                                            // If the entity does not exist, create a new one
+                                            CredentialEntity credentialEntity = buildCredentialEntity(formatMap, status, userId, vcJsonAttribute, vcId, types);
+                                            return deserializeEntityToString(credentialEntity);
+                                        }
+                                    });
                         }));
     }
+
 
     private Mono<CredentialAttribute> extractVcJsonFromSignedFormat(Map<String, CredentialAttribute> formatMap) {
         if (formatMap.containsKey(JWT_VC)) {
@@ -258,6 +273,42 @@ public class UserDataServiceImpl implements UserDataService {
             log.debug("Verifiable Credential ID extracted: {}", vcId);
             return Mono.just(vcId);
         });
+    }
+
+    private Mono<String> updateCredentialEntityWithNewFormat(String credentialEntityJson, String credential, String format) {
+        return Mono.just(credentialEntityJson)
+                .flatMap(json -> {
+                    try {
+                        CredentialEntity credentialEntity = objectMapper.readValue(json, CredentialEntity.class);
+                        CredentialEntity.CredentialEntityBuilder updatedCredentialEntity = CredentialEntity.builder()
+                                .id(credentialEntity.id())
+                                .type(credentialEntity.type())
+                                .jsonCredentialAttribute(credentialEntity.jsonCredentialAttribute())
+                                .credentialTypeAttribute(credentialEntity.credentialTypeAttribute())
+                                .credentialStatusAttribute(credentialEntity.credentialStatusAttribute())
+                                .relationshipAttribute(credentialEntity.relationshipAttribute());
+
+                        switch (format) {
+                            case JWT_VC:
+                                if (credentialEntity.jwtCredentialAttribute() == null) {
+                                    updatedCredentialEntity.jwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, credential));
+                                }
+                                break;
+                            case VC_CWT:
+                                if (credentialEntity.cwtCredentialAttribute() == null) {
+                                    updatedCredentialEntity.cwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, credential));
+                                }
+                                break;
+                            default:
+                                return Mono.error(new IllegalArgumentException("Unsupported credential format: " + credential));
+                        }
+
+                        CredentialEntity updatedEntity = updatedCredentialEntity.build();
+                        return deserializeEntityToString(updatedEntity);
+                    } catch (JsonProcessingException e) {
+                        return Mono.error(new FailedDeserializingException("Error processing credential entity JSON:" + e));
+                    }
+                });
     }
 
     /**
@@ -541,7 +592,6 @@ public class UserDataServiceImpl implements UserDataService {
                                 .type(CREDENTIAL_TYPE) // Set the credential type.
                                 .jsonCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, vcJson)) // Store the entire JSON as the credential.
                                 .credentialTypeAttribute(new CredentialTypeAttribute(PROPERTY_TYPE, types)) // Set the credential types extracted from JSON.
-                                .jwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, "")) // Set the jwt credential empty because we don't have the signed format yet
                                 .credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, CredentialStatus.ISSUED)) // Set the credential status to ISSUED.
                                 .relationshipAttribute(new RelationshipAttribute(RELATIONSHIP_TYPE, USER_ENTITY_PREFIX + userId)) // Set the relationship attribute linking the credential to a user.
                                 .build();

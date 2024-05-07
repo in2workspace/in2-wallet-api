@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.*;
-import es.in2.wallet.domain.service.impl.UserDataServiceImpl;
+import es.in2.wallet.domain.service.impl.DataServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -26,13 +26,13 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class UserDataUseCaseServiceImplTest {
+class DataWorkflowServiceTest {
 
     @Mock
     private ObjectMapper objectMapper;
 
     @InjectMocks
-    private UserDataServiceImpl userDataServiceImpl;
+    private DataServiceImpl userDataServiceImpl;
 
     @Test
     void testRegisterUserInContextBroker() throws JsonProcessingException {

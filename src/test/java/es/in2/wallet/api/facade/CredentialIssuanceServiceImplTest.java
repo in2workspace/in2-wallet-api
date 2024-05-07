@@ -47,7 +47,7 @@ class CredentialIssuanceServiceImplTest {
     @Mock
     private CredentialService credentialService;
     @Mock
-    private UserDataService userDataService;
+    private DataService dataService;
     @Mock
     private BrokerService brokerService;
     @Mock
@@ -96,8 +96,8 @@ class CredentialIssuanceServiceImplTest {
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
-            when(brokerService.verifyIfWalletUserExistById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
-            when(userDataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
+            when(brokerService.getEntityById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
+            when(dataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
 
             StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
@@ -134,11 +134,11 @@ class CredentialIssuanceServiceImplTest {
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
-            when(brokerService.verifyIfWalletUserExistById(processId, "userId")).thenReturn(Mono.just(Optional.empty())) //First interaction return empty because it's a new user
+            when(brokerService.getEntityById(processId, "userId")).thenReturn(Mono.just(Optional.empty())) //First interaction return empty because it's a new user
                     .thenReturn(Mono.just(Optional.of(userEntity)));
-            when(userDataService.createUserEntity("userId")).thenReturn(Mono.just("NewUserEntity"));
+            when(dataService.createUserEntity("userId")).thenReturn(Mono.just("NewUserEntity"));
             when(brokerService.postEntity(processId, "NewUserEntity")).thenReturn(Mono.empty());
-            when(userDataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
+            when(dataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
 
             StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
@@ -180,8 +180,8 @@ class CredentialIssuanceServiceImplTest {
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
-            when(brokerService.verifyIfWalletUserExistById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
-            when(userDataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
+            when(brokerService.getEntityById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
+            when(dataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
 
             StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
@@ -223,8 +223,8 @@ class CredentialIssuanceServiceImplTest {
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
-            when(brokerService.verifyIfWalletUserExistById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
-            when(userDataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
+            when(brokerService.getEntityById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
+            when(dataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
 
             StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
@@ -312,11 +312,11 @@ class CredentialIssuanceServiceImplTest {
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(credentialResponse));
-            when(brokerService.verifyIfWalletUserExistById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
-            when(userDataService.saveDOMEUnsignedCredential("userId", credentialResponse.credential())).thenReturn(Mono.just(credentialEntity));
+            when(brokerService.getEntityById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
+            when(dataService.saveDOMEUnsignedCredential("userId", credentialResponse.credential())).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
             when(objectMapper.readTree(anyString())).thenReturn(jsonNodeCredential);
-            when(userDataService.saveTransaction(
+            when(dataService.saveTransaction(
                     "urn:uuid:8700bee5-4621-4720-94de-e866fb7197e9",
                     credentialResponse.transactionId(),
                     tokenResponse.accessToken(),

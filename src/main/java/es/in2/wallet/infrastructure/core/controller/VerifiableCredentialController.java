@@ -2,7 +2,7 @@ package es.in2.wallet.infrastructure.core.controller;
 
 
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
-import es.in2.wallet.application.service.UserDataUseCaseService;
+import es.in2.wallet.application.service.DataWorkflow;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,7 +25,7 @@ import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerAndUserId
 @RequiredArgsConstructor
 public class VerifiableCredentialController {
 
-    private final UserDataUseCaseService userDataUseCaseService;
+    private final DataWorkflow dataWorkflow;
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
@@ -44,7 +44,7 @@ public class VerifiableCredentialController {
 
         MDC.put("processId", processId);
         return getCleanBearerAndUserIdFromToken(authorizationHeader)
-                .flatMap(userId -> userDataUseCaseService.getUserVCs(processId,userId));
+                .flatMap(userId -> dataWorkflow.getAllCredentialsByUserId(processId,userId));
     }
     @DeleteMapping
     @ResponseStatus(HttpStatus.OK)
@@ -65,7 +65,7 @@ public class VerifiableCredentialController {
         MDC.put("processId", processId);
 
         return getCleanBearerAndUserIdFromToken(authorizationHeader)
-                .flatMap(userId -> userDataUseCaseService.deleteVerifiableCredentialById(processId,credentialId, userId))
+                .flatMap(userId -> dataWorkflow.deleteCredentialById(processId,credentialId, userId))
                 .then();
     }
 

@@ -2,9 +2,9 @@ package es.in2.wallet.application.service.impl;
 
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.port.VaultService;
-import es.in2.wallet.application.service.UserDataUseCaseService;
+import es.in2.wallet.application.service.DataWorkflow;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
-import es.in2.wallet.domain.service.UserDataService;
+import es.in2.wallet.domain.service.DataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,10 +15,10 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
+public class DataWorkflowService implements DataWorkflow {
 
     private final BrokerService brokerService;
-    private final UserDataService userDataService;
+    private final DataService dataService;
     private final VaultService vaultService;
 
     /**
@@ -28,9 +28,9 @@ public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
      * @param userId    The unique identifier of the user whose VCs are to be retrieved.
      */
     @Override
-    public Mono<List<CredentialsBasicInfo>> getUserVCs(String processId, String userId) {
-        return brokerService.getCredentialsByUserId(processId, userId)
-                .flatMap(userDataService::getUserVCsInJson)
+    public Mono<List<CredentialsBasicInfo>> getAllCredentialsByUserId(String processId, String userId) {
+        return brokerService.getAllCredentialsByUserId(processId, userId)
+                .flatMap(dataService::getUserVCsInJson)
                 .doOnSuccess(list -> log.info("Retrieved VCs in JSON for userId: {}", userId))
                 .onErrorResume(Mono::error);
     }
@@ -47,9 +47,9 @@ public class UserDataUseCaseServiceImpl implements UserDataUseCaseService {
      */
 
     @Override
-    public Mono<Void> deleteVerifiableCredentialById(String processId, String credentialId, String userId) {
+    public Mono<Void> deleteCredentialById(String processId, String credentialId, String userId) {
         return brokerService.getCredentialByAndUserId(processId,userId,credentialId)
-                .flatMap(userDataService::extractDidFromVerifiableCredential)
+                .flatMap(dataService::extractDidFromVerifiableCredential)
                 .flatMap(vaultService::deleteSecretByKey)
                 .then(brokerService.deleteCredentialByIdAndUserId(processId,userId,credentialId))
                 .doOnSuccess(list -> log.info("Delete VC with Id: {}", credentialId))

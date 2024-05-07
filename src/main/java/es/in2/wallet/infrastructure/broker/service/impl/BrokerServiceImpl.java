@@ -21,15 +21,15 @@ public class BrokerServiceImpl implements BrokerService {
         return brokerAdapter.postEntity(processId, requestBody);
     }
 
-    public Mono<Optional<String>> verifyIfWalletUserExistById(String processId, String userId) {
-        return brokerAdapter.verifyIfWalletUserExistById(processId, userId);
+    public Mono<Optional<String>> getEntityById(String processId, String entityId) {
+        return brokerAdapter.getEntityById(processId, entityId);
     }
 
     public Mono<Void> updateEntity(String processId, String userId, String requestBody) {
         return brokerAdapter.updateEntity(processId, userId, requestBody);
     }
-    public Mono<String> getCredentialsByUserId(String processId, String userId){
-        return brokerAdapter.getCredentialsByUserId(processId,userId);
+    public Mono<String> getAllCredentialsByUserId(String processId, String userId){
+        return brokerAdapter.getAllCredentialsByUserId(processId,userId);
     }
     public Mono<String> getCredentialByAndUserId(String processId, String  userId, String credentialId){
         return brokerAdapter.getCredentialByIdAndUserId(processId,userId,credentialId);

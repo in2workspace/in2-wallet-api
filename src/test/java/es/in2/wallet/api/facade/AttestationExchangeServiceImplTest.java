@@ -35,7 +35,7 @@ class AttestationExchangeServiceImplTest {
     @Mock
     private VerifierValidationService verifierValidationService;
     @Mock
-    private UserDataService userDataService;
+    private DataService dataService;
     @Mock
     private BrokerService brokerService;
     @Mock
@@ -58,7 +58,7 @@ class AttestationExchangeServiceImplTest {
             when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestClaim(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(authorizationRequest));
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
             when(brokerService.getCredentialByCredentialTypeAndUserId(processId,"userId",authorizationRequest.scope().get(0))).thenReturn(Mono.just("credentialEntity"));
-            when(userDataService.getUserVCsInJson("credentialEntity")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
+            when(dataService.getUserVCsInJson("credentialEntity")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
 
             StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))
                     .expectNext(expectedVcSelectorRequest)

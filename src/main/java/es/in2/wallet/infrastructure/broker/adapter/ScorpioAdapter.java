@@ -53,9 +53,9 @@ public class ScorpioAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<Optional<String>> verifyIfWalletUserExistById(String processId, String userId) {
+    public Mono<Optional<String>> getEntityById(String processId, String entityId) {
         return webClient.get()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + USER_ENTITY_PREFIX + userId)
+                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + entityId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .onStatus(status -> status != null && status.is4xxClientError(), response -> response.createException().flatMap(Mono::error))
@@ -67,7 +67,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     }
 
     @Override
-    public Mono<String> getCredentialsByUserId(String processId, String userId) {
+    public Mono<String> getAllCredentialsByUserId(String processId, String userId) {
         return webClient.get()
                 .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
                         "?type=Credential&q=belongsTo==" + USER_ENTITY_PREFIX + userId)
@@ -124,7 +124,7 @@ public class ScorpioAdapter implements GenericBrokerService {
     @Override
     public Mono<Void> updateEntity(String processId, String entityId, String requestBody) {
         MediaType mediaType = getContentTypeAndAcceptMediaType(requestBody);
-        return webClient.patch()
+        return webClient.post()
                 .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + entityId + ATTRIBUTES)
                 .accept(mediaType)
                 .contentType(mediaType)

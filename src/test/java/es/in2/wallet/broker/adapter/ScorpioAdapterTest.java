@@ -136,7 +136,7 @@ class ScorpioAdapterTest {
                 .setBody(expectedResponse));
 
         // Test the getEntityById method
-        StepVerifier.create(scorpioAdapter.verifyIfWalletUserExistById(processId, userId))
+        StepVerifier.create(scorpioAdapter.getEntityById(processId, userId))
                 .expectNextMatches(optionalResponse ->
                         optionalResponse.map(response -> response.contains("\"id\":\"entityId\""))
                                 .orElse(false)) // Verify the response content within the Optional
@@ -210,7 +210,7 @@ class ScorpioAdapterTest {
         mockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
         // Test the getEntityById method expecting an empty result
-        StepVerifier.create(scorpioAdapter.verifyIfWalletUserExistById(processId,userId))
+        StepVerifier.create(scorpioAdapter.getEntityById(processId,userId))
                 .expectNextMatches(Optional::isEmpty) // Verify that an empty Optional is received
                 .verifyComplete();
 
@@ -232,7 +232,7 @@ class ScorpioAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(scorpioAdapter.getCredentialsByUserId(processId, userId))
+        StepVerifier.create(scorpioAdapter.getAllCredentialsByUserId(processId, userId))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 

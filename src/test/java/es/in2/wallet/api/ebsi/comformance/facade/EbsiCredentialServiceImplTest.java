@@ -45,7 +45,7 @@ class EbsiCredentialServiceImplTest {
     @Mock
     private CredentialService credentialService;
     @Mock
-    private UserDataService userDataService;
+    private DataService dataService;
     @Mock
     private BrokerService brokerService;
     @Mock
@@ -92,8 +92,8 @@ class EbsiCredentialServiceImplTest {
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
-            when(brokerService.verifyIfWalletUserExistById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
-            when(userDataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
+            when(brokerService.getEntityById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
+            when(dataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
 
             StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
@@ -130,11 +130,11 @@ class EbsiCredentialServiceImplTest {
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
-            when(brokerService.verifyIfWalletUserExistById(processId, "userId")).thenReturn(Mono.just(Optional.empty())) //First interaction return empty because it's a new user
+            when(brokerService.getEntityById(processId, "userId")).thenReturn(Mono.just(Optional.empty())) //First interaction return empty because it's a new user
                     .thenReturn(Mono.just(Optional.of(userEntity)));
-            when(userDataService.createUserEntity("userId")).thenReturn(Mono.just("NewUserEntity"));
+            when(dataService.createUserEntity("userId")).thenReturn(Mono.just("NewUserEntity"));
             when(brokerService.postEntity(processId, "NewUserEntity")).thenReturn(Mono.empty());
-            when(userDataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
+            when(dataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
 
             StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
@@ -176,8 +176,8 @@ class EbsiCredentialServiceImplTest {
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
-            when(brokerService.verifyIfWalletUserExistById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
-            when(userDataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
+            when(brokerService.getEntityById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
+            when(dataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
 
             StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
@@ -219,8 +219,8 @@ class EbsiCredentialServiceImplTest {
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
-            when(brokerService.verifyIfWalletUserExistById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
-            when(userDataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
+            when(brokerService.getEntityById(processId, "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
+            when(dataService.saveVC("userId", List.of(credentialResponse))).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
 
             StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();

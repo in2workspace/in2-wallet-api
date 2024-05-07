@@ -6,10 +6,10 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-public interface UserDataService {
+public interface DataService {
 
     Mono<String> createUserEntity(String id);
-    Mono<String> saveVC(String userEntity, List<CredentialResponse> credentials);
+    Mono<String> saveVC(String userId, CredentialResponse credential);
     Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String userEntity);
     Mono<String> getVerifiableCredentialOnRequestedFormat(String credentialEntityJson, String format);
     Mono<String> extractDidFromVerifiableCredential(String credentialJson);

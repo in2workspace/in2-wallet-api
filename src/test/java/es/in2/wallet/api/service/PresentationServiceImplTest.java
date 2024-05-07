@@ -9,7 +9,7 @@ import es.in2.wallet.domain.model.CredentialStatus;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.service.SignerService;
-import es.in2.wallet.domain.service.UserDataService;
+import es.in2.wallet.domain.service.DataService;
 import es.in2.wallet.domain.service.impl.PresentationServiceImpl;
 import es.in2.wallet.domain.util.ApplicationUtils;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class PresentationServiceImplTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private UserDataService userDataService;
+    private DataService dataService;
 
     @Mock
     private BrokerService brokerService;
@@ -87,7 +87,7 @@ class PresentationServiceImplTest {
             when(appConfig.getCredentialPresentationExpirationUnit()).thenReturn("minutes");
 
             // Simulate the user data service returning a list of verifiable credential JWTs
-            when(userDataService.getVerifiableCredentialOnRequestedFormat(credentialEntity, JWT_VC)).thenReturn(Mono.just(vcJwt));
+            when(dataService.getVerifiableCredentialOnRequestedFormat(credentialEntity, JWT_VC)).thenReturn(Mono.just(vcJwt));
 
             when(objectMapper.writeValueAsString(any())).thenReturn(vpClaims);
             when(objectMapper.readTree(anyString())).thenAnswer(invocation -> {
@@ -122,7 +122,7 @@ class PresentationServiceImplTest {
         when(brokerService.getCredentialByAndUserId(processId, userId, selectedVcList.get(0).id())).thenReturn(Mono.just((credentialEntity)));
 
             // Mock getVerifiableCredentials to return a list of credentials
-        when(userDataService.getVerifiableCredentialOnRequestedFormat(credentialEntity, VC_JSON))
+        when(dataService.getVerifiableCredentialOnRequestedFormat(credentialEntity, VC_JSON))
                 .thenReturn(Mono.just("vcString")); // Simplified for demonstration
 
         // Mock objectMapper.writeValueAsString to simulate JSON serialization
@@ -133,7 +133,7 @@ class PresentationServiceImplTest {
                 .verifyComplete();
 
         verify(brokerService).getCredentialByAndUserId(processId, userId, selectedVcList.get(0).id());
-        verify(userDataService).getVerifiableCredentialOnRequestedFormat(credentialEntity, VC_JSON);
+        verify(dataService).getVerifiableCredentialOnRequestedFormat(credentialEntity, VC_JSON);
         }
     }
 }

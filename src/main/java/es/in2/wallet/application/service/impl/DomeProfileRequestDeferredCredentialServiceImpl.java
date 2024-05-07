@@ -9,7 +9,7 @@ import es.in2.wallet.domain.exception.CredentialNotAvailableException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.TransactionEntity;
 import es.in2.wallet.domain.service.CredentialService;
-import es.in2.wallet.domain.service.UserDataService;
+import es.in2.wallet.domain.service.DataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,7 @@ public class DomeProfileRequestDeferredCredentialServiceImpl implements DomeProf
     private final BrokerService brokerService;
     private final ObjectMapper objectMapper;
     private final CredentialService credentialService;
-    private final UserDataService userDataService;
+    private final DataService dataService;
     @Override
     public Mono<Void> requestSignedLEARCredentialServiceByCredentialId(String processId, String userId, String credentialId) {
         return brokerService.getTransactionThatIsLinkedToACredential(processId,credentialId)
@@ -46,13 +46,13 @@ public class DomeProfileRequestDeferredCredentialServiceImpl implements DomeProf
 
                                             if (credentialResponse.transactionId() == null){
                                                 return brokerService.getCredentialByAndUserId(processId,userId,credentialId)
-                                                        .flatMap(credentialEntity -> userDataService.updateVCEntityWithSignedFormat(credentialEntity,credentialResponse))
+                                                        .flatMap(credentialEntity -> dataService.updateVCEntityWithSignedFormat(credentialEntity,credentialResponse))
                                                         .flatMap(updatedEntity -> brokerService.updateEntity(processId,credentialId,updatedEntity))
                                                         .then(brokerService.deleteTransactionByTransactionId(processId,transaction.id()));
                                             }
                                             else {
                                                 try {
-                                                    return userDataService.updateTransactionWithNewTransactionId(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(transaction),credentialResponse.transactionId())
+                                                    return dataService.updateTransactionWithNewTransactionId(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(transaction),credentialResponse.transactionId())
                                                             .flatMap(updatedEntity -> brokerService.updateEntity(processId,transaction.id(),updatedEntity))
                                                             .then(Mono.error(new CredentialNotAvailableException("The signed credential it's not available yet")));
                                                 }

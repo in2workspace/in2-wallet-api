@@ -7,7 +7,7 @@ import es.in2.wallet.application.port.AppConfig;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.domain.model.CredentialEntity;
 import es.in2.wallet.domain.service.DidKeyGeneratorService;
-import es.in2.wallet.domain.service.UserDataService;
+import es.in2.wallet.domain.service.DataService;
 import es.in2.wallet.domain.util.ApplicationUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
@@ -34,7 +34,7 @@ public class EbsiConfig {
     private final AppConfig appConfig;
     private final DidKeyGeneratorService didKeyGeneratorService;
     private final BrokerService brokerService;
-    private final UserDataService userDataService;
+    private final DataService dataService;
 
     private String didForEbsi;
 
@@ -97,7 +97,7 @@ public class EbsiConfig {
                     return Mono.just(token);
                 })
                 .flatMap(ApplicationUtils::getUserIdFromToken)
-                .flatMap(userId -> brokerService.verifyIfWalletUserExistById(processId, userId)
+                .flatMap(userId -> brokerService.getEntityById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
                                 .map(entity -> getDidForUserCredential(processId, userId,vcType))
                                 .orElseGet(() ->
@@ -150,7 +150,7 @@ public class EbsiConfig {
                               }
                             }
                             """,credentialId,type,did,userId);
-        return userDataService.createUserEntity(userId)
+        return dataService.createUserEntity(userId)
                 .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
                 .then(brokerService.postEntity(processId, credentialEntity));
     }
@@ -167,7 +167,7 @@ public class EbsiConfig {
 
                         String firstCredentialJson = objectMapper.writeValueAsString(firstCredential);
 
-                        return userDataService.extractDidFromVerifiableCredential(firstCredentialJson);
+                        return dataService.extractDidFromVerifiableCredential(firstCredentialJson);
                     } catch (Exception e) {
                         return Mono.error(new RuntimeException("Error processing credentials", e));
                     }

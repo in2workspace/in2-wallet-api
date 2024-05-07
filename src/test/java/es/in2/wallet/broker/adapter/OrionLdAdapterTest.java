@@ -104,7 +104,7 @@ class OrionLdAdapterTest {
                 .setBody(expectedResponse));
 
         // Test the getEntityById method
-        StepVerifier.create(orionLdAdapter.verifyIfWalletUserExistById(processId, userId))
+        StepVerifier.create(orionLdAdapter.getEntityById(processId, userId))
                 .expectNextMatches(optionalResponse ->
                         optionalResponse.map(response -> response.contains("\"id\":\"entityId\""))
                                 .orElse(false)) // Verify the response content within the Optional
@@ -153,7 +153,7 @@ class OrionLdAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(orionLdAdapter.getCredentialsByUserId(processId, userId))
+        StepVerifier.create(orionLdAdapter.getAllCredentialsByUserId(processId, userId))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 

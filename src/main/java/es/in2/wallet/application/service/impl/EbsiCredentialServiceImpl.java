@@ -26,7 +26,7 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
     private final CredentialIssuerMetadataService credentialIssuerMetadataService;
     private final AuthorisationServerMetadataService authorisationServerMetadataService;
     private final CredentialService credentialService;
-    private final UserDataService userDataService;
+    private final DataService dataService;
     private final BrokerService brokerService;
     private final PreAuthorizedService preAuthorizedService;
     private final EbsiIdTokenService ebsiIdTokenService;
@@ -118,7 +118,7 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
     private Mono<Void> processUserEntity(String processId, String authorizationToken, List<CredentialResponse> credentials) {
         log.info("ProcessId: {} - Processing User Entity", processId);
         return getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> brokerService.verifyIfWalletUserExistById(processId, userId)
+                .flatMap(userId -> brokerService.getEntityById(processId, userId)
                         .flatMap(optionalEntity -> optionalEntity
                                 .map(entity -> persistCredential(processId, userId, credentials))
                                 .orElseGet(() -> createUserEntityAndPersistCredential(processId, userId, credentials))
@@ -133,7 +133,7 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
      */
     private Mono<Void> persistCredential(String processId, String userId, List<CredentialResponse> credentials) {
         log.info("ProcessId: {} - Updating User Entity", processId);
-        return userDataService.saveVC(userId, credentials)
+        return dataService.saveVC(userId, credentials)
                 .flatMap(credentialEntity ->
                         brokerService.postEntity(processId, credentialEntity));
     }
@@ -145,9 +145,9 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
      */
     private Mono<Void> createUserEntityAndPersistCredential(String processId, String userId, List<CredentialResponse> credentials) {
         log.info("ProcessId: {} - Creating and Updating User Entity", processId);
-        return userDataService.createUserEntity(userId)
+        return dataService.createUserEntity(userId)
                 .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
-                .then(userDataService.saveVC(userId, credentials)
+                .then(dataService.saveVC(userId, credentials)
                         .flatMap(credentialEntity -> brokerService.postEntity(processId, credentialEntity))
                         .then());
     }

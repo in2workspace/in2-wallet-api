@@ -13,7 +13,7 @@ import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.model.VerifiablePresentation;
 import es.in2.wallet.domain.service.PresentationService;
 import es.in2.wallet.domain.service.SignerService;
-import es.in2.wallet.domain.service.UserDataService;
+import es.in2.wallet.domain.service.DataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,7 +33,7 @@ import static es.in2.wallet.domain.util.MessageUtils.*;
 public class PresentationServiceImpl implements PresentationService {
 
     private final ObjectMapper objectMapper;
-    private final UserDataService userDataService;
+    private final DataService dataService;
     private final BrokerService brokerService;
     private final SignerService signerService;
 
@@ -114,7 +114,7 @@ public class PresentationServiceImpl implements PresentationService {
     private Mono<List<String>> getVerifiableCredentials(String processId, String userId, List<CredentialsBasicInfo> selectedVcList, String format) {
         return Flux.fromIterable(selectedVcList)
                 .flatMap(credential -> brokerService.getCredentialByAndUserId(processId,userId,credential.id()))
-                .flatMap(credentialEntity -> userDataService.getVerifiableCredentialOnRequestedFormat(credentialEntity,format))
+                .flatMap(credentialEntity -> dataService.getVerifiableCredentialOnRequestedFormat(credentialEntity,format))
                 .collectList();
     }
 

@@ -9,8 +9,8 @@ public interface GenericBrokerService {
 
     Mono<Void> postEntity(String processId, String requestBody);
 
-    Mono<Optional<String>> verifyIfWalletUserExistById(String processId, String userId);
-    Mono<String> getCredentialsByUserId(String processId, String userId);
+    Mono<Optional<String>> getEntityById(String processId, String entityId);
+    Mono<String> getAllCredentialsByUserId(String processId, String userId);
     Mono<String> getCredentialByIdAndUserId(String processId, String  userId, String credentialId);
     Mono<Void> deleteCredentialByIdAndUserId(String processId, String  userId, String credentialId);
     Mono<String> getCredentialByCredentialTypeAndUserId(String processId, String  userId, String credentialType);

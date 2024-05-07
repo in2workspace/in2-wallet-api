@@ -31,7 +31,7 @@ public class AttestationExchangeServiceImpl implements AttestationExchangeServic
     private final AuthorizationRequestService authorizationRequestService;
     private final AuthorizationResponseService authorizationResponseService;
     private final VerifierValidationService verifierValidationService;
-    private final UserDataService userDataService;
+    private final DataService dataService;
     private final BrokerService brokerService;
     private final PresentationService presentationService;
 
@@ -51,7 +51,7 @@ public class AttestationExchangeServiceImpl implements AttestationExchangeServic
         return getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> Flux.fromIterable(scope)
                         .flatMap(element -> brokerService.getCredentialByCredentialTypeAndUserId(processId, userId,element)
-                                .flatMap(userDataService::getUserVCsInJson))
+                                .flatMap(dataService::getUserVCsInJson))
                         .collectList()  // This will collect all lists into a single list
                         .flatMap(lists -> {
                             List<CredentialsBasicInfo> allCredentials = new ArrayList<>();

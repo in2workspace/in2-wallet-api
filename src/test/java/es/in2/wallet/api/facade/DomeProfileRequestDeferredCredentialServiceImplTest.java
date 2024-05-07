@@ -13,7 +13,7 @@ import es.in2.wallet.domain.model.EntityAttribute;
 import es.in2.wallet.domain.model.TransactionDataAttribute;
 import es.in2.wallet.domain.model.TransactionEntity;
 import es.in2.wallet.domain.service.CredentialService;
-import es.in2.wallet.domain.service.UserDataService;
+import es.in2.wallet.domain.service.DataService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -41,7 +41,7 @@ class DomeProfileRequestDeferredCredentialServiceImplTest {
     @Mock
     private CredentialService credentialService;
     @Mock
-    private UserDataService userDataService;
+    private DataService dataService;
 
     @InjectMocks
     private DomeProfileRequestDeferredCredentialServiceImpl service;
@@ -81,7 +81,7 @@ class DomeProfileRequestDeferredCredentialServiceImplTest {
         when(brokerService.getCredentialByAndUserId(processId,userId,credentialId))
                 .thenReturn(Mono.just(credentialJson));
 
-        when(userDataService.updateVCEntityWithSignedFormat(credentialJson,credentialResponse))
+        when(dataService.updateVCEntityWithSignedFormat(credentialJson,credentialResponse))
                 .thenReturn(Mono.just("UpdatedCredentialEntity"));
 
         when(brokerService.updateEntity(processId, credentialId, "UpdatedCredentialEntity"))
@@ -134,7 +134,7 @@ class DomeProfileRequestDeferredCredentialServiceImplTest {
         ))
                 .thenReturn(Mono.just(credentialResponse));
 
-        when(userDataService.updateTransactionWithNewTransactionId("transaction entity", "newTransId"))
+        when(dataService.updateTransactionWithNewTransactionId("transaction entity", "newTransId"))
                 .thenReturn(Mono.just(updatedTransactionJson));
         when(brokerService.updateEntity(processId, transactionEntity.id(), updatedTransactionJson))
                 .thenReturn(Mono.empty());
