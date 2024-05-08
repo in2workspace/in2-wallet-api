@@ -22,8 +22,7 @@ import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-import static es.in2.wallet.domain.util.MessageUtils.ATTRIBUTES;
-import static es.in2.wallet.domain.util.MessageUtils.USER_ENTITY_PREFIX;
+import static es.in2.wallet.domain.util.MessageUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
@@ -104,7 +103,7 @@ class OrionLdAdapterTest {
                 .setBody(expectedResponse));
 
         // Test the getEntityById method
-        StepVerifier.create(orionLdAdapter.getEntityById(processId, userId))
+        StepVerifier.create(orionLdAdapter.getEntityById(processId, USER_ENTITY_PREFIX + userId))
                 .expectNextMatches(optionalResponse ->
                         optionalResponse.map(response -> response.contains("\"id\":\"entityId\""))
                                 .orElse(false)) // Verify the response content within the Optional
@@ -123,17 +122,17 @@ class OrionLdAdapterTest {
         String processId = "processId123";
         String requestBody = "{\"newKey\":\"newValue\"}";
 
-        // Enqueue a mock response for the PATCH request
+        // Enqueue a mock response for the POST request
         mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
         // Test the updateEntity method
         StepVerifier.create(orionLdAdapter.updateEntity(processId, entityId, requestBody))
                 .verifyComplete(); // Verify the request completes successfully
 
-        // Verify the PATCH request was made correctly
+        // Verify the POST request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("/external/entities" + "/" + entityId + ATTRIBUTES, recordedRequest.getPath());
-        assertEquals("PATCH", recordedRequest.getMethod());
+        assertEquals("POST", recordedRequest.getMethod());
         assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
     }

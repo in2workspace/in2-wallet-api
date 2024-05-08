@@ -1,6 +1,6 @@
 package es.in2.wallet.application.service.impl;
 
-import es.in2.wallet.application.service.DomeAttestationExchangeService;
+import es.in2.wallet.application.service.DomeAttestationExchangeWorkflow;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.service.AuthorizationRequestService;
@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DomeAttestationExchangeServiceImpl implements DomeAttestationExchangeService {
+public class DomeAttestationExchangeWorkflowImpl implements DomeAttestationExchangeWorkflow {
     private final AuthorizationRequestService authorizationRequestService;
     private final DomeVpTokenService domeVpTokenService;
     private final PresentationService presentationService;

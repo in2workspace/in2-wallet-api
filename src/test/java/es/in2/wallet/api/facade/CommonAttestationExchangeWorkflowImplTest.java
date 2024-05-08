@@ -2,7 +2,7 @@ package es.in2.wallet.api.facade;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.service.impl.AttestationExchangeServiceImpl;
+import es.in2.wallet.application.service.impl.CommonAttestationExchangeWorkflowImpl;
 import es.in2.wallet.domain.model.AuthorizationRequest;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorRequest;
@@ -27,7 +27,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class AttestationExchangeServiceImplTest {
+class CommonAttestationExchangeWorkflowImplTest {
     @Mock
     private AuthorizationRequestService authorizationRequestService;
     @Mock
@@ -41,7 +41,7 @@ class AttestationExchangeServiceImplTest {
     @Mock
     private PresentationService presentationService;
     @InjectMocks
-    private AttestationExchangeServiceImpl attestationExchangeServiceFacade;
+    private CommonAttestationExchangeWorkflowImpl attestationExchangeServiceFacade;
 
     @Test
     void getSelectableCredentialsRequiredToBuildThePresentationTest() {

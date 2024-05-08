@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.wallet.application.service.AttestationExchangeService;
+import es.in2.wallet.application.service.CommonAttestationExchangeWorkflow;
 import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedSerializingException;
 import es.in2.wallet.domain.model.*;
@@ -31,7 +31,7 @@ import static es.in2.wallet.domain.util.MessageUtils.*;
 public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
     private final ObjectMapper objectMapper;
     private final PresentationService presentationService;
-    private final AttestationExchangeService attestationExchangeService;
+    private final CommonAttestationExchangeWorkflow commonAttestationExchangeWorkflow;
 
     /**
      * Initiates the process to exchange the authorization token and JWT for a VP Token Request,
@@ -104,7 +104,7 @@ public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
      * Builds a signed JWT Verifiable Presentation by extracting user data and credentials based on the VC type list provided.
      */
     private Mono<String> buildSignedJwtVerifiablePresentationByVcTypeList(String processId, String authorizationToken, List<String> vcTypeList, String nonce, AuthorisationServerMetadata authorisationServerMetadata) {
-        return attestationExchangeService.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,vcTypeList)
+        return commonAttestationExchangeWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,vcTypeList)
                                         .flatMap(list -> {
                                             log.debug(list.toString());
                                             VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().selectedVcList(list).build();

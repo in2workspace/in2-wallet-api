@@ -1,8 +1,8 @@
 package es.in2.wallet.api.controller;
 
-import es.in2.wallet.application.service.AttestationExchangeService;
-import es.in2.wallet.application.service.DomeAttestationExchangeService;
-import es.in2.wallet.application.service.TurnstileAttestationExchangeService;
+import es.in2.wallet.application.service.CommonAttestationExchangeWorkflow;
+import es.in2.wallet.application.service.DomeAttestationExchangeWorkflow;
+import es.in2.wallet.application.service.TurnstileAttestationExchangeWorkflow;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.infrastructure.core.controller.VerifiablePresentationController;
@@ -21,11 +21,11 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class VerifiablePresentationControllerTest {
     @Mock
-    private TurnstileAttestationExchangeService turnstileAttestationExchangeService;
+    private TurnstileAttestationExchangeWorkflow turnstileAttestationExchangeWorkflow;
     @Mock
-    private AttestationExchangeService attestationExchangeService;
+    private CommonAttestationExchangeWorkflow commonAttestationExchangeWorkflow;
     @Mock
-    private DomeAttestationExchangeService domeAttestationExchangeService;
+    private DomeAttestationExchangeWorkflow domeAttestationExchangeWorkflow;
     @InjectMocks
     private VerifiablePresentationController verifiablePresentationController;
 
@@ -35,7 +35,7 @@ class VerifiablePresentationControllerTest {
         String authorizationToken = "authToken";
         VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().redirectUri("https://redirect.uri.com").build();
 
-        when(attestationExchangeService.buildVerifiablePresentationWithSelectedVCs(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
+        when(commonAttestationExchangeWorkflow.buildVerifiablePresentationWithSelectedVCs(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
                 .thenReturn(Mono.empty());
 
         WebTestClient
@@ -55,7 +55,7 @@ class VerifiablePresentationControllerTest {
         String authorizationToken = "authToken";
         VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().redirectUri("https://dome-marketplace.org").build();
 
-        when(domeAttestationExchangeService.buildAndSendVerifiablePresentationWithSelectedVCsForDome(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
+        when(domeAttestationExchangeWorkflow.buildAndSendVerifiablePresentationWithSelectedVCsForDome(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
                 .thenReturn(Mono.empty());
 
         WebTestClient
@@ -74,7 +74,7 @@ class VerifiablePresentationControllerTest {
         CredentialsBasicInfo credentialsBasicInfo = CredentialsBasicInfo.builder().build();
         String expectedResponse = "cbor";
 
-        when(turnstileAttestationExchangeService.createVerifiablePresentationForTurnstile(anyString(), eq(authorizationToken), any()))
+        when(turnstileAttestationExchangeWorkflow.createVerifiablePresentationForTurnstile(anyString(), eq(authorizationToken), any()))
                 .thenReturn(Mono.just("cbor"));
 
         WebTestClient

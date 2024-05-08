@@ -1,7 +1,7 @@
 package es.in2.wallet.api.facade;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import es.in2.wallet.application.service.impl.TurnstileAttestationExchangeServiceImpl;
+import es.in2.wallet.application.service.impl.TurnstileAttestationExchangeWorkflowImpl;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.service.CborGenerationService;
 import es.in2.wallet.domain.service.PresentationService;
@@ -18,13 +18,13 @@ import java.text.ParseException;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class TurnstileAttestationExchangeServiceImplTest {
+class TurnstileAttestationExchangeWorkflowImplTest {
     @Mock
     private PresentationService presentationService;
     @Mock
     private CborGenerationService cborGenerationService;
     @InjectMocks
-    private TurnstileAttestationExchangeServiceImpl credentialPresentationForTurnstileServiceFacade;
+    private TurnstileAttestationExchangeWorkflowImpl credentialPresentationForTurnstileServiceFacade;
     @Test
     void createVerifiablePresentationForTurnstileTestSuccess() throws ParseException {
         String processId = "123";

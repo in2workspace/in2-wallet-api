@@ -1,7 +1,7 @@
 package es.in2.wallet.application.service.impl;
 
 import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.service.EbsiCredentialService;
+import es.in2.wallet.application.service.EbsiCredentialIssuanceWorkflow;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.*;
 import es.in2.wallet.infrastructure.ebsi.config.EbsiConfig;
@@ -10,16 +10,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static es.in2.wallet.domain.util.ApplicationUtils.extractResponseType;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.domain.util.MessageUtils.USER_ENTITY_PREFIX;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class EbsiCredentialServiceImpl implements EbsiCredentialService {
+public class EbsiCredentialIssuanceWorkflowImpl implements EbsiCredentialIssuanceWorkflow {
 
     private final CredentialOfferService credentialOfferService;
     private final EbsiConfig ebsiConfig;
@@ -70,11 +68,8 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
     private Mono<Void> getCredentialWithPreAuthorizedCodeEbsi(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
         return ebsiConfig.getDid()
                 .flatMap(did -> preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
-                        .flatMap(tokenResponse -> getCredentialRecursive(
-                                 tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), new ArrayList<>(), 0
-                        ))
-                        .flatMap(credentialResponses -> processUserEntity(processId, authorizationToken, credentialResponses))
-                );
+                        .flatMap(tokenResponse -> getCredential(
+                                processId,authorizationToken,tokenResponse,credentialOffer,credentialIssuerMetadata,did,tokenResponse.cNonce())));
     }
 
 
@@ -102,12 +97,10 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
                                 .flatMap(params -> ebsiAuthorisationService.sendTokenRequest(tuple.getT2(), did, authorisationServerMetadata,params))
                         )
                         // get Credentials
-                        .flatMap(tokenResponse -> getCredentialRecursive(
-                                 tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), new ArrayList<>(), 0
+                        .flatMap(tokenResponse -> getCredential(
+                                 processId,authorizationToken,tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce()
                         ))
-                )
-                // save Credential
-                .flatMap(credentialResponse -> processUserEntity(processId,authorizationToken,credentialResponse));
+                );
     }
 
     /**
@@ -115,13 +108,14 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
      * If the user entity exists, it is updated with the new credential.
      * If not, a new user entity is created and then updated with the credential.
      */
-    private Mono<Void> processUserEntity(String processId, String authorizationToken, List<CredentialResponse> credentials) {
+    private Mono<Void> saveCredential(String processId, String authorizationToken, CredentialResponse credentialResponse) {
         log.info("ProcessId: {} - Processing User Entity", processId);
         return getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> brokerService.getEntityById(processId, userId)
+                .flatMap(userId -> brokerService.getEntityById(processId, USER_ENTITY_PREFIX + userId)
                         .flatMap(optionalEntity -> optionalEntity
-                                .map(entity -> persistCredential(processId, userId, credentials))
-                                .orElseGet(() -> createUserEntityAndPersistCredential(processId, userId, credentials))
+                                .map(entity -> persistCredential(processId, userId, credentialResponse))
+                                .orElseGet(() -> createUserEntity(processId, userId)
+                                        .then(persistCredential(processId,userId,credentialResponse)))
                         )
                 );
     }
@@ -131,25 +125,22 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
      * Following the update, a second operation is triggered to save the VC (Verifiable Credential) to the entity.
      * This process involves saving the DID, updating the entity, retrieving the updated entity, saving the VC, and finally updating the entity again with the VC information.
      */
-    private Mono<Void> persistCredential(String processId, String userId, List<CredentialResponse> credentials) {
+    private Mono<Void> persistCredential(String processId, String userId, CredentialResponse credentialResponse) {
         log.info("ProcessId: {} - Updating User Entity", processId);
-        return dataService.saveVC(userId, credentials)
-                .flatMap(credentialEntity ->
-                        brokerService.postEntity(processId, credentialEntity));
+        return dataService.saveVC(processId,userId, credentialResponse)
+                .flatMap(credentialEntity -> brokerService.postEntity(processId, credentialEntity))
+                .then();
     }
+
 
     /**
      * Handles the creation of a new user entity if it does not exist.
-     * After creation, the entity is updated with the DID information.
      * This involves creating the user, posting the entity, saving the DID to the entity, updating the entity with the DID, retrieving the updated entity, saving the VC, and performing a final update with the VC information.
      */
-    private Mono<Void> createUserEntityAndPersistCredential(String processId, String userId, List<CredentialResponse> credentials) {
+    private Mono<Void> createUserEntity(String processId, String userId) {
         log.info("ProcessId: {} - Creating and Updating User Entity", processId);
         return dataService.createUserEntity(userId)
-                .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
-                .then(dataService.saveVC(userId, credentials)
-                        .flatMap(credentialEntity -> brokerService.postEntity(processId, credentialEntity))
-                        .then());
+                .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId));
     }
 
     /**
@@ -161,19 +152,10 @@ public class EbsiCredentialServiceImpl implements EbsiCredentialService {
                 .flatMap(json -> signerService.buildJWTSFromJsonNode(json, did, "proof"));
     }
 
-    private Mono<List<CredentialResponse>> getCredentialRecursive(TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce, List<CredentialResponse> credentialResponses, int index) {
-        if (index >= credentialOffer.credentials().size()) {
-            return Mono.just(credentialResponses);
-        }
-        CredentialOffer.Credential credential = credentialOffer.credentials().get(index);
-        return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
-                .flatMap(jwt -> credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credential.format(), credential.types()))
-                .flatMap(credentialResponse -> {
-                    credentialResponses.add(credentialResponse);
-                    String newNonce = credentialResponse.c_nonce() != null ? credentialResponse.c_nonce() : nonce;
-                    return getCredentialRecursive(
-                            tokenResponse, credentialOffer, credentialIssuerMetadata, did, newNonce, credentialResponses, index + 1
-                    );
-                });
+    private Mono<Void> getCredential(String processId, String authorizationToken, TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce) {
+            return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
+                    .flatMap(jwt -> credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
+                    .flatMap(credentialResponse -> saveCredential(processId,authorizationToken,credentialResponse));
     }
+
 }

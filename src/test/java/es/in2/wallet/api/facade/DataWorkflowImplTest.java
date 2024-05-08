@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.port.VaultService;
-import es.in2.wallet.application.service.impl.DataWorkflowService;
+import es.in2.wallet.application.service.impl.DataWorkflowImpl;
 import es.in2.wallet.domain.model.CredentialStatus;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.service.DataService;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class DataWorkflowServiceTest {
+class DataWorkflowImplTest {
 
     @Mock
     private BrokerService brokerService;
@@ -36,7 +36,7 @@ class DataWorkflowServiceTest {
     private VaultService vaultService;
 
     @InjectMocks
-    private DataWorkflowService userDataFacadeService;
+    private DataWorkflowImpl userDataFacadeService;
 
     @Test
     void getUserVCs_UserExists_ReturnsVCs() throws JsonProcessingException {

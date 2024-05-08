@@ -1,7 +1,7 @@
 package es.in2.wallet.infrastructure.ebsi.controller;
 
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
-import es.in2.wallet.application.service.EbsiCredentialService;
+import es.in2.wallet.application.service.EbsiCredentialIssuanceWorkflow;
 import es.in2.wallet.domain.model.EbsiCredentialOfferContent;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerToken;
 @RequiredArgsConstructor
 public class CredentialIssuanceController {
 
-    private final EbsiCredentialService ebsiCredentialIssuanceServiceFacade;
+    private final EbsiCredentialIssuanceWorkflow ebsiCredentialIssuanceServiceFacade;
 
     /**
      * Processes a request for a verifiable credential when the credential offer is received via a redirect.

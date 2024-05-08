@@ -85,7 +85,7 @@ public class DataServiceImpl implements DataService {
      * @param credential The credential response which contain the credential and te format.
      */
     @Override
-    public Mono<String> saveVC(String userId, CredentialResponse credential) {
+    public Mono<String> saveVC(String processId, String userId, CredentialResponse credential) {
         Map<String, CredentialAttribute> formatMap = new HashMap<>();
         List<String> errors = new ArrayList<>();
 
@@ -98,7 +98,7 @@ public class DataServiceImpl implements DataService {
         // Since only signed formats will be processed, the status is always VALID
         CredentialStatus status = CredentialStatus.VALID;
         // Build and save the credential entity based on the processed data
-        return buildAndSaveCredentialEntity(formatMap, status, userId)
+        return buildAndSaveCredentialEntity(processId,formatMap, status, userId)
                 .doOnSuccess(entity -> log.info("Verifiable Credential saved successfully: {}", entity))
                 .onErrorResume(e -> {
                     log.error("Error saving Verifiable Credential: {}", e.getMessage());
@@ -120,27 +120,26 @@ public class DataServiceImpl implements DataService {
             }
     }
 
-    private Mono<String> buildAndSaveCredentialEntity(Map<String, CredentialAttribute> formatMap, CredentialStatus status, String userId) {
+    private Mono<String> buildAndSaveCredentialEntity(String processId, Map<String, CredentialAttribute> formatMap, CredentialStatus status, String userId) {
         // Always extract vc_json from a signed format
         return extractVcJsonFromSignedFormat(formatMap)
                 .flatMap(vcJsonAttribute -> extractVerifiableCredentialIdFromVcJson((JsonNode) vcJsonAttribute.value())
                         .flatMap(vcId -> {
                             List<String> types = extractCredentialTypes((JsonNode) vcJsonAttribute.value());
                             String credentialId = CREDENTIAL_ENTITY_PREFIX + vcId;
-                            return brokerService.getEntityById(userId, credentialId)
-                                    .flatMap(optionalEntity -> {
-                                        if (optionalEntity.isPresent()) {
-                                            // If the entity exists, update it with new format
-                                            String existingEntityJson = optionalEntity.get();
-                                            String format = formatMap.containsKey(JWT_VC) ? JWT_VC : VC_CWT;
-                                            String credential = formatMap.get(format).value().toString();
-                                            return updateCredentialEntityWithNewFormat(existingEntityJson, credential, format);
-                                        } else {
-                                            // If the entity does not exist, create a new one
-                                            CredentialEntity credentialEntity = buildCredentialEntity(formatMap, status, userId, vcJsonAttribute, vcId, types);
-                                            return deserializeEntityToString(credentialEntity);
-                                        }
-                                    });
+                            return brokerService.getEntityById(processId, credentialId)
+                                    .flatMap(optionalEntity -> optionalEntity
+                                            .map(entityJson -> {
+                                                // Update the existing entity with the new format
+                                                String format = formatMap.containsKey(JWT_VC) ? JWT_VC : VC_CWT;
+                                                String credential = formatMap.get(format).value().toString();
+                                                return updateCredentialEntityWithNewFormat(entityJson, credential, format);
+                                            })
+                                            .orElseGet(() -> {
+                                                // Create a new credential entity if it does not exist
+                                                CredentialEntity credentialEntity = buildCredentialEntity(formatMap, status, userId, vcJsonAttribute, vcId, types);
+                                                return deserializeEntityToString(credentialEntity);
+                                            }));
                         }));
     }
 
@@ -279,6 +278,7 @@ public class DataServiceImpl implements DataService {
         return Mono.just(credentialEntityJson)
                 .flatMap(json -> {
                     try {
+                        // Deserialize the existing credential entity
                         CredentialEntity credentialEntity = objectMapper.readValue(json, CredentialEntity.class);
                         CredentialEntity.CredentialEntityBuilder updatedCredentialEntity = CredentialEntity.builder()
                                 .id(credentialEntity.id())
@@ -288,28 +288,39 @@ public class DataServiceImpl implements DataService {
                                 .credentialStatusAttribute(credentialEntity.credentialStatusAttribute())
                                 .relationshipAttribute(credentialEntity.relationshipAttribute());
 
-                        switch (format) {
-                            case JWT_VC:
-                                if (credentialEntity.jwtCredentialAttribute() == null) {
-                                    updatedCredentialEntity.jwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, credential));
-                                }
-                                break;
-                            case VC_CWT:
-                                if (credentialEntity.cwtCredentialAttribute() == null) {
-                                    updatedCredentialEntity.cwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, credential));
-                                }
-                                break;
-                            default:
-                                return Mono.error(new IllegalArgumentException("Unsupported credential format: " + credential));
-                        }
+                        // Maintain existing formats and add new format if not present
+                        addOrUpdateCredentialAttribute(credentialEntity, updatedCredentialEntity, credential, format);
 
+                        // Build the updated credential entity
                         CredentialEntity updatedEntity = updatedCredentialEntity.build();
+                        // Serialize the updated entity back to JSON
                         return deserializeEntityToString(updatedEntity);
                     } catch (JsonProcessingException e) {
+                        // Handle JSON parsing errors
                         return Mono.error(new FailedDeserializingException("Error processing credential entity JSON:" + e));
                     }
                 });
     }
+
+    private void addOrUpdateCredentialAttribute(CredentialEntity existingEntity, CredentialEntity.CredentialEntityBuilder builder, String credential, String format) {
+        // Check and update JWT credential if the format is JWT
+        if (format.equals(JWT_VC) && existingEntity.jwtCredentialAttribute() == null) {
+            builder.jwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, credential));
+        }
+        // Check and update CWT credential if the format is CWT
+        else if (format.equals(VC_CWT) && existingEntity.cwtCredentialAttribute() == null) {
+            builder.cwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE, credential));
+        }
+
+        // Maintain existing formats if already present
+        if (existingEntity.jwtCredentialAttribute() != null && !format.equals(JWT_VC)) {
+            builder.jwtCredentialAttribute(existingEntity.jwtCredentialAttribute());
+        }
+        if (existingEntity.cwtCredentialAttribute() != null && !format.equals(VC_CWT)) {
+            builder.cwtCredentialAttribute(existingEntity.cwtCredentialAttribute());
+        }
+    }
+
 
     /**
      * Retrieves the user's Verifiable Credentials in JSON format from a list of credential JSON strings.

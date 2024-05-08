@@ -6,6 +6,6 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 public interface DataWorkflow {
-    public Mono<List<CredentialsBasicInfo>> getAllCredentialsByUserId(String processId, String userId);
+    Mono<List<CredentialsBasicInfo>> getAllCredentialsByUserId(String processId, String userId);
     Mono<Void> deleteCredentialById(String processId, String credentialId, String userId);
 }

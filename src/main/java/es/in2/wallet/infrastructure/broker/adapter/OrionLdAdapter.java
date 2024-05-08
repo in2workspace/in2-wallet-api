@@ -111,7 +111,7 @@ public class OrionLdAdapter implements GenericBrokerService {
 
     @Override
     public Mono<Void> updateEntity(String processId, String entityId, String requestBody) {
-        return webClient.patch()
+        return webClient.post()
                 .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + entityId + ATTRIBUTES)
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)

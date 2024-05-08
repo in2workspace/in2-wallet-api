@@ -7,7 +7,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-public interface AttestationExchangeService {
+public interface CommonAttestationExchangeWorkflow {
     Mono<VcSelectorRequest> processAuthorizationRequest(String processId, String authorizationToken, String qrContent);
     Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> scope);
     Mono<Void> buildVerifiablePresentationWithSelectedVCs(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse);

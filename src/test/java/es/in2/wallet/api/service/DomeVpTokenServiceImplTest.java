@@ -1,7 +1,7 @@
 package es.in2.wallet.api.service;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import es.in2.wallet.application.service.AttestationExchangeService;
+import es.in2.wallet.application.service.CommonAttestationExchangeWorkflow;
 import es.in2.wallet.domain.model.AuthorizationRequest;
 import es.in2.wallet.domain.model.CredentialStatus;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 class DomeVpTokenServiceImplTest {
 
     @Mock
-    private AttestationExchangeService attestationExchangeService;
+    private CommonAttestationExchangeWorkflow commonAttestationExchangeWorkflow;
 
     @InjectMocks
     private DomeVpTokenServiceImpl domeVpTokenService;
@@ -54,7 +54,7 @@ class DomeVpTokenServiceImplTest {
             List<CredentialsBasicInfo> selectableVCs = List.of(
                     new CredentialsBasicInfo("vcId1", List.of("vcType1"), CredentialStatus.VALID,List.of(VC_JWT),JsonNodeFactory.instance.objectNode().put("example", "data"), expirationDate)
             );
-            when(attestationExchangeService.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,authorizationRequest.scope())).thenReturn(Mono.just(selectableVCs));
+            when(commonAttestationExchangeWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,authorizationRequest.scope())).thenReturn(Mono.just(selectableVCs));
 
             VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder()
                     .selectableVcList(selectableVCs)
@@ -70,7 +70,7 @@ class DomeVpTokenServiceImplTest {
                     )
                     .verifyComplete();
 
-            verify(attestationExchangeService).getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,authorizationRequest.scope());
+            verify(commonAttestationExchangeWorkflow).getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,authorizationRequest.scope());
     }
     }
     @Test
@@ -90,7 +90,7 @@ class DomeVpTokenServiceImplTest {
             List<CredentialsBasicInfo> selectableVCs = List.of(
                     new CredentialsBasicInfo("vcId1", List.of("vcType1"), CredentialStatus.VALID,List.of(VC_JWT),JsonNodeFactory.instance.objectNode().put("example", "data"), expirationDate)
             );
-            when(attestationExchangeService.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,DEFAULT_VC_TYPES_FOR_DOME_VERIFIER)).thenReturn(Mono.just(selectableVCs));
+            when(commonAttestationExchangeWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,DEFAULT_VC_TYPES_FOR_DOME_VERIFIER)).thenReturn(Mono.just(selectableVCs));
 
             VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder()
                     .selectableVcList(selectableVCs)
@@ -106,7 +106,7 @@ class DomeVpTokenServiceImplTest {
                     )
                     .verifyComplete();
 
-            verify(attestationExchangeService).getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,DEFAULT_VC_TYPES_FOR_DOME_VERIFIER);
+            verify(commonAttestationExchangeWorkflow).getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,DEFAULT_VC_TYPES_FOR_DOME_VERIFIER);
         }
     }
 }

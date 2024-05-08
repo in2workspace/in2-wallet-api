@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.service.CredentialIssuanceService;
+import es.in2.wallet.application.service.CommonCredentialIssuanceWorkflow;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.*;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import static es.in2.wallet.domain.util.MessageUtils.USER_ENTITY_PREFIX;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CredentialIssuanceServiceImpl implements CredentialIssuanceService {
+public class CommonCredentialIssuanceWorkflowImpl implements CommonCredentialIssuanceWorkflow {
 
     private final CredentialOfferService credentialOfferService;
     private final CredentialIssuerMetadataService credentialIssuerMetadataService;
@@ -169,7 +169,7 @@ public class CredentialIssuanceServiceImpl implements CredentialIssuanceService 
         return Mono.defer(() -> {
                     // Check if transactionId is present and choose the appropriate method to save the VC
                     if (credentialResponse.transactionId() == null) {
-                        return dataService.saveVC(userId, credentialResponse);
+                        return dataService.saveVC(processId,userId, credentialResponse);
                     } else {
                         return dataService.saveDOMEUnsignedCredential(userId, credentialResponse.credential());
                     }

@@ -5,7 +5,7 @@ import es.in2.wallet.domain.model.VcSelectorResponse;
 import reactor.core.publisher.Mono;
 
 
-public interface DomeAttestationExchangeService {
+public interface DomeAttestationExchangeWorkflow {
     Mono<VcSelectorRequest> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, String qrContent);
     public Mono<Void> buildAndSendVerifiablePresentationWithSelectedVCsForDome(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse);
 }

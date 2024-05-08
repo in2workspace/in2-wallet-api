@@ -15,7 +15,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DataWorkflowService implements DataWorkflow {
+public class DataWorkflowImpl implements DataWorkflow {
 
     private final BrokerService brokerService;
     private final DataService dataService;

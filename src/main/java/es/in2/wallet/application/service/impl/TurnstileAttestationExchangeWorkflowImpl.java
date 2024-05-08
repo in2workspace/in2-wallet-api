@@ -1,7 +1,7 @@
 package es.in2.wallet.application.service.impl;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import es.in2.wallet.application.service.TurnstileAttestationExchangeService;
+import es.in2.wallet.application.service.TurnstileAttestationExchangeWorkflow;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.service.CborGenerationService;
 import es.in2.wallet.domain.service.PresentationService;
@@ -17,7 +17,7 @@ import java.text.ParseException;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TurnstileAttestationExchangeServiceImpl implements TurnstileAttestationExchangeService {
+public class TurnstileAttestationExchangeWorkflowImpl implements TurnstileAttestationExchangeWorkflow {
     private final PresentationService presentationService;
     private final CborGenerationService cborGenerationService;
 

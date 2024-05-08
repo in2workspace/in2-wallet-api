@@ -1,10 +1,10 @@
 package es.in2.wallet.domain.service.impl;
 
-import es.in2.wallet.application.service.DomeAttestationExchangeService;
-import es.in2.wallet.application.service.EbsiCredentialService;
+import es.in2.wallet.application.service.DomeAttestationExchangeWorkflow;
+import es.in2.wallet.application.service.EbsiCredentialIssuanceWorkflow;
 import es.in2.wallet.domain.exception.NoSuchQrContentException;
-import es.in2.wallet.application.service.AttestationExchangeService;
-import es.in2.wallet.application.service.CredentialIssuanceService;
+import es.in2.wallet.application.service.CommonAttestationExchangeWorkflow;
+import es.in2.wallet.application.service.CommonCredentialIssuanceWorkflow;
 import es.in2.wallet.domain.model.QrType;
 import es.in2.wallet.domain.service.QrCodeProcessorService;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +20,10 @@ import static es.in2.wallet.domain.util.MessageUtils.*;
 @RequiredArgsConstructor
 public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
 
-    private final CredentialIssuanceService credentialIssuanceService;
-    private final EbsiCredentialService ebsiCredentialService;
-    private final AttestationExchangeService attestationExchangeService;
-    private final DomeAttestationExchangeService domeAttestationExchangeService;
+    private final CommonCredentialIssuanceWorkflow commonCredentialIssuanceWorkflow;
+    private final EbsiCredentialIssuanceWorkflow ebsiCredentialIssuanceWorkflow;
+    private final CommonAttestationExchangeWorkflow commonAttestationExchangeWorkflow;
+    private final DomeAttestationExchangeWorkflow domeAttestationExchangeWorkflow;
 
     @Override
     public Mono<Object> processQrContent(String processId, String authorizationToken, String qrContent) {
@@ -33,19 +33,19 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
                     switch (qrType) {
                         case CREDENTIAL_OFFER_URI, OPENID_CREDENTIAL_OFFER: {
                             log.info("ProcessID: {} - Processing a Verifiable Credential Offer URI", processId);
-                            return credentialIssuanceService.identifyAuthMethod(processId, authorizationToken, qrContent)
+                            return commonCredentialIssuanceWorkflow.identifyAuthMethod(processId, authorizationToken, qrContent)
                                     .doOnSuccess(credential -> log.info("ProcessID: {} - Credential Issued: {}", processId, credential))
                                     .doOnError(e -> log.error("ProcessID: {} - Error while issuing credential: {}", processId, e.getMessage()));
                         }
                         case EBSI_CREDENTIAL_OFFER: {
                             log.info("ProcessID: {} - Processing a Verifiable Credential Offer URI in EBSI Format", processId);
-                            return ebsiCredentialService.identifyAuthMethod(processId, authorizationToken, qrContent)
+                            return ebsiCredentialIssuanceWorkflow.identifyAuthMethod(processId, authorizationToken, qrContent)
                                     .doOnSuccess(credential -> log.info("ProcessID: {} - Credential Issued: {}", processId, credential))
                                     .doOnError(e -> log.error("ProcessID: {} - Error while issuing credential: {}", processId, e.getMessage()));
                         }
                         case VC_LOGIN_REQUEST: {
                             log.info("ProcessID: {} - Processing a Verifiable Credential Login Request", processId);
-                            return attestationExchangeService.processAuthorizationRequest(processId, authorizationToken, qrContent)
+                            return commonAttestationExchangeWorkflow.processAuthorizationRequest(processId, authorizationToken, qrContent)
                                     .doOnSuccess(credential -> log.info("ProcessID: {} - Attestation Exchange", processId))
                                     .doOnError(e -> log.error("ProcessID: {} - Error while processing Attestation Exchange: {}", processId, e.getMessage()));
                         }
@@ -55,7 +55,7 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
                         }
                         case DOME_VC_LOGIN_REQUEST: {
                             log.info("ProcessID: {} - Processing an Authentication Request from DOME", processId);
-                            return domeAttestationExchangeService.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,qrContent);
+                            return domeAttestationExchangeWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,qrContent);
                         }
                         case UNKNOWN: {
                             String errorMessage = "The received QR content cannot be processed";

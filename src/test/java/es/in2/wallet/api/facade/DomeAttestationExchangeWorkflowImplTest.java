@@ -1,6 +1,6 @@
 package es.in2.wallet.api.facade;
 
-import es.in2.wallet.application.service.impl.DomeAttestationExchangeServiceImpl;
+import es.in2.wallet.application.service.impl.DomeAttestationExchangeWorkflowImpl;
 import es.in2.wallet.domain.model.AuthorizationRequest;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.model.VcSelectorResponse;
@@ -19,7 +19,7 @@ import reactor.test.StepVerifier;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class DomeAttestationExchangeServiceImplTest {
+class DomeAttestationExchangeWorkflowImplTest {
 
     @Mock
     private AuthorizationRequestService authorizationRequestService;
@@ -31,7 +31,7 @@ class DomeAttestationExchangeServiceImplTest {
     private AuthorizationResponseService authorizationResponseService;
 
     @InjectMocks
-    private DomeAttestationExchangeServiceImpl domeAttestationExchangeService;
+    private DomeAttestationExchangeWorkflowImpl domeAttestationExchangeService;
     @Test
     void getSelectableCredentialsRequiredToBuildThePresentationTest() {
         String processId = "processId";

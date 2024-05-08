@@ -9,7 +9,7 @@ import java.util.List;
 public interface DataService {
 
     Mono<String> createUserEntity(String id);
-    Mono<String> saveVC(String userId, CredentialResponse credential);
+    Mono<String> saveVC(String processId, String userId, CredentialResponse credential);
     Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String userEntity);
     Mono<String> getVerifiableCredentialOnRequestedFormat(String credentialEntityJson, String format);
     Mono<String> extractDidFromVerifiableCredential(String credentialJson);

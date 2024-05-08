@@ -136,7 +136,7 @@ class ScorpioAdapterTest {
                 .setBody(expectedResponse));
 
         // Test the getEntityById method
-        StepVerifier.create(scorpioAdapter.getEntityById(processId, userId))
+        StepVerifier.create(scorpioAdapter.getEntityById(processId, USER_ENTITY_PREFIX + userId))
                 .expectNextMatches(optionalResponse ->
                         optionalResponse.map(response -> response.contains("\"id\":\"entityId\""))
                                 .orElse(false)) // Verify the response content within the Optional
@@ -159,17 +159,17 @@ class ScorpioAdapterTest {
         JsonNode jsonNode = objectMapper1.readTree(requestBody);
 
         when(objectMapper.readTree(requestBody)).thenReturn(jsonNode);
-        // Enqueue a mock response for the PATCH request
+        // Enqueue a mock response for the POST request
         mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
         // Test the updateEntity method
         StepVerifier.create(scorpioAdapter.updateEntity(processId, entityId, requestBody))
                 .verifyComplete(); // Verify the request completes successfully
 
-        // Verify the PATCH request was made correctly
+        // Verify the POST request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("/external/entities" + "/" + entityId + ATTRIBUTES, recordedRequest.getPath());
-        assertEquals("PATCH", recordedRequest.getMethod());
+        assertEquals("POST", recordedRequest.getMethod());
         assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
     }
@@ -186,17 +186,17 @@ class ScorpioAdapterTest {
         JsonNode jsonNode = objectMapper1.readTree(requestBody);
 
         when(objectMapper.readTree(requestBody)).thenReturn(jsonNode);
-        // Enqueue a mock response for the PATCH request
+        // Enqueue a mock response for the POST request
         mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
         // Test the updateEntity method
         StepVerifier.create(scorpioAdapter.updateEntity(processId, entityId, requestBody))
                 .verifyComplete(); // Verify the request completes successfully
 
-        // Verify the PATCH request was made correctly
+        // Verify the POST request was made correctly
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("/external/entities" + "/" + entityId + ATTRIBUTES, recordedRequest.getPath());
-        assertEquals("PATCH", recordedRequest.getMethod());
+        assertEquals("POST", recordedRequest.getMethod());
         assertEquals(MediaType.valueOf("application/ld+json").toString(), recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
         assertNotNull(recordedRequest.getBody().readUtf8()); // Ensure the request body was sent
     }
@@ -210,7 +210,7 @@ class ScorpioAdapterTest {
         mockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
         // Test the getEntityById method expecting an empty result
-        StepVerifier.create(scorpioAdapter.getEntityById(processId,userId))
+        StepVerifier.create(scorpioAdapter.getEntityById(processId,USER_ENTITY_PREFIX + userId))
                 .expectNextMatches(Optional::isEmpty) // Verify that an empty Optional is received
                 .verifyComplete();
 

@@ -1,9 +1,9 @@
 package es.in2.wallet.api.service;
 
-import es.in2.wallet.application.service.EbsiCredentialService;
+import es.in2.wallet.application.service.EbsiCredentialIssuanceWorkflow;
 import es.in2.wallet.domain.exception.NoSuchQrContentException;
-import es.in2.wallet.application.service.AttestationExchangeService;
-import es.in2.wallet.application.service.CredentialIssuanceService;
+import es.in2.wallet.application.service.CommonAttestationExchangeWorkflow;
+import es.in2.wallet.application.service.CommonCredentialIssuanceWorkflow;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.service.impl.QrCodeProcessorServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -19,11 +19,11 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class QrCodeProcessorServiceImplTest {
     @Mock
-    private CredentialIssuanceService credentialIssuanceService;
+    private CommonCredentialIssuanceWorkflow commonCredentialIssuanceWorkflow;
     @Mock
-    private EbsiCredentialService ebsiCredentialService;
+    private EbsiCredentialIssuanceWorkflow ebsiCredentialIssuanceWorkflow;
     @Mock
-    private AttestationExchangeService attestationExchangeService;
+    private CommonAttestationExchangeWorkflow commonAttestationExchangeWorkflow;
 
     @InjectMocks
     private QrCodeProcessorServiceImpl qrCodeProcessorService;
@@ -33,7 +33,7 @@ class QrCodeProcessorServiceImplTest {
         String qrContent = "https://credential-offer";
         String processId = "processId";
         String authorizationToken = "authToken";
-        when(credentialIssuanceService.identifyAuthMethod(processId, authorizationToken, qrContent)).thenReturn(Mono.empty());
+        when(commonCredentialIssuanceWorkflow.identifyAuthMethod(processId, authorizationToken, qrContent)).thenReturn(Mono.empty());
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
                 .verifyComplete();
@@ -44,7 +44,7 @@ class QrCodeProcessorServiceImplTest {
         String processId = "processId";
         String authorizationToken = "authToken";
 
-        when(credentialIssuanceService.identifyAuthMethod(processId, authorizationToken, qrContent)).thenThrow(new RuntimeException());
+        when(commonCredentialIssuanceWorkflow.identifyAuthMethod(processId, authorizationToken, qrContent)).thenThrow(new RuntimeException());
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
                 .expectError(RuntimeException.class)
@@ -57,7 +57,7 @@ class QrCodeProcessorServiceImplTest {
         String processId = "processId";
         String authorizationToken = "authToken";
 
-        when(attestationExchangeService.processAuthorizationRequest(processId, authorizationToken, qrContent)).thenThrow(new RuntimeException());
+        when(commonAttestationExchangeWorkflow.processAuthorizationRequest(processId, authorizationToken, qrContent)).thenThrow(new RuntimeException());
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
                 .expectError(RuntimeException.class)
@@ -71,7 +71,7 @@ class QrCodeProcessorServiceImplTest {
         String authorizationToken = "authToken";
         VcSelectorRequest vcSelectorRequest = VcSelectorRequest.builder().build();
 
-        when(attestationExchangeService.processAuthorizationRequest(processId, authorizationToken, qrContent)).thenReturn(Mono.just(vcSelectorRequest));
+        when(commonAttestationExchangeWorkflow.processAuthorizationRequest(processId, authorizationToken, qrContent)).thenReturn(Mono.just(vcSelectorRequest));
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
                 .expectNext(vcSelectorRequest)
@@ -83,7 +83,7 @@ class QrCodeProcessorServiceImplTest {
         String qrContent = "openid-credential-offer://";
         String processId = "processId";
         String authorizationToken = "authToken";
-        when(credentialIssuanceService.identifyAuthMethod(processId, authorizationToken, qrContent)).thenReturn(Mono.empty());
+        when(commonCredentialIssuanceWorkflow.identifyAuthMethod(processId, authorizationToken, qrContent)).thenReturn(Mono.empty());
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
                 .verifyComplete();
@@ -94,7 +94,7 @@ class QrCodeProcessorServiceImplTest {
         String processId = "processId";
         String authorizationToken = "authToken";
 
-        when(credentialIssuanceService.identifyAuthMethod(processId, authorizationToken, qrContent)).thenThrow(new RuntimeException());
+        when(commonCredentialIssuanceWorkflow.identifyAuthMethod(processId, authorizationToken, qrContent)).thenThrow(new RuntimeException());
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
                 .expectError(RuntimeException.class)
@@ -106,7 +106,7 @@ class QrCodeProcessorServiceImplTest {
         String processId = "processId";
         String authorizationToken = "authToken";
 
-        when(ebsiCredentialService.identifyAuthMethod(processId, authorizationToken, qrContent)).thenReturn(Mono.empty());
+        when(ebsiCredentialIssuanceWorkflow.identifyAuthMethod(processId, authorizationToken, qrContent)).thenReturn(Mono.empty());
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
                 .verifyComplete();
@@ -117,7 +117,7 @@ class QrCodeProcessorServiceImplTest {
         String processId = "processId";
         String authorizationToken = "authToken";
 
-        when(ebsiCredentialService.identifyAuthMethod(processId, authorizationToken, qrContent)).thenThrow(new RuntimeException());
+        when(ebsiCredentialIssuanceWorkflow.identifyAuthMethod(processId, authorizationToken, qrContent)).thenThrow(new RuntimeException());
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
                 .expectError(RuntimeException.class)

@@ -2,7 +2,7 @@ package es.in2.wallet.api.ebsi.comformance.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.application.service.AttestationExchangeService;
+import es.in2.wallet.application.service.CommonAttestationExchangeWorkflow;
 import es.in2.wallet.domain.exception.FailedSerializingException;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
 import es.in2.wallet.domain.model.PresentationDefinition;
@@ -36,7 +36,7 @@ class EbsiVpTokenServiceImplTest {
     @Mock
     private ObjectMapper objectMapper;
     @Mock
-    private AttestationExchangeService attestationExchangeService;
+    private CommonAttestationExchangeWorkflow commonAttestationExchangeWorkflow;
     @Mock
     private PresentationService presentationService;
 
@@ -271,7 +271,7 @@ class EbsiVpTokenServiceImplTest {
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("123"));
             when(objectMapper.readValue(anyString(), eq(PresentationDefinition.class))).thenReturn(presentationDefinition);
-            when(attestationExchangeService.getSelectableCredentialsRequiredToBuildThePresentation(eq(processId),eq(authorizationToken),anyList())).thenReturn(Mono.just(List.of()));
+            when(commonAttestationExchangeWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(eq(processId),eq(authorizationToken),anyList())).thenReturn(Mono.just(List.of()));
             when(presentationService.createSignedVerifiablePresentation(anyString(), anyString(), any(VcSelectorResponse.class), anyString(), anyString())).thenReturn(Mono.just("jwt VP"));
 
             when(postRequest(anyString(), anyList(), anyString())).thenReturn(Mono.just("redirect response"));
@@ -287,7 +287,7 @@ class EbsiVpTokenServiceImplTest {
                     })
                     .verifyComplete();
 
-            verify(attestationExchangeService).getSelectableCredentialsRequiredToBuildThePresentation(eq(processId),eq(authorizationToken),anyList());
+            verify(commonAttestationExchangeWorkflow).getSelectableCredentialsRequiredToBuildThePresentation(eq(processId),eq(authorizationToken),anyList());
             verify(presentationService).createSignedVerifiablePresentation(anyString(), anyString(), any(VcSelectorResponse.class), anyString(), anyString());
         }
     }
@@ -522,7 +522,7 @@ class EbsiVpTokenServiceImplTest {
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("123"));
             when(objectMapper.readValue(anyString(), eq(PresentationDefinition.class))).thenReturn(presentationDefinition);
-            when(attestationExchangeService.getSelectableCredentialsRequiredToBuildThePresentation(eq(processId),eq(authorizationToken),anyList())).thenReturn(Mono.just(List.of()));
+            when(commonAttestationExchangeWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(eq(processId),eq(authorizationToken),anyList())).thenReturn(Mono.just(List.of()));
             when(presentationService.createSignedVerifiablePresentation(anyString(), anyString(), any(VcSelectorResponse.class), anyString(), anyString())).thenReturn(Mono.just("jwt VP"));
 
 
