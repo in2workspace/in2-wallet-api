@@ -59,6 +59,63 @@ class CredentialServiceImplTest {
 
             when(postRequest(credentialIssuerMetadata.credentialEndpoint(), headersForIssuer, "credentialRequest")).thenReturn(Mono.just("credential"));
 
+            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, List.of("VerifiableCredential","LEARCredential")))
+                    .expectNext(mockCredentialResponse)
+                    .verifyComplete();
+        }
+    }
+    @Test
+    void getCredentialTestWithoutTypes() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
+
+            String jwt = "ey34324";
+
+            TokenResponse tokenResponse = TokenResponse.builder().accessToken("token").cNonce("nonce").build();
+
+            CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").credentialEndpoint("endpoint").build();
+
+            CredentialResponse mockCredentialResponse = CredentialResponse.builder().credential("credential").c_nonce("fresh_nonce").c_nonce_expires_in(600).format("jwt").build();
+
+
+            List<Map.Entry<String, String>> headersForIssuer = new ArrayList<>();
+            headersForIssuer.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
+            headersForIssuer.add(new AbstractMap.SimpleEntry<>(HEADER_AUTHORIZATION, BEARER + tokenResponse.accessToken()));
+
+
+            when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
+            when(objectMapper.readValue(anyString(), eq(CredentialResponse.class))).thenReturn(mockCredentialResponse);
+
+            when(postRequest(credentialIssuerMetadata.credentialEndpoint(), headersForIssuer, "credentialRequest")).thenReturn(Mono.just("credential"));
+
+            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, null))
+                    .expectNext(mockCredentialResponse)
+                    .verifyComplete();
+        }
+    }
+
+    @Test
+    void getCredentialTestForFiware() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
+
+            String jwt = "ey34324";
+
+            TokenResponse tokenResponse = TokenResponse.builder().accessToken("token").cNonce("nonce").build();
+
+            CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").credentialEndpoint("endpoint").build();
+
+            CredentialResponse mockCredentialResponse = CredentialResponse.builder().credential("credential").c_nonce("fresh_nonce").c_nonce_expires_in(600).format("jwt").build();
+
+
+            List<Map.Entry<String, String>> headersForIssuer = new ArrayList<>();
+            headersForIssuer.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
+            headersForIssuer.add(new AbstractMap.SimpleEntry<>(HEADER_AUTHORIZATION, BEARER + tokenResponse.accessToken()));
+
+
+            when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
+            when(objectMapper.readValue(anyString(), eq(CredentialResponse.class))).thenReturn(mockCredentialResponse);
+
+            when(postRequest(credentialIssuerMetadata.credentialEndpoint(), headersForIssuer, "credentialRequest")).thenReturn(Mono.just("credential"));
+
             StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, List.of("LEARCredential")))
                     .expectNext(mockCredentialResponse)
                     .verifyComplete();
