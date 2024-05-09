@@ -10,6 +10,7 @@ import es.in2.wallet.domain.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.NoSuchElementException;
@@ -72,9 +73,10 @@ public class CommonCredentialIssuanceWorkflowImpl implements CommonCredentialIss
         log.info("ProcessId: {} - Getting Credential with Pre-Authorized Code", processId);
         return generateDid().flatMap(did ->
                 getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
-                        .flatMap(tokenResponse -> getCredentialRecursive(
-                                processId, authorizationToken, tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), 0
-                        )));
+                        .flatMapMany(tokenResponse -> Flux.fromIterable(credentialOffer.credentials())
+                                .concatMap(credential -> getCredential(processId, authorizationToken, tokenResponse, credentialIssuerMetadata, did, tokenResponse.cNonce(), credential))
+                        )
+                        .then());
     }
 
     /**
@@ -111,9 +113,10 @@ public class CommonCredentialIssuanceWorkflowImpl implements CommonCredentialIss
                                 })
                                 .flatMap(params -> ebsiAuthorisationService.sendTokenRequest(tuple.getT2(), did, authorisationServerMetadata, params)))
                         // get Credentials
-                        .flatMap(tokenResponse -> getCredentialRecursive(
-                                 processId, authorizationToken, tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce(), 0
-                        )));
+                        .flatMapMany(tokenResponse -> Flux.fromIterable(credentialOffer.credentials())
+                                .concatMap(credential -> getCredential(processId, authorizationToken, tokenResponse, credentialIssuerMetadata, did, tokenResponse.cNonce(), credential))
+                        )
+                        .then());
     }
 
     /**
@@ -190,23 +193,18 @@ public class CommonCredentialIssuanceWorkflowImpl implements CommonCredentialIss
     }
 
 
-    private Mono<Void> getCredentialRecursive(String processId, String authorizationToken, TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce, int index) {
-        if (index >= credentialOffer.credentials().size()) {
-            return Mono.empty();
-        }
-        CredentialOffer.Credential credential = credentialOffer.credentials().get(index);
-        try {
-            return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
-                    .flatMap(jwt -> credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credential.format(), credential.types()))
-                    .flatMap(credentialResponse -> {
-                        String newNonce = credentialResponse.c_nonce() != null ? credentialResponse.c_nonce() : nonce;
-                        return saveCredential(processId,authorizationToken,credentialResponse)
-                                .then(getCredentialRecursive(processId,authorizationToken,tokenResponse, credentialOffer, credentialIssuerMetadata, did, newNonce, index + 1));
-                    });
-        } catch (Exception e){
-            log.error("Error while getting the credential in the next format: {}", credentialOffer.credentials().get(index).format());
-            return getCredentialRecursive(processId, authorizationToken, tokenResponse, credentialOffer, credentialIssuerMetadata, did, nonce, index + 1);
-        }
+    private Mono<String> getCredential(String processId, String authorizationToken, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce, CredentialOffer.Credential credential) {
+        return Mono.defer(() -> buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
+                .flatMap(jwt -> credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credential.format(), credential.types()))
+                .flatMap(credentialResponse -> {
+                    String newNonce = credentialResponse.c_nonce() != null ? credentialResponse.c_nonce() : nonce;
+                    return saveCredential(processId, authorizationToken, credentialResponse)
+                            .thenReturn(newNonce);  // Return the new nonce for the next iteration
+                }))
+                .onErrorResume(e -> {
+                    log.error("Error while getting the credential at index {}", e.getMessage());
+                    return Mono.empty(); // Continue with next credential even in case of error
+                });
     }
 
     private Mono<String> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(String credentialConfigurationId, CredentialIssuerMetadata credentialIssuerMetadata){

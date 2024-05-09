@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.service.DomeProfileRequestDeferredCredentialService;
+import es.in2.wallet.application.service.DomeProfileRequestDeferredCredentialWorkflow;
 import es.in2.wallet.domain.exception.CredentialNotAvailableException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.TransactionEntity;
@@ -20,7 +20,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DomeProfileRequestDeferredCredentialServiceImpl implements DomeProfileRequestDeferredCredentialService {
+public class DomeProfileRequestDeferredCredentialWorkflowImpl implements DomeProfileRequestDeferredCredentialWorkflow {
     private final BrokerService brokerService;
     private final ObjectMapper objectMapper;
     private final CredentialService credentialService;
