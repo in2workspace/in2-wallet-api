@@ -48,10 +48,10 @@ public class DataWorkflowImpl implements DataWorkflow {
 
     @Override
     public Mono<Void> deleteCredentialByIdAndUserId(String processId, String credentialId, String userId) {
-        return brokerService.getCredentialByIdAndUserId(processId,userId,credentialId)
+        return brokerService.getCredentialByIdAndUserId(processId,credentialId,userId)
                 .flatMap(dataService::extractDidFromVerifiableCredential)
                 .flatMap(vaultService::deleteSecretByKey)
-                .then(brokerService.deleteCredentialByIdAndUserId(processId,userId,credentialId))
+                .then(brokerService.deleteCredentialByIdAndUserId(processId, credentialId, userId))
                 .doOnSuccess(list -> log.info("Delete VC with Id: {}", credentialId))
                 .onErrorResume(Mono::error);
     }

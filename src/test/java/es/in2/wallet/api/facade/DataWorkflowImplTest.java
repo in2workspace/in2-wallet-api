@@ -77,18 +77,18 @@ class DataWorkflowImplTest {
         String did = "did:example:123";
         String credentialEntity = "credential";
 
-        when(brokerService.getCredentialByIdAndUserId(processId, userId,credentialId)).thenReturn(Mono.just(credentialEntity));
+        when(brokerService.getCredentialByIdAndUserId(processId, credentialId,userId)).thenReturn(Mono.just(credentialEntity));
         when(dataService.extractDidFromVerifiableCredential(credentialEntity)).thenReturn(Mono.just(did));
         when(vaultService.deleteSecretByKey(did)).thenReturn(Mono.empty());
-        when(brokerService.deleteCredentialByIdAndUserId(processId, userId, credentialId)).thenReturn(Mono.empty());
+        when(brokerService.deleteCredentialByIdAndUserId(processId, credentialId, userId)).thenReturn(Mono.empty());
 
         StepVerifier.create(userDataFacadeService.deleteCredentialByIdAndUserId(processId, credentialId, userId))
                 .verifyComplete();
 
-        verify(brokerService).getCredentialByIdAndUserId(processId, userId,credentialId);
+        verify(brokerService).getCredentialByIdAndUserId(processId, credentialId,userId);
         verify(dataService).extractDidFromVerifiableCredential(credentialEntity);
         verify(vaultService).deleteSecretByKey(did);
-        verify(brokerService).deleteCredentialByIdAndUserId(processId, userId, credentialId);
+        verify(brokerService).deleteCredentialByIdAndUserId(processId, credentialId, userId);
     }
 
 }

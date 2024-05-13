@@ -21,12 +21,12 @@ public class BrokerServiceImpl implements BrokerService {
         return brokerAdapter.postEntity(processId, requestBody);
     }
 
-    public Mono<Optional<String>> getEntityById(String processId, String entityId) {
-        return brokerAdapter.getEntityById(processId, entityId);
+    public Mono<Optional<String>> getEntityById(String processId, String id) {
+        return brokerAdapter.getEntityById(processId, id);
     }
 
-    public Mono<Void> updateEntity(String processId, String userId, String requestBody) {
-        return brokerAdapter.updateEntity(processId, userId, requestBody);
+    public Mono<Void> updateEntity(String processId, String id, String requestBody) {
+        return brokerAdapter.updateEntityById(processId, id, requestBody);
     }
     public Mono<String> getAllCredentialsByUserId(String processId, String userId){
         return brokerAdapter.getAllCredentialsByUserId(processId,userId);

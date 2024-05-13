@@ -8,14 +8,14 @@ public interface BrokerService {
 
     Mono<Void> postEntity(String processId, String requestBody);
 
-    Mono<Optional<String>> getEntityById(String processId, String userId);
+    Mono<Optional<String>> getEntityById(String processId, String id);
     Mono<String> getAllCredentialsByUserId(String processId, String userId);
-    Mono<String> getCredentialByIdAndUserId(String processId, String  userId, String credentialId);
-    Mono<Void> deleteCredentialByIdAndUserId(String processId, String  userId, String credentialId);
-    Mono<String> getCredentialByCredentialTypeAndUserId(String processId, String  userId, String credentialType);
+    Mono<String> getCredentialByIdAndUserId(String processId, String credentialId, String  userId);
+    Mono<Void> deleteCredentialByIdAndUserId(String processId, String credentialId, String  userId);
+    Mono<String> getCredentialByCredentialTypeAndUserId(String processId, String credentialType, String  userId);
     Mono<String> getTransactionThatIsLinkedToACredential(String processId, String credentialId);
 
-    Mono<Void> updateEntity(String processId,  String entityId, String requestBody);
+    Mono<Void> updateEntity(String processId, String id, String requestBody);
     Mono<Void> deleteTransactionByTransactionId(String processId, String transactionId);
 
 }

@@ -79,7 +79,7 @@ class PresentationServiceImplTest {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just(userId));
 
-            when(brokerService.getCredentialByIdAndUserId(processId, userId, credentialsBasicInfo.id())).thenReturn(Mono.just((credentialEntity)));
+            when(brokerService.getCredentialByIdAndUserId(processId, credentialsBasicInfo.id(),userId)).thenReturn(Mono.just((credentialEntity)));
 
             Long expirationTime = 10L;
             when(appConfig.getCredentialPresentationExpirationTime()).thenReturn(expirationTime);
@@ -119,7 +119,7 @@ class PresentationServiceImplTest {
 
         // Mock getUserIdFromToken and getEntityById to simulate finding a user entity
         when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just(userId));
-        when(brokerService.getCredentialByIdAndUserId(processId, userId, selectedVcList.get(0).id())).thenReturn(Mono.just((credentialEntity)));
+        when(brokerService.getCredentialByIdAndUserId(processId, selectedVcList.get(0).id(),userId)).thenReturn(Mono.just((credentialEntity)));
 
             // Mock getVerifiableCredentials to return a list of credentials
         when(dataService.getVerifiableCredentialOnRequestedFormat(credentialEntity, VC_JSON))
@@ -132,7 +132,7 @@ class PresentationServiceImplTest {
                 .expectNext(encodedPresentation)
                 .verifyComplete();
 
-        verify(brokerService).getCredentialByIdAndUserId(processId, userId, selectedVcList.get(0).id());
+        verify(brokerService).getCredentialByIdAndUserId(processId, selectedVcList.get(0).id(), userId);
         verify(dataService).getVerifiableCredentialOnRequestedFormat(credentialEntity, VC_JSON);
         }
     }

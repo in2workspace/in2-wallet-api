@@ -78,7 +78,7 @@ class DeferredCredentialDomeProfileWorkflowImplTest {
                 ))
                 .thenReturn(Mono.just(credentialResponse));
 
-        when(brokerService.getCredentialByIdAndUserId(processId,userId,credentialId))
+        when(brokerService.getCredentialByIdAndUserId(processId,credentialId, userId))
                 .thenReturn(Mono.just(credentialJson));
 
         when(dataService.updateVCEntityWithSignedFormat(credentialJson,credentialResponse))

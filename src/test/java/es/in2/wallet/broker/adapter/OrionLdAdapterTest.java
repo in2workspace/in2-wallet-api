@@ -127,7 +127,7 @@ class OrionLdAdapterTest {
         mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
         // Test the updateEntity method
-        StepVerifier.create(orionLdAdapter.updateEntity(processId, entityId, requestBody))
+        StepVerifier.create(orionLdAdapter.updateEntityById(processId, entityId, requestBody))
                 .verifyComplete(); // Verify the request completes successfully
 
         // Verify the POST request was made correctly
@@ -175,7 +175,7 @@ class OrionLdAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(orionLdAdapter.getCredentialByIdAndUserId(processId, userId, credentialId))
+        StepVerifier.create(orionLdAdapter.getCredentialByIdAndUserId(processId, credentialId, userId))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 
@@ -193,7 +193,7 @@ class OrionLdAdapterTest {
 
         mockWebServer.enqueue(new MockResponse().setResponseCode(204));
 
-        StepVerifier.create(orionLdAdapter.deleteCredentialByIdAndUserId(processId, userId, credentialId))
+        StepVerifier.create(orionLdAdapter.deleteCredentialByIdAndUserId(processId, credentialId, userId))
                 .verifyComplete();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
@@ -216,7 +216,7 @@ class OrionLdAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(orionLdAdapter.getCredentialByCredentialTypeAndUserId(processId, userId, credentialType))
+        StepVerifier.create(orionLdAdapter.getCredentialByCredentialTypeAndUserId(processId, credentialType,userId))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 

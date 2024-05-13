@@ -163,7 +163,7 @@ class ScorpioAdapterTest {
         mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
         // Test the updateEntity method
-        StepVerifier.create(scorpioAdapter.updateEntity(processId, entityId, requestBody))
+        StepVerifier.create(scorpioAdapter.updateEntityById(processId, entityId, requestBody))
                 .verifyComplete(); // Verify the request completes successfully
 
         // Verify the POST request was made correctly
@@ -190,7 +190,7 @@ class ScorpioAdapterTest {
         mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
         // Test the updateEntity method
-        StepVerifier.create(scorpioAdapter.updateEntity(processId, entityId, requestBody))
+        StepVerifier.create(scorpioAdapter.updateEntityById(processId, entityId, requestBody))
                 .verifyComplete(); // Verify the request completes successfully
 
         // Verify the POST request was made correctly
@@ -254,7 +254,7 @@ class ScorpioAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(scorpioAdapter.getCredentialByIdAndUserId(processId, userId, credentialId))
+        StepVerifier.create(scorpioAdapter.getCredentialByIdAndUserId(processId, credentialId, userId))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 
@@ -272,7 +272,7 @@ class ScorpioAdapterTest {
 
         mockWebServer.enqueue(new MockResponse().setResponseCode(204));
 
-        StepVerifier.create(scorpioAdapter.deleteCredentialByIdAndUserId(processId, userId, credentialId))
+        StepVerifier.create(scorpioAdapter.deleteCredentialByIdAndUserId(processId, credentialId, userId))
                 .verifyComplete();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
@@ -295,7 +295,7 @@ class ScorpioAdapterTest {
                 .setResponseCode(200)
                 .setBody(expectedResponse));
 
-        StepVerifier.create(scorpioAdapter.getCredentialByCredentialTypeAndUserId(processId, userId, credentialType))
+        StepVerifier.create(scorpioAdapter.getCredentialByCredentialTypeAndUserId(processId, credentialType, userId))
                 .expectNext(expectedResponse)
                 .verifyComplete();
 

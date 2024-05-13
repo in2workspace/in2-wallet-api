@@ -45,7 +45,7 @@ public class DeferredCredentialDomeProfileWorkflowImpl implements DeferredCreden
                                         .flatMap(credentialResponse -> {
 
                                             if (credentialResponse.transactionId() == null){
-                                                return brokerService.getCredentialByIdAndUserId(processId,userId,credentialId)
+                                                return brokerService.getCredentialByIdAndUserId(processId,credentialId,userId)
                                                         .flatMap(credentialEntity -> dataService.updateVCEntityWithSignedFormat(credentialEntity,credentialResponse))
                                                         .flatMap(updatedEntity -> brokerService.updateEntity(processId,credentialId,updatedEntity))
                                                         .then(brokerService.deleteTransactionByTransactionId(processId,transaction.id()));
