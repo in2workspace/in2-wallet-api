@@ -1,6 +1,6 @@
 package es.in2.wallet.domain.service.impl;
 
-import es.in2.wallet.application.service.CommonAttestationExchangeWorkflow;
+import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
 import es.in2.wallet.domain.model.AuthorizationRequest;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.service.DomeVpTokenService;
@@ -9,14 +9,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import static es.in2.wallet.domain.util.MessageUtils.DEFAULT_SCOPE_FOR_DOME_VERIFIER;
-import static es.in2.wallet.domain.util.MessageUtils.DEFAULT_VC_TYPES_FOR_DOME_VERIFIER;
+import static es.in2.wallet.domain.util.ApplicationConstants.DEFAULT_SCOPE_FOR_DOME_VERIFIER;
+import static es.in2.wallet.domain.util.ApplicationConstants.DEFAULT_VC_TYPES_FOR_DOME_VERIFIER;
+
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DomeVpTokenServiceImpl implements DomeVpTokenService {
-    private final CommonAttestationExchangeWorkflow commonAttestationExchangeWorkflow;
+    private final AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
 
     /**
      * Initiates the process to exchange the authorization token and JWT for a VP Token Request,
@@ -45,14 +46,14 @@ public class DomeVpTokenServiceImpl implements DomeVpTokenService {
 
         if (scopeMatches) {
             // If there is a match, use DEFAULT_VC_TYPES_FOR_DOME_VERIFIER as the list of VC types
-            return commonAttestationExchangeWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, DEFAULT_VC_TYPES_FOR_DOME_VERIFIER)
+            return attestationExchangeCommonWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, DEFAULT_VC_TYPES_FOR_DOME_VERIFIER)
                     .flatMap(credentialsBasicInfos -> Mono.just(VcSelectorRequest.builder().selectableVcList(credentialsBasicInfos)
                             .redirectUri(authorizationRequest.redirectUri())
                             .state(authorizationRequest.state())
                             .build()));
         } else {
             // If there is no match, pass the scope from AuthorizationRequest directly
-            return commonAttestationExchangeWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, authorizationRequest.scope())
+            return attestationExchangeCommonWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, authorizationRequest.scope())
                     .flatMap(credentialsBasicInfos -> Mono.just(VcSelectorRequest.builder().selectableVcList(credentialsBasicInfos)
                             .redirectUri(authorizationRequest.redirectUri())
                             .state(authorizationRequest.state())

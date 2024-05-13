@@ -1,8 +1,8 @@
-package es.in2.wallet.application.service.impl;
+package es.in2.wallet.application.workflow.presentation.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.service.CommonAttestationExchangeWorkflow;
+import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.AuthorizationRequest;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
@@ -26,7 +26,7 @@ import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CommonAttestationExchangeWorkflowImpl implements CommonAttestationExchangeWorkflow {
+public class AttestationExchangeCommonWorkflowImpl implements AttestationExchangeCommonWorkflow {
 
     private final AuthorizationRequestService authorizationRequestService;
     private final AuthorizationResponseService authorizationResponseService;

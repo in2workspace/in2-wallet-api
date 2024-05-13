@@ -11,9 +11,9 @@ import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.DomeVerifiablePresentation;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.model.VerifiablePresentation;
+import es.in2.wallet.domain.service.DataService;
 import es.in2.wallet.domain.service.PresentationService;
 import es.in2.wallet.domain.service.SignerService;
-import es.in2.wallet.domain.service.DataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,8 +24,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.domain.util.MessageUtils.*;
 
 @Slf4j
 @Service
@@ -113,7 +113,7 @@ public class PresentationServiceImpl implements PresentationService {
      */
     private Mono<List<String>> getVerifiableCredentials(String processId, String userId, List<CredentialsBasicInfo> selectedVcList, String format) {
         return Flux.fromIterable(selectedVcList)
-                .flatMap(credential -> brokerService.getCredentialByAndUserId(processId,userId,credential.id()))
+                .flatMap(credential -> brokerService.getCredentialByIdAndUserId(processId,userId,credential.id()))
                 .flatMap(credentialEntity -> dataService.getVerifiableCredentialOnRequestedFormat(credentialEntity,format))
                 .collectList();
     }

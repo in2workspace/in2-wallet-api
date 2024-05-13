@@ -7,7 +7,6 @@ import es.in2.wallet.domain.exception.FailedSerializingException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.CredentialService;
 import es.in2.wallet.domain.util.ApplicationUtils;
-import es.in2.wallet.domain.util.MessageUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -18,6 +17,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,7 +28,7 @@ public class CredentialServiceImpl implements CredentialService {
 
     @Override
     public Mono<CredentialResponse> getCredential(String jwt, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types) {
-        String processId = MDC.get(MessageUtils.PROCESS_ID);
+        String processId = MDC.get(PROCESS_ID);
         // build CredentialRequest
         return buildCredentialRequest(jwt,format,types)
                 .doOnSuccess(credentialRequest -> log.info("ProcessID: {} - CredentialRequest: {}", processId, credentialRequest))
@@ -41,7 +42,7 @@ public class CredentialServiceImpl implements CredentialService {
 
     @Override
     public Mono<CredentialResponse> getCredentialDomeDeferredCase(String transactionId, String accessToken, String deferredEndpoint) {
-        String processId = MDC.get(MessageUtils.PROCESS_ID);
+        String processId = MDC.get(PROCESS_ID);
         DeferredCredentialRequest deferredCredentialRequest = DeferredCredentialRequest.builder().transactionId(transactionId).build();
         return postCredential(accessToken,deferredEndpoint,deferredCredentialRequest)
                 .flatMap(response -> {
@@ -82,7 +83,7 @@ public class CredentialServiceImpl implements CredentialService {
     }
 
     private Mono<CredentialResponse> handleDeferredCredential(String acceptanceToken, CredentialIssuerMetadata credentialIssuerMetadata) {
-        List<Map.Entry<String, String>> headers = List.of(Map.entry(MessageUtils.HEADER_AUTHORIZATION, MessageUtils.BEARER + acceptanceToken));
+        List<Map.Entry<String, String>> headers = List.of(Map.entry(HEADER_AUTHORIZATION, BEARER + acceptanceToken));
 
         // Logic to handle the deferred credential request using acceptanceToken
         return ApplicationUtils.postRequest(credentialIssuerMetadata.deferredCredentialEndpoint(),headers,"")
@@ -118,8 +119,8 @@ public class CredentialServiceImpl implements CredentialService {
                                         String credentialEndpoint,
                                         Object credentialRequest) {
         try {
-            List<Map.Entry<String, String>> headers = List.of(Map.entry(MessageUtils.CONTENT_TYPE, MessageUtils.CONTENT_TYPE_APPLICATION_JSON),
-                    Map.entry(MessageUtils.HEADER_AUTHORIZATION, MessageUtils.BEARER + accessToken));
+            List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON),
+                    Map.entry(HEADER_AUTHORIZATION, BEARER + accessToken));
             return ApplicationUtils.postRequest(credentialEndpoint, headers, objectMapper.writeValueAsString(credentialRequest))
                     .onErrorResume(e -> {
                         log.error("Error while fetching Credential from Issuer: {}", e.getMessage());

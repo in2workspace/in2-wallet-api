@@ -1,10 +1,10 @@
-package es.in2.wallet.application.service.impl;
+package es.in2.wallet.application.workflow.issuance.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.service.CommonCredentialIssuanceWorkflow;
+import es.in2.wallet.application.workflow.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.*;
 import lombok.RequiredArgsConstructor;
@@ -15,14 +15,14 @@ import reactor.core.publisher.Mono;
 
 import java.util.NoSuchElementException;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.USER_ENTITY_PREFIX;
 import static es.in2.wallet.domain.util.ApplicationUtils.extractResponseType;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.domain.util.MessageUtils.USER_ENTITY_PREFIX;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CommonCredentialIssuanceWorkflowImpl implements CommonCredentialIssuanceWorkflow {
+public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceCommonWorkflow {
 
     private final CredentialOfferService credentialOfferService;
     private final CredentialIssuerMetadataService credentialIssuerMetadataService;

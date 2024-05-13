@@ -9,7 +9,6 @@ import com.nimbusds.jwt.JWTParser;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.AuthorizationResponseService;
-import es.in2.wallet.domain.util.MessageUtils;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,9 +23,8 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
 import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM;
 
 
 @Slf4j
@@ -77,7 +75,7 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                                     try {
                                         return parseVerifiableCredentialFromString(credential)
                                                 .map(verifiableCredential ->
-                                                        new DescriptorMap(MessageUtils.JWT_VC, "$.verifiableCredential[" + index + "]", verifiableCredential.id(), null)
+                                                        new DescriptorMap(JWT_VC, "$.verifiableCredential[" + index + "]", verifiableCredential.id(), null)
                                                 );
                                     } catch (JsonProcessingException e) {
                                         return Mono.error(new FailedDeserializingException("Error while deserializing Verifiable Credential: " + e));
@@ -126,14 +124,14 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
             result = result.flatMap(credentialDescriptorMap ->
                     addCredentialDescriptorMap(credentialDescriptorMap, tmpCredentialDescriptorMap));
         }
-        return result.map(finalMap -> new DescriptorMap(MessageUtils.JWT_VP, "$", verifiablePresentationId, finalMap));
+        return result.map(finalMap -> new DescriptorMap(JWT_VP, "$", verifiablePresentationId, finalMap));
     }
 
     private Mono<String> getPresentationSubmissionAsString(String processId, DescriptorMap descriptorMapping) {
         return Mono.fromCallable(() -> {
                     PresentationSubmission presentationSubmission = new PresentationSubmission(
-                            MessageUtils.CUSTOMER_PRESENTATION_SUBMISSION,
-                            MessageUtils.CUSTOMER_PRESENTATION_DEFINITION,
+                            CUSTOMER_PRESENTATION_SUBMISSION,
+                            CUSTOMER_PRESENTATION_DEFINITION,
                             Collections.singletonList(descriptorMapping)
                     );
                     return objectMapper.writeValueAsString(presentationSubmission);
@@ -188,7 +186,7 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                 .post()
                 .uri(vcSelectorResponse.redirectUri())
                 .contentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED)
-                .header(HttpHeaders.AUTHORIZATION, MessageUtils.BEARER + authorizationToken)
+                .header(HttpHeaders.AUTHORIZATION, BEARER + authorizationToken)
                 .bodyValue(xWwwFormUrlencodedBody)
                 .exchangeToMono(response -> {
                     if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {

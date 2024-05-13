@@ -20,8 +20,9 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
-import static es.in2.wallet.domain.util.MessageUtils.ATTRIBUTES;
-import static es.in2.wallet.domain.util.MessageUtils.USER_ENTITY_PREFIX;
+import static es.in2.wallet.domain.util.ApplicationConstants.ATTRIBUTES;
+import static es.in2.wallet.domain.util.ApplicationConstants.USER_ENTITY_PREFIX;
+
 
 @Slf4j
 @Component

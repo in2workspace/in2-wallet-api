@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.BEARER;
+
 @Slf4j
 public class ApplicationUtils {
     private ApplicationUtils() {
@@ -84,8 +86,8 @@ public class ApplicationUtils {
     }
     public static Mono<String> getCleanBearerToken(String authorizationHeader) {
         return Mono.just(authorizationHeader)
-                .filter(header -> header.startsWith(MessageUtils.BEARER))
-                .map(header -> header.replace(MessageUtils.BEARER, "").trim())
+                .filter(header -> header.startsWith(BEARER))
+                .map(header -> header.replace(BEARER, "").trim())
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Invalid")));
     }
     public static Mono<String> getUserIdFromToken(String authorizationToken) {
@@ -99,7 +101,7 @@ public class ApplicationUtils {
     }
     public static Mono<String> getCleanBearerAndUserIdFromToken(String authorizationHeader) {
         return Mono.just(authorizationHeader)
-                .filter(header -> header.startsWith(MessageUtils.BEARER))
+                .filter(header -> header.startsWith(BEARER))
                 .map(header -> header.substring(7))
                 .flatMap(token -> {
                     try {

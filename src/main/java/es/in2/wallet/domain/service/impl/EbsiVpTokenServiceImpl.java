@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.wallet.application.service.CommonAttestationExchangeWorkflow;
+import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
 import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedSerializingException;
 import es.in2.wallet.domain.model.*;
@@ -21,9 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.*;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
 import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
 import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
-import static es.in2.wallet.domain.util.MessageUtils.*;
 
 @Slf4j
 @Service
@@ -31,7 +31,7 @@ import static es.in2.wallet.domain.util.MessageUtils.*;
 public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
     private final ObjectMapper objectMapper;
     private final PresentationService presentationService;
-    private final CommonAttestationExchangeWorkflow commonAttestationExchangeWorkflow;
+    private final AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
 
     /**
      * Initiates the process to exchange the authorization token and JWT for a VP Token Request,
@@ -104,7 +104,7 @@ public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
      * Builds a signed JWT Verifiable Presentation by extracting user data and credentials based on the VC type list provided.
      */
     private Mono<String> buildSignedJwtVerifiablePresentationByVcTypeList(String processId, String authorizationToken, List<String> vcTypeList, String nonce, AuthorisationServerMetadata authorisationServerMetadata) {
-        return commonAttestationExchangeWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,vcTypeList)
+        return attestationExchangeCommonWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,vcTypeList)
                                         .flatMap(list -> {
                                             log.debug(list.toString());
                                             VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().selectedVcList(list).build();

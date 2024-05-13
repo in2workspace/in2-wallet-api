@@ -5,7 +5,8 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.List;
 
-import static es.in2.wallet.domain.util.MessageUtils.*;
+import static es.in2.wallet.domain.util.ApplicationConstants.MSB;
+import static es.in2.wallet.domain.util.ApplicationConstants.MSBALL;
 
 @Getter
 public class UVarInt {

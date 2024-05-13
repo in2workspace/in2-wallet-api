@@ -1,8 +1,8 @@
 package es.in2.wallet.infrastructure.core.controller;
 
-import es.in2.wallet.application.service.CommonAttestationExchangeWorkflow;
-import es.in2.wallet.application.service.DomeAttestationExchangeWorkflow;
-import es.in2.wallet.application.service.TurnstileAttestationExchangeWorkflow;
+import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
+import es.in2.wallet.application.workflow.presentation.AttestationExchangeDOMEWorkflow;
+import es.in2.wallet.application.workflow.presentation.AttestationExchangeTurnstileWorkflow;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
@@ -18,8 +18,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
+import static es.in2.wallet.domain.util.ApplicationRegexPattern.DOME_REDIRECT_URI_PATTERN;
 import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerToken;
-import static es.in2.wallet.domain.util.MessageUtils.DOME_REDIRECT_URI_PATTERN;
 
 @RestController
 @RequestMapping("/api/v1/vp")
@@ -27,9 +27,9 @@ import static es.in2.wallet.domain.util.MessageUtils.DOME_REDIRECT_URI_PATTERN;
 @RequiredArgsConstructor
 public class VerifiablePresentationController {
 
-    private final TurnstileAttestationExchangeWorkflow turnstileAttestationExchangeWorkflow;
-    private final CommonAttestationExchangeWorkflow commonAttestationExchangeWorkflow;
-    private final DomeAttestationExchangeWorkflow domeAttestationExchangeWorkflow;
+    private final AttestationExchangeTurnstileWorkflow attestationExchangeTurnstileWorkflow;
+    private final AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
+    private final AttestationExchangeDOMEWorkflow attestationExchangeDOMEWorkflow;
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
@@ -46,11 +46,11 @@ public class VerifiablePresentationController {
                         // Since the attestation exchange of DOME does not follow the standard, we check if the content of the
                         // redirect_uri belongs to the DOME verifier in order to continue with their use case.
                         if (DOME_REDIRECT_URI_PATTERN.matcher(vcSelectorResponse.redirectUri()).matches()){
-                            return domeAttestationExchangeWorkflow.buildAndSendVerifiablePresentationWithSelectedVCsForDome(processId,authorizationToken,vcSelectorResponse);
+                            return attestationExchangeDOMEWorkflow.publishAuthorisationResponseWithSelectedVCs(processId,authorizationToken,vcSelectorResponse);
                         }
 
                         else {
-                            return commonAttestationExchangeWorkflow.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse);
+                            return attestationExchangeCommonWorkflow.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse);
                         }
 
                 }).doOnSuccess(aVoid -> log.info("Attestation exchange successful"));
@@ -72,6 +72,6 @@ public class VerifiablePresentationController {
 
         MDC.put("processId", processId);
         return getCleanBearerToken(authorizationHeader)
-                .flatMap(authorizationToken -> turnstileAttestationExchangeWorkflow.createVerifiablePresentationForTurnstile(processId, authorizationToken, credentialsBasicInfo));
+                .flatMap(authorizationToken -> attestationExchangeTurnstileWorkflow.createVerifiablePresentationForTurnstile(processId, authorizationToken, credentialsBasicInfo));
     }
 }

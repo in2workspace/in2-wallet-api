@@ -31,7 +31,7 @@ public class BrokerServiceImpl implements BrokerService {
     public Mono<String> getAllCredentialsByUserId(String processId, String userId){
         return brokerAdapter.getAllCredentialsByUserId(processId,userId);
     }
-    public Mono<String> getCredentialByAndUserId(String processId, String  userId, String credentialId){
+    public Mono<String> getCredentialByIdAndUserId(String processId, String  userId, String credentialId){
         return brokerAdapter.getCredentialByIdAndUserId(processId,userId,credentialId);
     }
     public Mono<Void> deleteCredentialByIdAndUserId(String processId, String  userId, String credentialId){

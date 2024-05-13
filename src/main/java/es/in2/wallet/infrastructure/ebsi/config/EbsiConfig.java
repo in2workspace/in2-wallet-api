@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.AppConfig;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.domain.model.CredentialEntity;
-import es.in2.wallet.domain.service.DidKeyGeneratorService;
 import es.in2.wallet.domain.service.DataService;
+import es.in2.wallet.domain.service.DidKeyGeneratorService;
 import es.in2.wallet.domain.util.ApplicationUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
@@ -21,9 +21,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
 import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM;
 
 @Component
 @RequiredArgsConstructor
@@ -97,7 +96,7 @@ public class EbsiConfig {
                     return Mono.just(token);
                 })
                 .flatMap(ApplicationUtils::getUserIdFromToken)
-                .flatMap(userId -> brokerService.getEntityById(processId, userId)
+                .flatMap(userId -> brokerService.getEntityById(processId, USER_ENTITY_PREFIX + userId)
                         .flatMap(optionalEntity -> optionalEntity
                                 .map(entity -> getDidForUserCredential(processId, userId,vcType))
                                 .orElseGet(() ->

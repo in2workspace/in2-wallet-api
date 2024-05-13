@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.port.VaultService;
-import es.in2.wallet.application.service.impl.DataWorkflowImpl;
+import es.in2.wallet.application.workflow.data.impl.DataWorkflowImpl;
 import es.in2.wallet.domain.model.CredentialStatus;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.service.DataService;
@@ -77,15 +77,15 @@ class DataWorkflowImplTest {
         String did = "did:example:123";
         String credentialEntity = "credential";
 
-        when(brokerService.getCredentialByAndUserId(processId, userId,credentialId)).thenReturn(Mono.just(credentialEntity));
+        when(brokerService.getCredentialByIdAndUserId(processId, userId,credentialId)).thenReturn(Mono.just(credentialEntity));
         when(dataService.extractDidFromVerifiableCredential(credentialEntity)).thenReturn(Mono.just(did));
         when(vaultService.deleteSecretByKey(did)).thenReturn(Mono.empty());
         when(brokerService.deleteCredentialByIdAndUserId(processId, userId, credentialId)).thenReturn(Mono.empty());
 
-        StepVerifier.create(userDataFacadeService.deleteCredentialById(processId, credentialId, userId))
+        StepVerifier.create(userDataFacadeService.deleteCredentialByIdAndUserId(processId, credentialId, userId))
                 .verifyComplete();
 
-        verify(brokerService).getCredentialByAndUserId(processId, userId,credentialId);
+        verify(brokerService).getCredentialByIdAndUserId(processId, userId,credentialId);
         verify(dataService).extractDidFromVerifiableCredential(credentialEntity);
         verify(vaultService).deleteSecretByKey(did);
         verify(brokerService).deleteCredentialByIdAndUserId(processId, userId, credentialId);

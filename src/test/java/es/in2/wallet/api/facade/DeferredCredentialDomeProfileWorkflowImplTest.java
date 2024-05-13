@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.service.impl.DomeProfileRequestDeferredCredentialWorkflowImpl;
+import es.in2.wallet.application.workflow.issuance.impl.DeferredCredentialDomeProfileWorkflowImpl;
 import es.in2.wallet.domain.exception.CredentialNotAvailableException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.CredentialResponse;
@@ -24,15 +24,15 @@ import reactor.test.StepVerifier;
 
 import java.util.List;
 
-import static es.in2.wallet.domain.util.MessageUtils.JWT_VC;
-import static es.in2.wallet.domain.util.MessageUtils.PROPERTY_TYPE;
+import static es.in2.wallet.domain.util.ApplicationConstants.JWT_VC;
+import static es.in2.wallet.domain.util.ApplicationConstants.PROPERTY_TYPE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class DomeProfileRequestDeferredCredentialWorkflowImplTest {
+class DeferredCredentialDomeProfileWorkflowImplTest {
 
     @Mock
     private BrokerService brokerService;
@@ -44,7 +44,7 @@ class DomeProfileRequestDeferredCredentialWorkflowImplTest {
     private DataService dataService;
 
     @InjectMocks
-    private DomeProfileRequestDeferredCredentialWorkflowImpl service;
+    private DeferredCredentialDomeProfileWorkflowImpl service;
 
     @Test
     void requestSignedLEARCredentialService_Success() throws JsonProcessingException {
@@ -78,7 +78,7 @@ class DomeProfileRequestDeferredCredentialWorkflowImplTest {
                 ))
                 .thenReturn(Mono.just(credentialResponse));
 
-        when(brokerService.getCredentialByAndUserId(processId,userId,credentialId))
+        when(brokerService.getCredentialByIdAndUserId(processId,userId,credentialId))
                 .thenReturn(Mono.just(credentialJson));
 
         when(dataService.updateVCEntityWithSignedFormat(credentialJson,credentialResponse))
@@ -89,7 +89,7 @@ class DomeProfileRequestDeferredCredentialWorkflowImplTest {
         when(brokerService.deleteTransactionByTransactionId(processId,transactionEntity.id()))
                 .thenReturn(Mono.empty());
 
-        StepVerifier.create(service.requestSignedLEARCredentialServiceByCredentialId(processId, userId, credentialId))
+        StepVerifier.create(service.requestDeferredCredential(processId, userId, credentialId))
                 .verifyComplete();
     }
 
@@ -139,7 +139,7 @@ class DomeProfileRequestDeferredCredentialWorkflowImplTest {
         when(brokerService.updateEntity(processId, transactionEntity.id(), updatedTransactionJson))
                 .thenReturn(Mono.empty());
 
-        StepVerifier.create(service.requestSignedLEARCredentialServiceByCredentialId(processId, userId, credentialId))
+        StepVerifier.create(service.requestDeferredCredential(processId, userId, credentialId))
                 .expectError(CredentialNotAvailableException.class)
                 .verify();
     }
@@ -156,7 +156,7 @@ class DomeProfileRequestDeferredCredentialWorkflowImplTest {
         when(objectMapper.readValue(eq(transactionJson), any(TypeReference.class)))
                 .thenThrow(new JsonProcessingException("Deserialization error") {});
 
-        StepVerifier.create(service.requestSignedLEARCredentialServiceByCredentialId(processId, userId, credentialId))
+        StepVerifier.create(service.requestDeferredCredential(processId, userId, credentialId))
                 .expectError(FailedDeserializingException.class)
                 .verify();
     }

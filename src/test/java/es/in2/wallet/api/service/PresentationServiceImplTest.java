@@ -8,8 +8,8 @@ import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.domain.model.CredentialStatus;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorResponse;
-import es.in2.wallet.domain.service.SignerService;
 import es.in2.wallet.domain.service.DataService;
+import es.in2.wallet.domain.service.SignerService;
 import es.in2.wallet.domain.service.impl.PresentationServiceImpl;
 import es.in2.wallet.domain.util.ApplicationUtils;
 import org.junit.jupiter.api.Test;
@@ -25,9 +25,9 @@ import reactor.test.StepVerifier;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.JWT_VC;
+import static es.in2.wallet.domain.util.ApplicationConstants.VC_JSON;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.domain.util.MessageUtils.JWT_VC;
-import static es.in2.wallet.domain.util.MessageUtils.VC_JSON;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -79,7 +79,7 @@ class PresentationServiceImplTest {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just(userId));
 
-            when(brokerService.getCredentialByAndUserId(processId, userId, credentialsBasicInfo.id())).thenReturn(Mono.just((credentialEntity)));
+            when(brokerService.getCredentialByIdAndUserId(processId, userId, credentialsBasicInfo.id())).thenReturn(Mono.just((credentialEntity)));
 
             Long expirationTime = 10L;
             when(appConfig.getCredentialPresentationExpirationTime()).thenReturn(expirationTime);
@@ -119,7 +119,7 @@ class PresentationServiceImplTest {
 
         // Mock getUserIdFromToken and getEntityById to simulate finding a user entity
         when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just(userId));
-        when(brokerService.getCredentialByAndUserId(processId, userId, selectedVcList.get(0).id())).thenReturn(Mono.just((credentialEntity)));
+        when(brokerService.getCredentialByIdAndUserId(processId, userId, selectedVcList.get(0).id())).thenReturn(Mono.just((credentialEntity)));
 
             // Mock getVerifiableCredentials to return a list of credentials
         when(dataService.getVerifiableCredentialOnRequestedFormat(credentialEntity, VC_JSON))
@@ -132,7 +132,7 @@ class PresentationServiceImplTest {
                 .expectNext(encodedPresentation)
                 .verifyComplete();
 
-        verify(brokerService).getCredentialByAndUserId(processId, userId, selectedVcList.get(0).id());
+        verify(brokerService).getCredentialByIdAndUserId(processId, userId, selectedVcList.get(0).id());
         verify(dataService).getVerifiableCredentialOnRequestedFormat(credentialEntity, VC_JSON);
         }
     }

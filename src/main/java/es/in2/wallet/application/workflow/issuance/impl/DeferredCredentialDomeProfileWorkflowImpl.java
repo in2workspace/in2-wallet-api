@@ -1,10 +1,10 @@
-package es.in2.wallet.application.service.impl;
+package es.in2.wallet.application.workflow.issuance.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.service.DomeProfileRequestDeferredCredentialWorkflow;
+import es.in2.wallet.application.workflow.issuance.DeferredCredentialDomeProfileWorkflow;
 import es.in2.wallet.domain.exception.CredentialNotAvailableException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.TransactionEntity;
@@ -20,13 +20,13 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DomeProfileRequestDeferredCredentialWorkflowImpl implements DomeProfileRequestDeferredCredentialWorkflow {
+public class DeferredCredentialDomeProfileWorkflowImpl implements DeferredCredentialDomeProfileWorkflow {
     private final BrokerService brokerService;
     private final ObjectMapper objectMapper;
     private final CredentialService credentialService;
     private final DataService dataService;
     @Override
-    public Mono<Void> requestSignedLEARCredentialServiceByCredentialId(String processId, String userId, String credentialId) {
+    public Mono<Void> requestDeferredCredential(String processId, String userId, String credentialId) {
         return brokerService.getTransactionThatIsLinkedToACredential(processId,credentialId)
                 .flatMap(transactionEntity -> {
                             try {
@@ -45,7 +45,7 @@ public class DomeProfileRequestDeferredCredentialWorkflowImpl implements DomePro
                                         .flatMap(credentialResponse -> {
 
                                             if (credentialResponse.transactionId() == null){
-                                                return brokerService.getCredentialByAndUserId(processId,userId,credentialId)
+                                                return brokerService.getCredentialByIdAndUserId(processId,userId,credentialId)
                                                         .flatMap(credentialEntity -> dataService.updateVCEntityWithSignedFormat(credentialEntity,credentialResponse))
                                                         .flatMap(updatedEntity -> brokerService.updateEntity(processId,credentialId,updatedEntity))
                                                         .then(brokerService.deleteTransactionByTransactionId(processId,transaction.id()));

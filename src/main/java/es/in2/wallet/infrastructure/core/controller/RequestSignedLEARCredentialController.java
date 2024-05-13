@@ -1,6 +1,6 @@
 package es.in2.wallet.infrastructure.core.controller;
 
-import es.in2.wallet.application.service.DomeProfileRequestDeferredCredentialWorkflow;
+import es.in2.wallet.application.workflow.issuance.DeferredCredentialDomeProfileWorkflow;
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,7 +21,7 @@ import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerAndUserId
 @RequiredArgsConstructor
 public class RequestSignedLEARCredentialController {
 
-    private final DomeProfileRequestDeferredCredentialWorkflow domeProfileRequestDeferredCredentialWorkflow;
+    private final DeferredCredentialDomeProfileWorkflow deferredCredentialDomeProfileWorkflow;
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
@@ -41,7 +41,7 @@ public class RequestSignedLEARCredentialController {
 
         return getCleanBearerAndUserIdFromToken(authorizationHeader)
                 .flatMap(userId ->
-                        domeProfileRequestDeferredCredentialWorkflow.requestSignedLEARCredentialServiceByCredentialId(processId,userId,credentialId));
+                        deferredCredentialDomeProfileWorkflow.requestDeferredCredential(processId,userId,credentialId));
     }
 
 }

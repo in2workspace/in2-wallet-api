@@ -22,9 +22,9 @@ import reactor.test.StepVerifier;
 import java.util.HashMap;
 import java.util.Map;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.GLOBAL_STATE;
 import static es.in2.wallet.domain.util.ApplicationUtils.extractAllQueryParams;
 import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
-import static es.in2.wallet.domain.util.MessageUtils.GLOBAL_STATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;

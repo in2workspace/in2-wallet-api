@@ -22,7 +22,8 @@ import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-import static es.in2.wallet.domain.util.MessageUtils.*;
+import static es.in2.wallet.domain.util.ApplicationConstants.ATTRIBUTES;
+import static es.in2.wallet.domain.util.ApplicationConstants.USER_ENTITY_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;

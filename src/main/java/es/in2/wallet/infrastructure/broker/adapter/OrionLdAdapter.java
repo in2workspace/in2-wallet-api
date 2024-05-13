@@ -16,7 +16,10 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
-import static es.in2.wallet.domain.util.MessageUtils.*;
+import static es.in2.wallet.domain.util.ApplicationConstants.ATTRIBUTES;
+import static es.in2.wallet.domain.util.ApplicationConstants.USER_ENTITY_PREFIX;
+import static es.in2.wallet.domain.util.MessageUtils.ERROR_UPDATING_RESOURCE_MESSAGE;
+import static es.in2.wallet.domain.util.MessageUtils.RESOURCE_UPDATED_MESSAGE;
 
 
 @Component

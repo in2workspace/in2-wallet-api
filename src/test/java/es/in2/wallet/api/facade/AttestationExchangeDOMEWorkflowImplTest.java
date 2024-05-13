@@ -1,6 +1,6 @@
 package es.in2.wallet.api.facade;
 
-import es.in2.wallet.application.service.impl.DomeAttestationExchangeWorkflowImpl;
+import es.in2.wallet.application.workflow.presentation.impl.AttestationExchangeDOMEWorkflowImpl;
 import es.in2.wallet.domain.model.AuthorizationRequest;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.model.VcSelectorResponse;
@@ -19,7 +19,7 @@ import reactor.test.StepVerifier;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class DomeAttestationExchangeWorkflowImplTest {
+class AttestationExchangeDOMEWorkflowImplTest {
 
     @Mock
     private AuthorizationRequestService authorizationRequestService;
@@ -31,7 +31,7 @@ class DomeAttestationExchangeWorkflowImplTest {
     private AuthorizationResponseService authorizationResponseService;
 
     @InjectMocks
-    private DomeAttestationExchangeWorkflowImpl domeAttestationExchangeService;
+    private AttestationExchangeDOMEWorkflowImpl domeAttestationExchangeService;
     @Test
     void getSelectableCredentialsRequiredToBuildThePresentationTest() {
         String processId = "processId";
@@ -64,7 +64,7 @@ class DomeAttestationExchangeWorkflowImplTest {
         when(authorizationResponseService.sendDomeAuthorizationResponse(vpToken, vcSelectorResponse))
                 .thenReturn(Mono.empty());
 
-        StepVerifier.create(domeAttestationExchangeService.buildAndSendVerifiablePresentationWithSelectedVCsForDome(processId, authorizationToken, vcSelectorResponse))
+        StepVerifier.create(domeAttestationExchangeService.publishAuthorisationResponseWithSelectedVCs(processId, authorizationToken, vcSelectorResponse))
                 .verifyComplete();
 
         verify(presentationService).createEncodedVerifiablePresentationForDome(processId, authorizationToken, vcSelectorResponse);

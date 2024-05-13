@@ -21,9 +21,9 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
 import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
 import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
-import static es.in2.wallet.domain.util.MessageUtils.*;
 
 @Slf4j
 @Service
@@ -159,7 +159,7 @@ public class EbsiAuthorisationServiceImpl implements EbsiAuthorisationService {
             StringBuilder sb = new StringBuilder(length);
 
             for (int i = 0; i < length; i++) {
-                sb.append(CODEVERIFIERALLOWEDCHARACTERS.charAt(SecureRandom.getInstanceStrong().nextInt(CODEVERIFIERALLOWEDCHARACTERS.length())));
+                sb.append(CODE_VERIFIER_ALLOWED_CHARACTERS.charAt(SecureRandom.getInstanceStrong().nextInt(CODE_VERIFIER_ALLOWED_CHARACTERS.length())));
             }
             return sb.toString();
         });

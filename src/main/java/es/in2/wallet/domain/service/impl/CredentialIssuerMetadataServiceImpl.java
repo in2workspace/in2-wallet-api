@@ -8,7 +8,6 @@ import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.CredentialIssuerMetadata;
 import es.in2.wallet.domain.model.CredentialOffer;
 import es.in2.wallet.domain.service.CredentialIssuerMetadataService;
-import es.in2.wallet.domain.util.MessageUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +16,8 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.Map;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE;
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE_APPLICATION_JSON;
 import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
 
 @Slf4j
@@ -42,7 +43,7 @@ public class CredentialIssuerMetadataServiceImpl implements CredentialIssuerMeta
     }
 
     private Mono<String> getCredentialIssuerMetadata(String credentialIssuerURL) {
-        List<Map.Entry<String, String>> headers = List.of(Map.entry(MessageUtils.CONTENT_TYPE, MessageUtils.CONTENT_TYPE_APPLICATION_JSON));
+        List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
         return getRequest(credentialIssuerURL, headers)
                 .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching Credential Issuer Metadata from the Issuer")));
     }

@@ -35,7 +35,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static es.in2.wallet.domain.util.MessageUtils.*;
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
 
 @Slf4j
 @Service

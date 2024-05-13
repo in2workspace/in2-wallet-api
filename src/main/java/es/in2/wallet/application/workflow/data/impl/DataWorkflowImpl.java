@@ -1,8 +1,8 @@
-package es.in2.wallet.application.service.impl;
+package es.in2.wallet.application.workflow.data.impl;
 
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.port.VaultService;
-import es.in2.wallet.application.service.DataWorkflow;
+import es.in2.wallet.application.workflow.data.DataWorkflow;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.service.DataService;
 import lombok.RequiredArgsConstructor;
@@ -47,8 +47,8 @@ public class DataWorkflowImpl implements DataWorkflow {
      */
 
     @Override
-    public Mono<Void> deleteCredentialById(String processId, String credentialId, String userId) {
-        return brokerService.getCredentialByAndUserId(processId,userId,credentialId)
+    public Mono<Void> deleteCredentialByIdAndUserId(String processId, String credentialId, String userId) {
+        return brokerService.getCredentialByIdAndUserId(processId,userId,credentialId)
                 .flatMap(dataService::extractDidFromVerifiableCredential)
                 .flatMap(vaultService::deleteSecretByKey)
                 .then(brokerService.deleteCredentialByIdAndUserId(processId,userId,credentialId))

@@ -1,11 +1,11 @@
-package es.in2.wallet.application.service;
+package es.in2.wallet.application.workflow.presentation;
 
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import reactor.core.publisher.Mono;
 
 
-public interface DomeAttestationExchangeWorkflow {
+public interface AttestationExchangeDOMEWorkflow {
     Mono<VcSelectorRequest> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, String qrContent);
-    public Mono<Void> buildAndSendVerifiablePresentationWithSelectedVCsForDome(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse);
+    Mono<Void> publishAuthorisationResponseWithSelectedVCs(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse);
 }

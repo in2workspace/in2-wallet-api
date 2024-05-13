@@ -10,7 +10,7 @@ public interface BrokerService {
 
     Mono<Optional<String>> getEntityById(String processId, String userId);
     Mono<String> getAllCredentialsByUserId(String processId, String userId);
-    Mono<String> getCredentialByAndUserId(String processId, String  userId, String credentialId);
+    Mono<String> getCredentialByIdAndUserId(String processId, String  userId, String credentialId);
     Mono<Void> deleteCredentialByIdAndUserId(String processId, String  userId, String credentialId);
     Mono<String> getCredentialByCredentialTypeAndUserId(String processId, String  userId, String credentialType);
     Mono<String> getTransactionThatIsLinkedToACredential(String processId, String credentialId);

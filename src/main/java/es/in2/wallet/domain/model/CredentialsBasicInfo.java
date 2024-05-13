@@ -9,7 +9,8 @@ import lombok.Builder;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import static es.in2.wallet.domain.util.MessageUtils.*;
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
+
 
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)

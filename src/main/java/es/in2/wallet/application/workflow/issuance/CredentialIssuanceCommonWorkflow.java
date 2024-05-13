@@ -1,7 +1,8 @@
-package es.in2.wallet.application.service;
+package es.in2.wallet.application.workflow.issuance;
 
 import reactor.core.publisher.Mono;
 
-public interface EbsiCredentialIssuanceWorkflow {
+public interface CredentialIssuanceCommonWorkflow {
     Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent);
 }
+

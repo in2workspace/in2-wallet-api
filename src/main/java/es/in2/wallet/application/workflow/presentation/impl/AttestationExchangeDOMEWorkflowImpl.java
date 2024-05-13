@@ -1,6 +1,6 @@
-package es.in2.wallet.application.service.impl;
+package es.in2.wallet.application.workflow.presentation.impl;
 
-import es.in2.wallet.application.service.DomeAttestationExchangeWorkflow;
+import es.in2.wallet.application.workflow.presentation.AttestationExchangeDOMEWorkflow;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.service.AuthorizationRequestService;
@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DomeAttestationExchangeWorkflowImpl implements DomeAttestationExchangeWorkflow {
+public class AttestationExchangeDOMEWorkflowImpl implements AttestationExchangeDOMEWorkflow {
     private final AuthorizationRequestService authorizationRequestService;
     private final DomeVpTokenService domeVpTokenService;
     private final PresentationService presentationService;
@@ -31,7 +31,7 @@ public class DomeAttestationExchangeWorkflowImpl implements DomeAttestationExcha
                 .flatMap(authorizationRequest -> domeVpTokenService.getVpRequest(processId,authorizationToken,authorizationRequest));
     }
     @Override
-    public Mono<Void> buildAndSendVerifiablePresentationWithSelectedVCsForDome(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse) {
+    public Mono<Void> publishAuthorisationResponseWithSelectedVCs(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse) {
         // Get the Verifiable Credentials which will be used for the Presentation from the Wallet Data Service
         return presentationService.createEncodedVerifiablePresentationForDome(processId,authorizationToken,vcSelectorResponse)
                 .flatMap(vpToken -> authorizationResponseService.sendDomeAuthorizationResponse(vpToken,vcSelectorResponse));

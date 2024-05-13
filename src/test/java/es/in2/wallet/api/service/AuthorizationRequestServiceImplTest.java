@@ -15,9 +15,9 @@ import reactor.test.StepVerifier;
 import java.util.List;
 import java.util.Map;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.BEARER;
+import static es.in2.wallet.domain.util.ApplicationConstants.HEADER_AUTHORIZATION;
 import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.domain.util.MessageUtils.BEARER;
-import static es.in2.wallet.domain.util.MessageUtils.HEADER_AUTHORIZATION;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)

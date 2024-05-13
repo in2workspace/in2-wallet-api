@@ -1,7 +1,7 @@
-package es.in2.wallet.application.service.impl;
+package es.in2.wallet.application.workflow.issuance.impl;
 
 import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.service.EbsiCredentialIssuanceWorkflow;
+import es.in2.wallet.application.workflow.issuance.CredentialIssuanceEbsiWorkflow;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.*;
 import es.in2.wallet.infrastructure.ebsi.config.EbsiConfig;
@@ -10,14 +10,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.USER_ENTITY_PREFIX;
 import static es.in2.wallet.domain.util.ApplicationUtils.extractResponseType;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.domain.util.MessageUtils.USER_ENTITY_PREFIX;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class EbsiCredentialIssuanceWorkflowImpl implements EbsiCredentialIssuanceWorkflow {
+public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbsiWorkflow {
 
     private final CredentialOfferService credentialOfferService;
     private final EbsiConfig ebsiConfig;

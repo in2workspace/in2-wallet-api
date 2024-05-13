@@ -12,8 +12,9 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.Map;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.BEARER;
+import static es.in2.wallet.domain.util.ApplicationConstants.HEADER_AUTHORIZATION;
 import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.domain.util.MessageUtils.*;
 
 @Slf4j
 @Service

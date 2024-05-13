@@ -20,9 +20,9 @@ import reactor.test.StepVerifier;
 import java.util.List;
 import java.util.Map;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE;
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE_APPLICATION_JSON;
 import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)

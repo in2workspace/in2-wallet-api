@@ -25,9 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE;
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE_URL_ENCODED_FORM;
 import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM;
 
 @Slf4j
 @Service
