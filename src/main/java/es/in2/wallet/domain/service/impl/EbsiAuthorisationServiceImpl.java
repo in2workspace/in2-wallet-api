@@ -7,8 +7,10 @@ import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.EbsiAuthorisationService;
 import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -22,8 +24,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static es.in2.wallet.domain.util.ApplicationConstants.*;
-import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
 
 @Slf4j
 @Service
@@ -31,6 +31,7 @@ import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
 public class EbsiAuthorisationServiceImpl implements EbsiAuthorisationService {
 
     private final ObjectMapper objectMapper;
+    private final WebClientConfig webClient;
 
     @Override
     public Mono<Tuple2<String, String>> getRequestWithOurGeneratedCodeVerifier(String processId, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata, String did) {
@@ -120,9 +121,20 @@ public class EbsiAuthorisationServiceImpl implements EbsiAuthorisationService {
     }
 
     private Mono<String> sendAuthRequest(AuthorisationServerMetadata authorisationServerMetadata, String authRequestEncodedBody) {
-        List<Map.Entry<String, String>> headers = new ArrayList<>();
         String urlWithParams = authorisationServerMetadata.authorizationEndpoint() + "?" + authRequestEncodedBody;
-        return getRequest(urlWithParams, headers).onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while sending Authorization Request")));
+        return webClient.centralizedWebClient()
+                .get()
+                .uri(urlWithParams)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("There was an error during the Authorization request, error" + response));
+                    }
+                    else {
+                        log.info("EBSI authorization request response: {}", response);
+                        return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
+                    }
+                })
+                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while sending Authorization Request")));
     }
 
     /**
@@ -136,9 +148,19 @@ public class EbsiAuthorisationServiceImpl implements EbsiAuthorisationService {
      */
     private Mono<String> getJwtRequest(Map<String, String> params) {
         if (params.get("request_uri") != null) {
-            List<Map.Entry<String, String>> headers = new ArrayList<>();
             String requestUri = params.get("request_uri");
-            return getRequest(requestUri, headers);
+            return webClient.centralizedWebClient()
+                    .get()
+                    .uri(requestUri)
+                    .exchangeToMono(response -> {
+                        if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                            return Mono.error(new RuntimeException("There was an error retrieving EBSI authorisation request, error" + response));
+                        }
+                        else {
+                            log.info("EBSI authorization request: {}", response);
+                            return response.bodyToMono(String.class);
+                        }
+                    });
         } else if (params.get("request") != null) {
             return Mono.just(params.get("request"));
         } else {
@@ -204,12 +226,22 @@ public class EbsiAuthorisationServiceImpl implements EbsiAuthorisationService {
     public Mono<TokenResponse> sendTokenRequest(String codeVerifier, String did, AuthorisationServerMetadata authorisationServerMetadata, Map<String, String> params) {
         if (Objects.equals(params.get("state"), GLOBAL_STATE)) {
             String code = params.get("code");
-            List<Map.Entry<String, String>> headers = new ArrayList<>();
-            headers.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
             // Build URL encoded form data request body
             Map<String, String> formDataMap = Map.of("grant_type", AUTH_CODE_GRANT_TYPE, "client_id", did, "code", code, "code_verifier", codeVerifier);
             String xWwwFormUrlencodedBody = formDataMap.entrySet().stream().map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8)).collect(Collectors.joining("&"));
-            return postRequest(authorisationServerMetadata.tokenEndpoint(), headers, xWwwFormUrlencodedBody).flatMap(response -> {
+            return webClient.centralizedWebClient()
+                    .post()
+                    .uri(authorisationServerMetadata.tokenEndpoint())
+                    .header(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM)
+                    .bodyValue(xWwwFormUrlencodedBody)
+                    .exchangeToMono(response -> {
+                        if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                            return Mono.error(new RuntimeException("There was an error during the token request, error" + response));
+                        } else {
+                            log.info("Token Response: {}", response);
+                            return response.bodyToMono(String.class);
+                        }
+                    }).flatMap(response -> {
                 try {
                     TokenResponse tokenResponse = objectMapper.readValue(response, TokenResponse.class);
                     return Mono.just(tokenResponse);

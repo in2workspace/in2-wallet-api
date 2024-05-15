@@ -1,21 +1,21 @@
 package es.in2.wallet.domain.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.exception.FailedSerializingException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.CredentialService;
-import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
 import static es.in2.wallet.domain.util.ApplicationConstants.*;
 
@@ -25,6 +25,7 @@ import static es.in2.wallet.domain.util.ApplicationConstants.*;
 public class CredentialServiceImpl implements CredentialService {
 
     private final ObjectMapper objectMapper;
+    private final WebClientConfig webClient;
 
     @Override
     public Mono<CredentialResponse> getCredential(String jwt, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types) {
@@ -83,10 +84,19 @@ public class CredentialServiceImpl implements CredentialService {
     }
 
     private Mono<CredentialResponse> handleDeferredCredential(String acceptanceToken, CredentialIssuerMetadata credentialIssuerMetadata) {
-        List<Map.Entry<String, String>> headers = List.of(Map.entry(HEADER_AUTHORIZATION, BEARER + acceptanceToken));
-
         // Logic to handle the deferred credential request using acceptanceToken
-        return ApplicationUtils.postRequest(credentialIssuerMetadata.deferredCredentialEndpoint(),headers,"")
+        return webClient.centralizedWebClient()
+                .post()
+                .uri(credentialIssuerMetadata.deferredCredentialEndpoint())
+                .header(HEADER_AUTHORIZATION, BEARER + acceptanceToken)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("There was an error during the deferred credential request, error" + response));
+                    } else {
+                        log.info("Deferred credential response retrieve");
+                        return response.bodyToMono(String.class);
+                    }
+                })
                 .flatMap(response -> {
                     try {
                         log.debug(response);
@@ -119,12 +129,19 @@ public class CredentialServiceImpl implements CredentialService {
                                         String credentialEndpoint,
                                         Object credentialRequest) {
         try {
-            List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON),
-                    Map.entry(HEADER_AUTHORIZATION, BEARER + accessToken));
-            return ApplicationUtils.postRequest(credentialEndpoint, headers, objectMapper.writeValueAsString(credentialRequest))
-                    .onErrorResume(e -> {
-                        log.error("Error while fetching Credential from Issuer: {}", e.getMessage());
-                        return Mono.error(new FailedCommunicationException("Error while fetching  Credential from Issuer"));
+            return webClient.centralizedWebClient()
+                    .post()
+                    .uri(credentialEndpoint)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header(HttpHeaders.AUTHORIZATION, BEARER + accessToken)
+                    .bodyValue(objectMapper.writeValueAsString(credentialRequest))
+                    .exchangeToMono(response -> {
+                        if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                            return Mono.error(new RuntimeException("There was an error during the credential request, error" + response));
+                        } else {
+                            log.info("Credential response retrieved: {}", response);
+                            return response.bodyToMono(String.class);
+                        }
                     });
         } catch (Exception e) {
             log.error("Error while serializing CredentialRequest: {}", e.getMessage());

@@ -20,11 +20,13 @@ import reactor.core.publisher.Mono;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static es.in2.wallet.domain.util.ApplicationConstants.*;
-import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
 
 
 @Slf4j
@@ -50,16 +52,21 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
     @Override
     public Mono<Void> sendDomeAuthorizationResponse(String vpToken, VcSelectorResponse vcSelectorResponse) {
         String body = "vp_token=" + vpToken;
-        List<Map.Entry<String, String>> headers = new ArrayList<>();
-        headers.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
+
         String urlWithState = vcSelectorResponse.redirectUri() + "?state=" + vcSelectorResponse.state();
-        return postRequest(urlWithState, headers, body).flatMap(message -> {
-            if (!message.equals("{}")) {
-                return Mono.error(new RuntimeException("There was an error during the attestation exchange, error: " + message));
-            } else {
-                return Mono.empty();
-            }
-        }).then();
+        return webClient.centralizedWebClient()
+                .post()
+                .uri(urlWithState)
+                .header(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM)
+                .bodyValue(body)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("There was an error during the DOME attestation exchange, error" + response));
+                    } else {
+                        log.info("DOME attestation exchange completed");
+                        return Mono.empty();
+                    }
+                });
     }
 
     private Mono<DescriptorMap> generateDescriptorMapping(String verifiablePresentationString) throws JsonProcessingException {

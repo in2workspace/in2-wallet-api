@@ -2,12 +2,14 @@ package es.in2.wallet.domain.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.domain.exception.InvalidPinException;
+import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
 import es.in2.wallet.domain.model.CredentialOffer;
 import es.in2.wallet.domain.model.TokenResponse;
 import es.in2.wallet.domain.model.WebSocketServerMessage;
 import es.in2.wallet.domain.service.PreAuthorizedService;
 import es.in2.wallet.infrastructure.core.config.PinRequestWebSocketHandler;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import es.in2.wallet.infrastructure.core.config.WebSocketSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,14 +20,12 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static es.in2.wallet.domain.util.ApplicationConstants.*;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
 
 @Slf4j
 @Service
@@ -35,6 +35,7 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
     private final ObjectMapper objectMapper;
     private final WebSocketSessionManager sessionManager;
     private final PinRequestWebSocketHandler pinRequestWebSocketHandler;
+    private final WebClientConfig webClient;
 
 
     /**
@@ -99,16 +100,14 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
     }
 
     private Mono<String> getAccessToken(String tokenURL, CredentialOffer credentialOffer, String pin) {
-        // Headers
-        List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
-
         // Build URL encoded form data request body
         Map<String, String> formDataMap = new HashMap<>();
         formDataMap.put("grant_type", PRE_AUTH_CODE_GRANT_TYPE);
         formDataMap.put("pre-authorized_code", credentialOffer.grant().preAuthorizedCodeGrant().preAuthorizedCode());
         if (credentialOffer.grant().preAuthorizedCodeGrant().userPinRequired() && pin != null && !pin.isEmpty()) {
             formDataMap.put("user_pin", pin);
-        }else if (credentialOffer.grant().preAuthorizedCodeGrant().txCode() != null){
+        }
+        else if (credentialOffer.grant().preAuthorizedCodeGrant().txCode() != null){
             formDataMap.put("tx_code", pin);
         }
 
@@ -117,14 +116,26 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
                 .collect(Collectors.joining("&"));
 
         // Post request
-        return postRequest(tokenURL, headers, xWwwFormUrlencodedBody);
+        return webClient.centralizedWebClient()
+                .post()
+                .uri(tokenURL)
+                .header(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM)
+                .bodyValue(xWwwFormUrlencodedBody)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new InvalidPinException(("Incorrect PIN, there next error occurs:" + response)));
+                    } else {
+                        log.info("DOME attestation exchange completed");
+                        return response.bodyToMono(String.class);
+                    }
+                });
     }
 
     private Mono<TokenResponse> parseTokenResponse(String response) {
         try {
             return Mono.just(objectMapper.readValue(response, TokenResponse.class));
         } catch (Exception e) {
-            return Mono.error(new InvalidPinException("Incorrect PIN" + e));
+            return Mono.error(new ParseErrorException("Error parsing token response" + e));
         }
     }
 

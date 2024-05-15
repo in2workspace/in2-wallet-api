@@ -5,14 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
-import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedSerializingException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.EbsiVpTokenService;
 import es.in2.wallet.domain.service.PresentationService;
 import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -22,8 +23,6 @@ import java.text.ParseException;
 import java.util.*;
 
 import static es.in2.wallet.domain.util.ApplicationConstants.*;
-import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
 
 @Slf4j
 @Service
@@ -32,7 +31,7 @@ public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
     private final ObjectMapper objectMapper;
     private final PresentationService presentationService;
     private final AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
-
+    private final WebClientConfig webClient;
     /**
      * Initiates the process to exchange the authorization token and JWT for a VP Token Request,
      * logging the authorization response with the code upon success.
@@ -58,7 +57,7 @@ public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
     }
 
     /**
-     * Builds the VP Token response based on the JWT and authorization token, using the authorisation server metadata.
+     * Builds the VP Token response based on the JWT and authorization token, using the authorization server metadata.
      * This involves processing the presentation definition to understand the required credentials and constructing
      * the signed verifiable presentation and presentation submission accordingly.
      */
@@ -88,12 +87,19 @@ public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
             String body = "vp_token=" + URLEncoder.encode(vpToken, StandardCharsets.UTF_8)
                     + "&presentation_submission=" + URLEncoder.encode(objectMapper.writeValueAsString(presentationSubmission), StandardCharsets.UTF_8)
                     + "&state=" + URLEncoder.encode(params.get(1), StandardCharsets.UTF_8);
-            List<Map.Entry<String, String>> headers = new ArrayList<>();
-            headers.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
 
-
-            return postRequest(params.get(2),headers,body)
-                    .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while sending Id Token Response")));
+            return webClient.centralizedWebClient()
+                    .post()
+                    .uri(params.get(2))
+                    .header(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM)
+                    .bodyValue(body)
+                    .exchangeToMono(response -> {
+                        if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                            return Mono.error(new RuntimeException("There was an error during the VP token response, error" + response));
+                        } else {
+                            return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
+                        }
+                    });
         }
         catch (JsonProcessingException e){
             return Mono.error(new FailedSerializingException("Error while serializing Presentation Submission"));
@@ -128,8 +134,18 @@ public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
                 return Mono.just(params);
             } else if (signedJwt.getJWTClaimsSet().getClaim("presentation_definition_uri") != null) {
                 String presentationDefinitionUri = signedJwt.getJWTClaimsSet().getClaim("presentation_definition_uri").toString();
-                List<Map.Entry<String, String>> headers = new ArrayList<>();
-                return getRequest(presentationDefinitionUri, headers)
+                return webClient.centralizedWebClient()
+                        .get()
+                        .uri(presentationDefinitionUri)
+                        .exchangeToMono(response -> {
+                            if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                                return Mono.error(new RuntimeException("There was an error retrieving presentation definition, error" + response));
+                            }
+                            else {
+                                log.info("Presentation definition: {}", response);
+                                return response.bodyToMono(String.class);
+                            }
+                        })
                         .flatMap(presentationDefinition -> {
                             try {
                                 String presentationDefinitionStr = objectMapper.writeValueAsString(presentationDefinition);

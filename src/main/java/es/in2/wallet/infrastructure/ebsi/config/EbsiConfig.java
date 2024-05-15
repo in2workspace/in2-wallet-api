@@ -9,6 +9,7 @@ import es.in2.wallet.domain.model.CredentialEntity;
 import es.in2.wallet.domain.service.DataService;
 import es.in2.wallet.domain.service.DidKeyGeneratorService;
 import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,12 @@ import reactor.core.publisher.Mono;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.*;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static es.in2.wallet.domain.util.ApplicationConstants.*;
-import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
 
 @Component
 @RequiredArgsConstructor
@@ -34,7 +37,7 @@ public class EbsiConfig {
     private final DidKeyGeneratorService didKeyGeneratorService;
     private final BrokerService brokerService;
     private final DataService dataService;
-
+    private final WebClientConfig webClient;
     private String didForEbsi;
 
     @PostConstruct
@@ -46,13 +49,9 @@ public class EbsiConfig {
     private Mono<String> generateEbsiDid() {
 
         String processId = UUID.randomUUID().toString();
-        List<Map.Entry<String, String>> headers = new ArrayList<>();
 
         String credentialId = "urn:entities:credential:exampleCredential";
         String vcType = "ExampleCredential";
-        log.debug(headers.toString());
-
-        headers.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
 
         String clientSecret = appConfig.getIdentityProviderClientSecret().trim();
         String decodedSecret;
@@ -81,7 +80,19 @@ public class EbsiConfig {
                 "&client_secret=" + URLEncoder.encode(decodedSecret, StandardCharsets.UTF_8);
 
         return Mono.delay(Duration.ofSeconds(15))
-                .then(postRequest(appConfig.getIdentityProviderUrl(), headers, body))
+                .then(webClient.centralizedWebClient()
+                        .post()
+                        .uri(appConfig.getIdentityProviderUrl())
+                        .header(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM)
+                        .bodyValue(body)
+                        .exchangeToMono(response -> {
+                            if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                                return Mono.error(new RuntimeException(("Error getting token form user:" + appConfig.getIdentityProviderUsername())));
+                            } else {
+                                log.info("Token retrieval completed");
+                                return response.bodyToMono(String.class);
+                            }
+                        }))
                 .flatMap(response -> {
                     log.debug(response);
                     Map<String, Object> jsonObject;
