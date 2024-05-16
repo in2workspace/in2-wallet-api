@@ -42,8 +42,12 @@ public class EbsiConfig {
 
     @PostConstruct
     @Tag(name = "EbsiConfig", description = "Generate Did for ebsi purposes")
-    public void init() {
-        generateEbsiDid().subscribe(did -> this.didForEbsi = did);
+    public Mono<Void> init() {
+        return generateEbsiDid()
+                .flatMap(did -> {
+                    this.didForEbsi = did;
+                    return Mono.empty();
+                });
     }
 
     private Mono<String> generateEbsiDid() {
