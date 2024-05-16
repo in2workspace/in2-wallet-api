@@ -10,6 +10,7 @@ import es.in2.wallet.domain.model.CredentialOffer;
 import es.in2.wallet.domain.model.TokenResponse;
 import es.in2.wallet.domain.service.impl.EbsiAuthorisationServiceImpl;
 import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,25 +18,31 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFunction;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.GLOBAL_STATE;
-import static es.in2.wallet.domain.util.ApplicationUtils.*;
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
+import static es.in2.wallet.domain.util.ApplicationUtils.extractAllQueryParams;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class EbsiAuthorisationServiceImplTest {
     @Mock
     private ObjectMapper objectMapper;
+    @Mock
+    private WebClientConfig webClientConfig;
     @InjectMocks
     private EbsiAuthorisationServiceImpl ebsiAuthorisationService;
 
@@ -55,9 +62,20 @@ class EbsiAuthorisationServiceImplTest {
             JsonNode jsonNode = objectMapper2.readTree(json);
 
             when(objectMapper.valueToTree(any())).thenReturn(jsonNode);
-            List<Map.Entry<String, String>> headers = new ArrayList<>();
+            ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
 
-            when(getRequest(anyString(), eq(headers))).thenReturn(Mono.just("redirect response"));
+            // Create a mock ClientResponse for a successful response
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.FOUND)
+                    .header("Location", "redirect response")
+                    .build();
+
+            // Stub the exchange function to return the mock ClientResponse
+            when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+            WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
+
             Map<String, String> map = new HashMap<>();
             map.put("request","jwt");
             when(extractAllQueryParams("redirect response")).thenReturn(Mono.just(map));
@@ -75,7 +93,6 @@ class EbsiAuthorisationServiceImplTest {
     }
     @Test
     void getRequestWithOurGeneratedCodeVerifierFailedCommunicationExceptionTest() throws JsonProcessingException {
-        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             String processId = "processId";
             CredentialOffer.Credential credential = CredentialOffer.Credential.builder().format("jwt_vc").types(List.of("VC")).build();
             CredentialOffer.Grant grant = CredentialOffer.Grant.builder().authorizationCodeGrant(CredentialOffer.Grant.AuthorizationCodeGrant.builder().issuerState("state").build()).build();
@@ -89,14 +106,24 @@ class EbsiAuthorisationServiceImplTest {
             JsonNode jsonNode = objectMapper2.readTree(json);
 
             when(objectMapper.valueToTree(any())).thenReturn(jsonNode);
-            List<Map.Entry<String, String>> headers = new ArrayList<>();
 
-            when(getRequest(anyString(), eq(headers))).thenReturn(Mono.error(new RuntimeException("Error during request")));
+            ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+            // Create a mock ClientResponse for a successful response
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.BAD_REQUEST)
+                    .body("Error")
+                    .build();
+
+            // Stub the exchange function to return the mock ClientResponse
+            when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+            WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
 
             StepVerifier.create(ebsiAuthorisationService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did))
                     .expectError(FailedCommunicationException.class)
                     .verify();
-        }
     }
 
     @Test
@@ -115,9 +142,20 @@ class EbsiAuthorisationServiceImplTest {
             JsonNode jsonNode = objectMapper2.readTree(json);
 
             when(objectMapper.valueToTree(any())).thenReturn(jsonNode);
-            List<Map.Entry<String, String>> headers = new ArrayList<>();
 
-            when(getRequest(anyString(), eq(headers))).thenReturn(Mono.just("redirect response"));
+            ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+            // Create a mock ClientResponse for a successful response
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.FOUND)
+                    .header("Location", "redirect response")
+                    .build();
+
+            // Stub the exchange function to return the mock ClientResponse
+            when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+            WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
             Map<String, String> map = new HashMap<>();
             map.put("not known property","example");
             when(extractAllQueryParams("redirect response")).thenReturn(Mono.just(map));
@@ -132,7 +170,6 @@ class EbsiAuthorisationServiceImplTest {
 
     @Test
     void sendTokenRequest_SuccessfulFlow() throws JsonProcessingException {
-        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
             // Setup
             String codeVerifier = "codeVerifier";
             String did = "did:key:example";
@@ -143,13 +180,26 @@ class EbsiAuthorisationServiceImplTest {
             when(objectMapper.readValue(anyString(), eq(TokenResponse.class))).thenReturn(expectedTokenResponse);
 
             // Mock postRequest to simulate successful token response
-            when(postRequest(eq(authorisationServerMetadata.tokenEndpoint()), anyList(), anyString())).thenReturn(Mono.just("token response"));
+
+            ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+            // Create a mock ClientResponse for a successful response
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.OK)
+                    .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                    .body("token response")
+                    .build();
+
+            // Stub the exchange function to return the mock ClientResponse
+            when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+            WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
             // Execute & Verify
             StepVerifier.create(ebsiAuthorisationService.sendTokenRequest(codeVerifier, did, authorisationServerMetadata, params))
                     .expectNext(expectedTokenResponse)
                     .verifyComplete();
-        }
+
     }
     @Test
     void sendTokenRequest_FailedCommunicationException() {
@@ -161,8 +211,20 @@ class EbsiAuthorisationServiceImplTest {
             Map<String, String> params = Map.of("state", GLOBAL_STATE, "code", "authCode");
 
             // Mock postRequest to simulate a failure in communication
-            when(postRequest(eq(authorisationServerMetadata.tokenEndpoint()), anyList(), anyString()))
-                    .thenReturn(Mono.error(new RuntimeException("Error during request")));
+
+            ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+            // Create a mock ClientResponse for a successful response
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.BAD_REQUEST)
+                    .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                    .body("error")
+                    .build();
+
+            // Stub the exchange function to return the mock ClientResponse
+            when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+            WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
             // Execute & Verify
             StepVerifier.create(ebsiAuthorisationService.sendTokenRequest(codeVerifier, did, authorisationServerMetadata, params))
