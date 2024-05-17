@@ -125,7 +125,7 @@ public class EbsiConfig {
                 .onErrorResume(e -> {
                             log.error("Error while processing did generation: {}", e.getMessage());
 
-                            return Mono.error(new RuntimeException("The user already exist"));
+                            return Mono.error(new RuntimeException("The user already exist" + e));
                         }
                 );
 
@@ -183,7 +183,7 @@ public class EbsiConfig {
 
                         return dataService.extractDidFromVerifiableCredential(firstCredentialJson);
                     } catch (Exception e) {
-                        return Mono.error(new RuntimeException("Error processing credentials", e));
+                        return Mono.error(new RuntimeException("There was an error: ", e));
                     }
                 });
     }
