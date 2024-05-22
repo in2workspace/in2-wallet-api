@@ -372,4 +372,36 @@ class CredentialServiceImplTest {
                     .expectNext(expectedCredentialResponse)
                     .verifyComplete();
     }
+    @Test
+    void getCredentialDomeDeferredCaseTestFailedDeserializingException() throws JsonProcessingException {
+        String transactionId = "trans123";
+        String accessToken = "access-token";
+        String deferredEndpoint = "/deferred/endpoint";
+
+        when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
+
+        // Mock the response of the postCredential method
+        ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+        // Create a mock ClientResponse for a successful response
+        ClientResponse clientResponse = ClientResponse.create(HttpStatus.OK)
+                .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                .body("invalid body")
+                .build();
+
+        // Stub the exchange function to return the mock ClientResponse
+        when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+        WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+        when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+        // Configure ObjectMapper to parse the mocked response
+        when(objectMapper.readValue("invalid body", CredentialResponse.class))
+                .thenThrow(new IllegalStateException("The response have a invalid format") {});
+
+        // Execute the method and verify the results
+        StepVerifier.create(credentialService.getCredentialDomeDeferredCase(transactionId, accessToken, deferredEndpoint))
+                .expectError(FailedDeserializingException.class)
+                .verify();
+    }
+
 }
