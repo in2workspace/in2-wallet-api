@@ -89,7 +89,7 @@ class CredentialServiceImplTest {
         ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
 
         // Create a mock ClientResponse for a successful response
-        ClientResponse clientResponse = ClientResponse.create(HttpStatus.BAD_REQUEST)
+        ClientResponse clientResponse = ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR)
                 .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
                 .body("error")
                 .build();
