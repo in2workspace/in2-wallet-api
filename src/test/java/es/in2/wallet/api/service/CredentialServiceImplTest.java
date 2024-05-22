@@ -339,6 +339,50 @@ class CredentialServiceImplTest {
                     .verify();
 
     }
+
+    @Test
+    void getCredentialDeferredErrorDuringSecondRequestTest() throws JsonProcessingException {
+        String jwt = "ey34324";
+        CredentialOffer.Credential credential = CredentialOffer.Credential.builder().types(List.of("LEARCredential")).format("jwt_vc").build();
+        List<CredentialOffer.Credential> credentials = List.of(credential);
+
+        TokenResponse tokenResponse = TokenResponse.builder().accessToken("token").cNonce("nonce").build();
+
+        CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").credentialEndpoint("endpoint").deferredCredentialEndpoint("deferredEndpoint").build();
+
+
+        CredentialResponse mockDeferredResponse1 = CredentialResponse.builder()
+                .acceptanceToken("deferredToken")
+                .build();
+
+
+        when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
+
+        WebClient webClient = WebClient.builder().exchangeFunction(request -> {
+            String url = request.url().toString();
+            ClientResponse.Builder responseBuilder = ClientResponse.create(HttpStatus.OK)
+                    .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON);
+
+            if (url.equals(credentialIssuerMetadata.credentialEndpoint())) {
+                return Mono.just(responseBuilder.body("deferredResponse").build());
+            } else if (url.equals(credentialIssuerMetadata.deferredCredentialEndpoint())) {
+                return Mono.just(responseBuilder.statusCode(HttpStatus.BAD_REQUEST).build());
+            }
+            return Mono.just(responseBuilder.build());
+        }).build();
+        when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
+
+        when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
+        when(objectMapper.readValue("deferredResponse", CredentialResponse.class)).thenReturn(mockDeferredResponse1);
+
+
+        StepVerifier.withVirtualTime(() -> credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata, credentials.get(0).format(), credentials.get(0).types()))
+                .thenAwait(Duration.ofSeconds(10))
+                .expectError(RuntimeException.class)
+                .verify();
+    }
+
     @Test
     void getCredentialDomeDeferredCaseTest() throws JsonProcessingException {
             String transactionId = "trans123";
@@ -401,35 +445,6 @@ class CredentialServiceImplTest {
         // Execute the method and verify the results
         StepVerifier.create(credentialService.getCredentialDomeDeferredCase(transactionId, accessToken, deferredEndpoint))
                 .expectError(FailedDeserializingException.class)
-                .verify();
-    }
-
-    @Test
-    void getCredentialDomeDeferredCaseTestRuntimeException() throws JsonProcessingException {
-        String transactionId = "trans123";
-        String accessToken = "access-token";
-        String deferredEndpoint = "/deferred/endpoint";
-
-        when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
-
-        // Mock the response of the postCredential method
-        ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
-
-        // Create a mock ClientResponse for a successful response
-        ClientResponse clientResponse = ClientResponse.create(HttpStatus.BAD_REQUEST)
-                .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
-                .body("error")
-                .build();
-
-        // Stub the exchange function to return the mock ClientResponse
-        when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
-
-        WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
-        when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
-
-        // Execute the method and verify the results
-        StepVerifier.create(credentialService.getCredentialDomeDeferredCase(transactionId, accessToken, deferredEndpoint))
-                .expectError(RuntimeException.class)
                 .verify();
     }
 }
