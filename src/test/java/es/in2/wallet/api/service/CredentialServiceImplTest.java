@@ -75,6 +75,36 @@ class CredentialServiceImplTest {
                     .verifyComplete();
     }
     @Test
+    void getCredentialTestRuntimeException() throws JsonProcessingException {
+
+        String jwt = "ey34324";
+
+        TokenResponse tokenResponse = TokenResponse.builder().accessToken("token").cNonce("nonce").build();
+
+        CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").credentialEndpoint("endpoint").build();
+
+
+        when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
+
+        ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+        // Create a mock ClientResponse for a successful response
+        ClientResponse clientResponse = ClientResponse.create(HttpStatus.BAD_REQUEST)
+                .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                .body("error")
+                .build();
+
+        // Stub the exchange function to return the mock ClientResponse
+        when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+        WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+        when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
+        StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, List.of("VerifiableCredential","LEARCredential")))
+                .expectError(RuntimeException.class)
+                .verify();
+    }
+    @Test
     void getCredentialTestWithoutTypes() throws JsonProcessingException {
 
             String jwt = "ey34324";
