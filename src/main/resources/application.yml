@@ -3,6 +3,11 @@ spring:
     name: "wallet-server"
   main:
     web-application-type: reactive
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "http://localhost:9099/realms/wallet"
 
 logging:
   pattern:
