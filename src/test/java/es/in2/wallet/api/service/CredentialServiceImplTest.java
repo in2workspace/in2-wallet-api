@@ -404,4 +404,32 @@ class CredentialServiceImplTest {
                 .verify();
     }
 
+    @Test
+    void getCredentialDomeDeferredCaseTestRuntimeException() throws JsonProcessingException {
+        String transactionId = "trans123";
+        String accessToken = "access-token";
+        String deferredEndpoint = "/deferred/endpoint";
+
+        when(objectMapper.writeValueAsString(any())).thenReturn("credentialRequest");
+
+        // Mock the response of the postCredential method
+        ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+        // Create a mock ClientResponse for a successful response
+        ClientResponse clientResponse = ClientResponse.create(HttpStatus.BAD_REQUEST)
+                .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                .body("error")
+                .build();
+
+        // Stub the exchange function to return the mock ClientResponse
+        when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+        WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+        when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
+        // Execute the method and verify the results
+        StepVerifier.create(credentialService.getCredentialDomeDeferredCase(transactionId, accessToken, deferredEndpoint))
+                .expectError(RuntimeException.class)
+                .verify();
+    }
 }
