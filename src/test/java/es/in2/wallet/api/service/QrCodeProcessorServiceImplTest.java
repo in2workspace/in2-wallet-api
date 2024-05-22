@@ -1,11 +1,10 @@
 package es.in2.wallet.api.service;
 
-import es.in2.wallet.application.workflow.issuance.CredentialIssuanceEbsiWorkflow;
-import es.in2.wallet.application.workflow.presentation.AttestationExchangeDOMEWorkflow;
-import es.in2.wallet.application.workflow.presentation.impl.AttestationExchangeDOMEWorkflowImpl;
-import es.in2.wallet.domain.exception.NoSuchQrContentException;
-import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceCommonWorkflow;
+import es.in2.wallet.application.workflow.issuance.CredentialIssuanceEbsiWorkflow;
+import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
+import es.in2.wallet.application.workflow.presentation.AttestationExchangeDOMEWorkflow;
+import es.in2.wallet.domain.exception.NoSuchQrContentException;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.service.impl.QrCodeProcessorServiceImpl;
 import org.junit.jupiter.api.Test;
