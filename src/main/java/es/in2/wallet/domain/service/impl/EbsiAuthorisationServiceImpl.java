@@ -43,7 +43,9 @@ public class EbsiAuthorisationServiceImpl implements EbsiAuthorisationService {
      * Generates a code verifier, initiates the authorization request.
      */
     private Mono<Tuple2<String, String>> performAuthorizationRequest(CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, AuthorisationServerMetadata authorisationServerMetadata, String did) {
-        return generateCodeVerifier().flatMap(codeVerifier -> initiateAuthorizationRequest(credentialOffer, credentialIssuerMetadata, authorisationServerMetadata, did, codeVerifier)).flatMap(this::extractRequest);
+        return generateCodeVerifier()
+                .flatMap(codeVerifier -> initiateAuthorizationRequest(credentialOffer, credentialIssuerMetadata, authorisationServerMetadata, did, codeVerifier))
+                .flatMap(this::extractRequest);
     }
 
     /**
@@ -51,7 +53,10 @@ public class EbsiAuthorisationServiceImpl implements EbsiAuthorisationService {
      * and then extracting all query parameters.
      */
     private Mono<Tuple2<Map<String, String>, String>> initiateAuthorizationRequest(CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, AuthorisationServerMetadata authorisationServerMetadata, String did, String codeVerifier) {
-        return buildAuthRequest(credentialOffer, credentialIssuerMetadata, codeVerifier, did).flatMap(this::authRequestBodyToUrlEncodedString).flatMap(authRequestEncodedBody -> sendAuthRequest(authorisationServerMetadata, authRequestEncodedBody)).flatMap(ApplicationUtils::extractAllQueryParams).map(params -> Tuples.of(params, codeVerifier));
+        return buildAuthRequest(credentialOffer, credentialIssuerMetadata, codeVerifier, did)
+                .flatMap(this::authRequestBodyToUrlEncodedString)
+                .flatMap(authRequestEncodedBody -> sendAuthRequest(authorisationServerMetadata, authRequestEncodedBody))
+                .flatMap(ApplicationUtils::extractAllQueryParams).map(params -> Tuples.of(params, codeVerifier));
     }
 
     /**

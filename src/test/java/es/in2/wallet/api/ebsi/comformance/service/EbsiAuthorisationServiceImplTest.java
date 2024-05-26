@@ -91,6 +91,53 @@ class EbsiAuthorisationServiceImplTest {
 
         }
     }
+
+    @Test
+    void getRequestWithOurGeneratedCodeVerifierTestWithRequestUri() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
+            String processId = "processId";
+            CredentialOffer.Credential credential = CredentialOffer.Credential.builder().format("jwt_vc").types(List.of("VC")).build();
+            CredentialOffer.Grant grant = CredentialOffer.Grant.builder().authorizationCodeGrant(CredentialOffer.Grant.AuthorizationCodeGrant.builder().issuerState("state").build()).build();
+            CredentialOffer credentialOffer = CredentialOffer.builder().credentials(List.of(credential)).grant(grant).build();
+            AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().authorizationEndpoint("https://example").build();
+            CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").build();
+            String did = "did:key:example";
+
+            String json = "{\"request\":\"auth request\"}";
+            ObjectMapper objectMapper2 = new ObjectMapper();
+            JsonNode jsonNode = objectMapper2.readTree(json);
+
+            when(objectMapper.valueToTree(any())).thenReturn(jsonNode);
+
+            WebClient webClient = WebClient.builder().exchangeFunction(request -> {
+                String url = request.url().toString();
+                ClientResponse.Builder responseBuilder = ClientResponse.create(HttpStatus.OK)
+                        .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON);
+
+                if (url.contains(authorisationServerMetadata.authorizationEndpoint())) {
+                    return Mono.just(responseBuilder.statusCode(HttpStatus.FOUND).header("Location", "redirect response").build());
+                } else {
+                    return Mono.just(responseBuilder.body("jwt").build());
+                }
+            }).build();
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
+            Map<String, String> map = new HashMap<>();
+            map.put("request_uri","https://resource");
+            when(extractAllQueryParams("redirect response")).thenReturn(Mono.just(map));
+
+
+            StepVerifier.create(ebsiAuthorisationService.getRequestWithOurGeneratedCodeVerifier(processId, credentialOffer, authorisationServerMetadata, credentialIssuerMetadata, did))
+                    .assertNext(tuple -> {
+                        assertEquals("jwt", tuple.getT1());
+
+                        assertTrue(tuple.getT2().length() >= 43 && tuple.getT2().length() <= 128);
+                    })
+                    .verifyComplete();
+
+
+        }
+    }
     @Test
     void getRequestWithOurGeneratedCodeVerifierFailedCommunicationExceptionTest() throws JsonProcessingException {
             String processId = "processId";
