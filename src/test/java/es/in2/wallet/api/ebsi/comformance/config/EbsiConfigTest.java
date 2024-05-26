@@ -137,6 +137,7 @@ class EbsiConfigTest {
 
             // Invoke the @PostConstruct method manually
             StepVerifier.create(ebsiConfig.init())
+                    .expectNext(expectedDid)
                     .verifyComplete();
 
 
@@ -184,6 +185,7 @@ class EbsiConfigTest {
 
             // Invoke the @PostConstruct method manually
             StepVerifier.create(ebsiConfig.init())
+                    .expectNext(expectedDid)
                     .verifyComplete();
 
 

@@ -45,6 +45,7 @@ public class AppConfigImpl implements AppConfig {
         this.verifiablePresentationProperties = verifiablePresentationProperties;
     }
 
+
     @Override
     public List<String> getWalletDrivingUrls() {
         return walletDrivingApplicationProperties.urls().stream()
@@ -141,6 +142,14 @@ public class AppConfigImpl implements AppConfig {
             return String.format("%s://%s%s", scheme, domain, path);
         }
         return String.format("%s://%s:%d%s", scheme, domain, port, path);
+    }
+
+    private String getAuthServerJwtDecoderPath() {
+        return authServerProperties.jwtDecoderPath();
+    }
+    @Override
+    public String getJwtDecoder() {
+        return getAuthServerInternalUrl() + getAuthServerJwtDecoderPath();
     }
 
 }

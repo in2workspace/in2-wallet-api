@@ -30,6 +30,7 @@ import static es.in2.wallet.domain.util.ApplicationConstants.*;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "EbsiConfig", description = "Generate Did for ebsi purposes")
 public class EbsiConfig {
 
     private final ObjectMapper objectMapper;
@@ -41,19 +42,21 @@ public class EbsiConfig {
     private String didForEbsi;
 
     @PostConstruct
-    @Tag(name = "EbsiConfig", description = "Generate Did for ebsi purposes")
-    public Mono<Void> init() {
+    public void onPostConstruct() {
+        init().subscribe(
+                null,
+                error -> log.error("Initialization failed", error)
+        );
+    }
+
+    public Mono<String> init() {
         return generateEbsiDid()
-                .flatMap(did -> {
-                    this.didForEbsi = did;
-                    return Mono.empty();
-                });
+                .doOnNext(did -> this.didForEbsi = did)
+                .doOnError(error -> log.error("Initialization failed", error));
     }
 
     private Mono<String> generateEbsiDid() {
-
         String processId = UUID.randomUUID().toString();
-
         String credentialId = "urn:entities:credential:exampleCredential";
         String vcType = "ExampleCredential";
 
@@ -61,19 +64,14 @@ public class EbsiConfig {
         String decodedSecret;
 
         try {
-            // Attempt to decode the clientSecret assuming it is Base64 encoded.
             byte[] decodedBytes = Base64.getDecoder().decode(clientSecret);
             decodedSecret = new String(decodedBytes, StandardCharsets.UTF_8);
 
-            // Check if re-encoding the decoded result gives us the original string.
             String reEncodedSecret = Base64.getEncoder().encodeToString(decodedSecret.getBytes(StandardCharsets.UTF_8)).trim();
             if (!clientSecret.equals(reEncodedSecret)) {
-                // If re-encoding the decoded text does not match the original string,
-                // assume the original was not in Base64 and use it as it was.
                 decodedSecret = clientSecret;
             }
         } catch (IllegalArgumentException ex) {
-            // If an error occurs during decoding, assume the string was not in Base64.
             decodedSecret = clientSecret;
         }
 
@@ -91,7 +89,7 @@ public class EbsiConfig {
                         .bodyValue(body)
                         .exchangeToMono(response -> {
                             if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
-                                return Mono.error(new RuntimeException(("Error getting token form user:" + appConfig.getIdentityProviderUsername())));
+                                return Mono.error(new RuntimeException("Error getting token from user: " + appConfig.getIdentityProviderUsername()));
                             } else {
                                 log.info("Token retrieval completed");
                                 return response.bodyToMono(String.class);
@@ -101,35 +99,26 @@ public class EbsiConfig {
                     log.debug(response);
                     Map<String, Object> jsonObject;
                     try {
-                        jsonObject = objectMapper.readValue(response, new TypeReference<>() {
-                        });
+                        jsonObject = objectMapper.readValue(response, new TypeReference<>() {});
                     } catch (JsonProcessingException e) {
                         return Mono.error(new RuntimeException(e));
                     }
                     String token = jsonObject.get("access_token").toString();
-
                     return Mono.just(token);
                 })
                 .flatMap(ApplicationUtils::getUserIdFromToken)
                 .flatMap(userId -> brokerService.getEntityById(processId, USER_ENTITY_PREFIX + userId)
                         .flatMap(optionalEntity -> optionalEntity
-                                .map(entity -> getDidForUserCredential(processId, userId,vcType))
-                                .orElseGet(() ->
-                                        generateDid()
-                                                .flatMap(did -> createAndAddCredentialWithADidToPassEbsiTest(processId, userId, did,credentialId,vcType)
-                                                        .thenReturn(did)
-                                                )
+                                .map(entity -> getDidForUserCredential(processId, userId, vcType))
+                                .orElseGet(() -> generateDid()
+                                        .flatMap(did -> createAndAddCredentialWithADidToPassEbsiTest(processId, userId, did, credentialId, vcType)
+                                                .thenReturn(did)
+                                        )
                                 )
                         )
                 )
-                .onErrorResume(e -> {
-                            log.error("Error while processing did generation: {}", e.getMessage());
-
-                            return Mono.error(new RuntimeException("The user already exist" + e));
-                        }
-                );
-
-
+                .doOnError(e -> log.error("Error while processing did generation: {}", e.getMessage()))
+                .onErrorResume(e -> Mono.error(new RuntimeException("The user already exists: " + e)));
     }
 
     private Mono<String> generateDid() {
@@ -163,27 +152,22 @@ public class EbsiConfig {
                                 "object": "urn:entities:walletUser:%s"
                               }
                             }
-                            """,credentialId,type,did,userId);
+                            """, credentialId, type, did, userId);
         return dataService.createUserEntity(userId)
                 .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
                 .then(brokerService.postEntity(processId, credentialEntity));
     }
 
-
     private Mono<String> getDidForUserCredential(String processId, String userId, String type) {
         return brokerService.getCredentialByCredentialTypeAndUserId(processId, type, userId)
                 .flatMap(credentialsJson -> {
                     try {
-                        List<CredentialEntity> credentials = objectMapper.readValue(credentialsJson, new TypeReference<>() {
-                        });
-
+                        List<CredentialEntity> credentials = objectMapper.readValue(credentialsJson, new TypeReference<>() {});
                         CredentialEntity firstCredential = credentials.get(0);
-
                         String firstCredentialJson = objectMapper.writeValueAsString(firstCredential);
-
                         return dataService.extractDidFromVerifiableCredential(firstCredentialJson);
                     } catch (Exception e) {
-                        return Mono.error(new RuntimeException("There was an error: ", e));
+                        return Mono.error(new RuntimeException("Error processing credentials", e));
                     }
                 });
     }
@@ -191,5 +175,6 @@ public class EbsiConfig {
     public Mono<String> getDid() {
         return Mono.just(this.didForEbsi);
     }
-
 }
+
+
