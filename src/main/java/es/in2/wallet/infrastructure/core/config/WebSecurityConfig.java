@@ -38,6 +38,7 @@ public class WebSecurityConfig {
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
                 .authorizeExchange(exchanges -> exchanges
+                                .pathMatchers("api/v1/pin").permitAll()
                                 .pathMatchers(HttpMethod.GET, GLOBAL_ENDPOINTS_API).authenticated()
                                 .pathMatchers(HttpMethod.POST, GLOBAL_ENDPOINTS_API).authenticated()
                                 .pathMatchers(HttpMethod.DELETE, GLOBAL_ENDPOINTS_API).authenticated()
