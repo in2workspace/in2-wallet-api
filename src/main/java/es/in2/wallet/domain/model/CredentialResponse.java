@@ -13,7 +13,7 @@ public record CredentialResponse(
         @JsonProperty("format") String format,
         @Schema(example = "LUpixVCWJk0eOt4CXQe1NXK....WZwmhmn9OQp6YxX0a2L",
                 description = "Contains issued Credential")
-        @JsonProperty("credential") Object credential,
+        @JsonProperty("credential") String credential,
         @Schema(
                 example = "fGFF7UkhLA",
                 description = "Nonce to be used to create a proof of possession of key material when requesting a Credential. " +
@@ -24,6 +24,7 @@ public record CredentialResponse(
                 example = "86400",
                 description = "Lifetime in seconds of the c_nonce")
         @JsonProperty("c_nonce_expires_in") Integer c_nonce_expires_in,
-        @JsonProperty("acceptance_token") String acceptanceToken
+        @JsonProperty("acceptance_token") String acceptanceToken,
+        @JsonProperty("transaction_id") String transactionId
 ) {
 }

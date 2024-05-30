@@ -3,21 +3,18 @@ package es.in2.wallet.domain.service.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.AppConfig;
-import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.CredentialIssuerMetadata;
 import es.in2.wallet.domain.model.CredentialOffer;
 import es.in2.wallet.domain.service.CredentialIssuerMetadataService;
-import es.in2.wallet.domain.util.MessageUtils;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.Map;
-
-import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE;
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE_APPLICATION_JSON;
 
 @Slf4j
 @Service
@@ -26,6 +23,8 @@ public class CredentialIssuerMetadataServiceImpl implements CredentialIssuerMeta
 
     private final ObjectMapper objectMapper;
     private final AppConfig appConfig;
+
+    private final WebClientConfig webClient;
 
     @Override
     public Mono<CredentialIssuerMetadata> getCredentialIssuerMetadataFromCredentialOffer(String processId, CredentialOffer credentialOffer) {
@@ -42,9 +41,19 @@ public class CredentialIssuerMetadataServiceImpl implements CredentialIssuerMeta
     }
 
     private Mono<String> getCredentialIssuerMetadata(String credentialIssuerURL) {
-        List<Map.Entry<String, String>> headers = List.of(Map.entry(MessageUtils.CONTENT_TYPE, MessageUtils.CONTENT_TYPE_APPLICATION_JSON));
-        return getRequest(credentialIssuerURL, headers)
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching Credential Issuer Metadata from the Issuer")));
+        return webClient.centralizedWebClient()
+                .get()
+                .uri(credentialIssuerURL)
+                .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("Error while fetching Credential Issuer Metadata from the Issuer, error" + response));
+                    }
+                    else {
+                        log.info("Credential issuer metadata: {}", response);
+                        return response.bodyToMono(String.class);
+                    }
+                });
     }
 
     /**

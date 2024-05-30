@@ -8,11 +8,13 @@ import es.in2.wallet.infrastructure.core.config.properties.WalletDrivingApplicat
 import es.in2.wallet.infrastructure.ebsi.config.properties.EbsiProperties;
 import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
 @Configuration
+@Slf4j
 public class AppConfigImpl implements AppConfig {
 
     private final GenericConfigAdapter genericConfigAdapter;
@@ -31,6 +33,8 @@ public class AppConfigImpl implements AppConfig {
         authServerInternalUrl = initAuthServerInternalUrl();
         authServerExternalUrl = initAuthServerExternalUrl();
         authServerTokenEndpoint = initAuthServerTokenEndpoint();
+        log.debug(authServerExternalUrl);
+        log.debug(authServerInternalUrl);
     }
 
     public AppConfigImpl(ConfigAdapterFactory configAdapterFactory,
@@ -42,11 +46,14 @@ public class AppConfigImpl implements AppConfig {
         this.authServerProperties = authServerProperties;
         this.walletDrivingApplicationProperties = walletDrivingApplicationProperties;
         this.ebsiProperties = ebsiProperties;
+        log.debug(ebsiProperties.url());
         this.verifiablePresentationProperties = verifiablePresentationProperties;
     }
 
+
     @Override
     public List<String> getWalletDrivingUrls() {
+        log.debug(String.valueOf(walletDrivingApplicationProperties.urls().get(0).port()));
         return walletDrivingApplicationProperties.urls().stream()
                 .map(urlProperties -> {
                     String domain = "localhost".equalsIgnoreCase(urlProperties.domain()) ?
@@ -141,6 +148,14 @@ public class AppConfigImpl implements AppConfig {
             return String.format("%s://%s%s", scheme, domain, path);
         }
         return String.format("%s://%s:%d%s", scheme, domain, port, path);
+    }
+
+    private String getAuthServerJwtDecoderPath() {
+        return authServerProperties.jwtDecoderPath();
+    }
+    @Override
+    public String getJwtDecoder() {
+        return getAuthServerInternalUrl() + getAuthServerJwtDecoderPath();
     }
 
 }
