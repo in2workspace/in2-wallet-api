@@ -1,6 +1,7 @@
 package es.in2.wallet.domain.service.impl;
 
 import COSE.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEObject;
 import com.nimbusds.jose.shaded.gson.JsonArray;
 import com.nimbusds.jose.shaded.gson.JsonObject;
@@ -23,6 +24,8 @@ import java.util.zip.DeflaterInputStream;
 @RequiredArgsConstructor
 @Slf4j
 public class CborGenerationServiceImpl implements CborGenerationService {
+    private final ObjectMapper objectMapper;
+
     @Override
     public Mono<String> generateCbor(String processId, String content) throws ParseException {
         return generateCborFromJson(content)
@@ -40,7 +43,6 @@ public class CborGenerationServiceImpl implements CborGenerationService {
     private Mono<byte[]> generateCborFromJson(String content) throws ParseException {
         return modifyPayload(content)
                 .flatMap(modifiedPayload -> Mono.just((CBORObject.FromJSONString(modifiedPayload)).EncodeToBytes()));
-
     }
 
     private Mono<String> modifyPayload(String token) throws ParseException {

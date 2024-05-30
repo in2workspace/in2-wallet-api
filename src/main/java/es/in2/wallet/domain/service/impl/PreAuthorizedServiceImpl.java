@@ -2,11 +2,14 @@ package es.in2.wallet.domain.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.domain.exception.InvalidPinException;
+import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
 import es.in2.wallet.domain.model.CredentialOffer;
 import es.in2.wallet.domain.model.TokenResponse;
+import es.in2.wallet.domain.model.WebSocketServerMessage;
 import es.in2.wallet.domain.service.PreAuthorizedService;
 import es.in2.wallet.infrastructure.core.config.PinRequestWebSocketHandler;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import es.in2.wallet.infrastructure.core.config.WebSocketSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,14 +20,12 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
-import static es.in2.wallet.domain.util.MessageUtils.*;
 
 @Slf4j
 @Service
@@ -34,6 +35,7 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
     private final ObjectMapper objectMapper;
     private final WebSocketSessionManager sessionManager;
     private final PinRequestWebSocketHandler pinRequestWebSocketHandler;
+    private final WebClientConfig webClient;
 
 
     /**
@@ -54,23 +56,34 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
         if (credentialOffer.grant().preAuthorizedCodeGrant().userPinRequired()) {
             // If a user PIN is required, extract the user ID from the token,
             // send a PIN request, wait for the PIN response, and then proceed to get access token.
-            return getUserIdFromToken(authorizationToken)
-                    .flatMap(id -> sessionManager.getSession(id)
-                            .flatMap(session -> {
-                                pinRequestWebSocketHandler.sendPinRequest(session);
-                                return waitForPinResponse(id);
-                            })
-                            .switchIfEmpty(Mono.error(new RuntimeException("WebSocket session not found")))
-                            .flatMap(pin -> getAccessToken(tokenURL, credentialOffer, pin))
-                            .flatMap(this::parseTokenResponse)
-                    );
-        } else {
+            return sendPinRequestAndRetrieveResponse
+                    (authorizationToken,tokenURL,credentialOffer,WebSocketServerMessage.builder().pin(true).build());
+        }
+        else if (credentialOffer.grant().preAuthorizedCodeGrant().txCode() != null){
+            // If a tx_code is required, extract the user ID from the token,
+            // send a PIN request, wait for the PIN response, and then proceed to get access token.
+            return sendPinRequestAndRetrieveResponse
+                    (authorizationToken,tokenURL,credentialOffer,
+                            WebSocketServerMessage.builder().txCode(credentialOffer.grant().preAuthorizedCodeGrant().txCode()).build());
+        }
+        else {
             // If no PIN is required, directly proceed to get the access token.
             return getAccessToken(tokenURL, credentialOffer, null)
                     .flatMap(this::parseTokenResponse);
         }
     }
-
+    private Mono<TokenResponse> sendPinRequestAndRetrieveResponse(String authorizationToken,String tokenURL, CredentialOffer credentialOffer,WebSocketServerMessage webSocketServerMessage){
+        return getUserIdFromToken(authorizationToken)
+                .flatMap(id  -> sessionManager.getSession(id)
+                        .flatMap(session -> {
+                            pinRequestWebSocketHandler.sendPinRequest(session, webSocketServerMessage);
+                            return waitForPinResponse(id);
+                        }
+                        ))
+                .switchIfEmpty(Mono.error(new RuntimeException("WebSocket session not found")))
+                .flatMap(pin -> getAccessToken(tokenURL, credentialOffer, pin))
+                .flatMap(this::parseTokenResponse);
+    }
     /**
      * Waits for the PIN response from the user for a given user ID.
      *
@@ -87,15 +100,15 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
     }
 
     private Mono<String> getAccessToken(String tokenURL, CredentialOffer credentialOffer, String pin) {
-        // Headers
-        List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
-
         // Build URL encoded form data request body
         Map<String, String> formDataMap = new HashMap<>();
         formDataMap.put("grant_type", PRE_AUTH_CODE_GRANT_TYPE);
         formDataMap.put("pre-authorized_code", credentialOffer.grant().preAuthorizedCodeGrant().preAuthorizedCode());
-        if (pin != null && !pin.isEmpty()) {
+        if (credentialOffer.grant().preAuthorizedCodeGrant().userPinRequired() && pin != null && !pin.isEmpty()) {
             formDataMap.put("user_pin", pin);
+        }
+        else if (credentialOffer.grant().preAuthorizedCodeGrant().txCode() != null){
+            formDataMap.put("tx_code", pin);
         }
 
         String xWwwFormUrlencodedBody = formDataMap.entrySet().stream()
@@ -103,14 +116,26 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
                 .collect(Collectors.joining("&"));
 
         // Post request
-        return postRequest(tokenURL, headers, xWwwFormUrlencodedBody);
+        return webClient.centralizedWebClient()
+                .post()
+                .uri(tokenURL)
+                .header(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM)
+                .bodyValue(xWwwFormUrlencodedBody)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new InvalidPinException(("Incorrect PIN, there next error occurs:" + response)));
+                    } else {
+                        log.info("DOME attestation exchange completed");
+                        return response.bodyToMono(String.class);
+                    }
+                });
     }
 
     private Mono<TokenResponse> parseTokenResponse(String response) {
         try {
             return Mono.just(objectMapper.readValue(response, TokenResponse.class));
         } catch (Exception e) {
-            return Mono.error(new InvalidPinException("Incorrect PIN" + e));
+            return Mono.error(new ParseErrorException("Error parsing token response" + e));
         }
     }
 

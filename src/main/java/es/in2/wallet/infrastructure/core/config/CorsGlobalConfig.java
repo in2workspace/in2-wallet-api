@@ -7,8 +7,9 @@ import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 
-import static es.in2.wallet.domain.util.MessageUtils.ALLOWED_METHODS;
-import static es.in2.wallet.domain.util.MessageUtils.GLOBAL_ENDPOINTS_API;
+import static es.in2.wallet.domain.util.ApplicationConstants.ALLOWED_METHODS;
+import static es.in2.wallet.domain.util.ApplicationConstants.GLOBAL_ENDPOINTS_API;
+
 
 @Configuration
 @EnableWebFlux

@@ -7,7 +7,6 @@ import es.in2.wallet.domain.exception.JwtInvalidFormatException;
 import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.UVarInt;
 import es.in2.wallet.domain.service.VerifierValidationService;
-import es.in2.wallet.domain.util.MessageUtils;
 import io.ipfs.multibase.Base58;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,12 +18,13 @@ import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-
 import java.security.interfaces.ECPublicKey;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
 
 @Slf4j
 @Service
@@ -57,8 +57,8 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
 
     private Mono<SignedJWT> validateClientIdClaim(String processId, SignedJWT signedJWTAuthorizationRequest) {
         Map<String, Object> jsonPayload = signedJWTAuthorizationRequest.getPayload().toJSONObject();
-        String iss = jsonPayload.get(MessageUtils.ISSUER_TOKEN_PROPERTY_NAME).toString();
-        String sub = jsonPayload.get(MessageUtils.ISSUER_SUB).toString();
+        String iss = jsonPayload.get(ISSUER_TOKEN_PROPERTY_NAME).toString();
+        String sub = jsonPayload.get(ISSUER_SUB).toString();
         return Mono.fromCallable(() -> {
                     String authenticationRequestClaim = jsonPayload.get("auth_request").toString();
                     Pattern pattern = Pattern.compile("client_id=([^&]+)");
@@ -91,11 +91,11 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
     }
 
     private ECPublicKey decodeDidKey(String didKey){
-        if (!didKey.startsWith(MessageUtils.DID_KEY_PREFIX)) {
+        if (!didKey.startsWith(DID_KEY_PREFIX)) {
             throw new IllegalArgumentException("Invalid DID Key format");
         }
 
-        String encodedMultiBase58 = didKey.substring(MessageUtils.DID_KEY_PREFIX.length());
+        String encodedMultiBase58 = didKey.substring(DID_KEY_PREFIX.length());
 
         int multiCodecKeyCodeForSecp256r1 = 0x1200;
 

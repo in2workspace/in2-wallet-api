@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -18,9 +17,9 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
+import static es.in2.wallet.domain.util.ApplicationConstants.BEARER;
 
 @Slf4j
 public class ApplicationUtils {
@@ -49,43 +48,10 @@ public class ApplicationUtils {
             ))
             .build();
 
-    public static Mono<String> postRequest(String url, List<Map.Entry<String, String>> headers, String body) {
-        return WEB_CLIENT.post()
-                .uri(url)
-                .headers(httpHeaders -> headers.forEach(entry -> httpHeaders.add(entry.getKey(), entry.getValue())))
-                .bodyValue(body)
-                .exchangeToMono(response -> {
-                    if (response.statusCode().is3xxRedirection()) {
-                        return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
-                    }
-                    else {
-                        return response.bodyToMono(String.class);
-                    }
-                });
-    }
-
-    public static Mono<String> getRequest(String url, List<Map.Entry<String, String>> headers) {
-        return WEB_CLIENT.get()
-                .uri(URI.create(url))
-                .headers(httpHeaders -> headers.forEach(entry -> httpHeaders.add(entry.getKey(), entry.getValue())))
-                .exchangeToMono(response -> {
-                    if (response.statusCode().is3xxRedirection()) {
-                        return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
-                    }
-                    else if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
-                        return Mono.error(new RuntimeException("Error during get request:" + response.statusCode() ));
-                    }
-                    else {
-
-                        return response.bodyToMono(String.class);
-                    }
-                })
-                .log();
-    }
     public static Mono<String> getCleanBearerToken(String authorizationHeader) {
         return Mono.just(authorizationHeader)
-                .filter(header -> header.startsWith(MessageUtils.BEARER))
-                .map(header -> header.replace(MessageUtils.BEARER, "").trim())
+                .filter(header -> header.startsWith(BEARER))
+                .map(header -> header.replace(BEARER, "").trim())
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Invalid")));
     }
     public static Mono<String> getUserIdFromToken(String authorizationToken) {
@@ -99,7 +65,7 @@ public class ApplicationUtils {
     }
     public static Mono<String> getCleanBearerAndUserIdFromToken(String authorizationHeader) {
         return Mono.just(authorizationHeader)
-                .filter(header -> header.startsWith(MessageUtils.BEARER))
+                .filter(header -> header.startsWith(BEARER))
                 .map(header -> header.substring(7))
                 .flatMap(token -> {
                     try {

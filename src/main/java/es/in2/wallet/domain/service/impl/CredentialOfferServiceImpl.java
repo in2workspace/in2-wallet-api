@@ -7,6 +7,7 @@ import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.CredentialOffer;
 import es.in2.wallet.domain.service.CredentialOfferService;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,10 +18,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.domain.util.MessageUtils.*;
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
 
 @Slf4j
 @Service
@@ -28,21 +27,13 @@ import static es.in2.wallet.domain.util.MessageUtils.*;
 public class CredentialOfferServiceImpl implements CredentialOfferService {
 
     private final ObjectMapper objectMapper;
-
-    @Override
-    public Mono<CredentialOffer> getCredentialOfferFromCredentialOfferUriWithAuthorizationToken(String processId, String credentialOfferUri, String authorizationToken) {
-        return getCredentialOfferFromCredentialOfferUri(processId, credentialOfferUri, authorizationToken);
-    }
-
+    private final WebClientConfig webClient;
     @Override
     public Mono<CredentialOffer> getCredentialOfferFromCredentialOfferUri(String processId, String credentialOfferUri) {
-        return getCredentialOfferFromCredentialOfferUri(processId, credentialOfferUri, null);
-    }
-    private Mono<CredentialOffer> getCredentialOfferFromCredentialOfferUri(String processId, String credentialOfferUri, String authorizationToken) {
         return parseCredentialOfferUri(credentialOfferUri)
                 .doOnSuccess(credentialOfferUriValue -> log.info("ProcessId: {}, Credential Offer Uri parsed successfully: {}", processId, credentialOfferUriValue))
                 .doOnError(e -> log.error("ProcessId: {}, Error while parsing Credential Offer Uri: {}", processId, e.getMessage()))
-                .flatMap(credentialOfferUriValue -> getCredentialOffer(credentialOfferUriValue, authorizationToken))
+                .flatMap(this::getCredentialOffer)
                 .doOnSuccess(credentialOffer -> log.info("ProcessId: {}, Credential Offer fetched successfully: {}", processId, credentialOffer))
                 .doOnError(e -> log.error("ProcessId: {}, Error while fetching Credential Offer: {}", processId, e.getMessage()))
                 .flatMap(this::parseCredentialOfferResponse)
@@ -63,20 +54,21 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
 
         });
     }
-    private Mono<String> getCredentialOffer(String credentialOfferUri, String authorizationToken) {
+    private Mono<String> getCredentialOffer(String credentialOfferUri) {
         log.info("CredentialOfferServiceImpl - getCredentialOffer invoked");
-        List<Map.Entry<String, String>> headers;
-        if (authorizationToken != null) {
-            headers = List.of(
-                    Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON),
-                    Map.entry(HEADER_AUTHORIZATION, BEARER + authorizationToken));
-        }
-        else {
-            headers = List.of(
-                    Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
-        }
-        log.info("CredentialOfferServiceImpl - getCredentialOffer headers: {}", headers);
-        return getRequest(credentialOfferUri, headers)
+        return webClient.centralizedWebClient()
+                .get()
+                .uri(credentialOfferUri)
+                .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("Error while fetching credentialOffer from the issuer, error: " + response));
+                    }
+                    else {
+                        log.info("Credential Offer: {}", response);
+                        return response.bodyToMono(String.class);
+                    }
+                })
                 .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching credentialOffer from the issuer", e)));
     }
 
