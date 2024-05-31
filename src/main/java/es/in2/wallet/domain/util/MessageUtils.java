@@ -2,6 +2,9 @@ package es.in2.wallet.domain.util;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+import java.util.regex.Pattern;
+
 @Slf4j
 public class MessageUtils {
 
@@ -60,6 +63,6 @@ public class MessageUtils {
     public static final Pattern DOME_REDIRECT_URI_PATTERN = Pattern.compile("\\S*(dome)\\S*");
     public static final Pattern OPENID_AUTHENTICATION_REQUEST_PATTERN = Pattern.compile("openid://\\S*");
     public static final String ISO_8601_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ssX";
-    public static final List<String> DEFAULT_VC_TYPES_FOR_DOME_VERIFIER = List.of("LegalPersonCredential","LEARCredentialEmployee");
+    public static final List<String> DEFAULT_VC_TYPES_FOR_DOME_VERIFIER = List.of("LegalPersonCredential", "LEARCredentialEmployee");
     public static final List<String> DEFAULT_SCOPE_FOR_DOME_VERIFIER = List.of("didRead", "defaultScope");
 }
