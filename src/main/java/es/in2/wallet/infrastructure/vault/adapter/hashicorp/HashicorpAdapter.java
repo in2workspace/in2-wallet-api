@@ -21,7 +21,6 @@ import java.util.Objects;
 @VaultProviderAnnotation(provider = VaultProviderEnum.HASHICORP)
 public class HashicorpAdapter implements GenericVaultService {
     public static final String DATA = "/data/";
-    public static final String METADATA = "/metadata/";
 
     private final ReactiveVaultOperations vaultOperations;
     private final String hashicorpSecretPath;
@@ -70,7 +69,7 @@ public class HashicorpAdapter implements GenericVaultService {
 
     @Override
     public Mono<Void> deleteSecret(String key) {
-        return vaultOperations.delete(hashicorpSecretPath + METADATA + key)
+        return vaultOperations.delete(hashicorpSecretPath + DATA + key)
                 .doOnSuccess(voidValue -> log.debug("Secret deleted successfully"))
                 .onErrorResume(Exception.class, e -> {
                     log.error("Error deleting secret: " + key, e.getMessage(), e);

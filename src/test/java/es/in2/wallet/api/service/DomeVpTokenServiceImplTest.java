@@ -1,11 +1,11 @@
 package es.in2.wallet.api.service;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import es.in2.wallet.application.port.BrokerService;
+import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
 import es.in2.wallet.domain.model.AuthorizationRequest;
+import es.in2.wallet.domain.model.CredentialStatus;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorRequest;
-import es.in2.wallet.domain.service.UserDataService;
 import es.in2.wallet.domain.service.impl.DomeVpTokenServiceImpl;
 import es.in2.wallet.domain.util.ApplicationUtils;
 import org.junit.jupiter.api.Test;
@@ -21,19 +21,17 @@ import reactor.test.StepVerifier;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.DEFAULT_VC_TYPES_FOR_DOME_VERIFIER;
+import static es.in2.wallet.domain.util.ApplicationConstants.VC_JWT;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.domain.util.MessageUtils.VC_JWT;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DomeVpTokenServiceImplTest {
 
     @Mock
-    private UserDataService userDataService;
-    @Mock
-    private BrokerService brokerService;
+    private AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
 
     @InjectMocks
     private DomeVpTokenServiceImpl domeVpTokenService;
@@ -52,14 +50,11 @@ class DomeVpTokenServiceImplTest {
             String userId = "userId";
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just(userId));
 
-            String userEntity = "userEntityId";
-            when(brokerService.getEntityById(processId, userId)).thenReturn(Mono.just(Optional.of(userEntity)));
 
-            // Ajusta aquí para usar CredentialsBasicInfo
             List<CredentialsBasicInfo> selectableVCs = List.of(
-                    new CredentialsBasicInfo("vcId1", List.of("vcType1"),List.of(VC_JWT),JsonNodeFactory.instance.objectNode().put("example", "data"), expirationDate)
+                    new CredentialsBasicInfo("vcId1", List.of("vcType1"), CredentialStatus.VALID,List.of(VC_JWT),JsonNodeFactory.instance.objectNode().put("example", "data"), expirationDate)
             );
-            when(userDataService.getSelectableVCsByVcTypeList(anyList(), eq(userEntity))).thenReturn(Mono.just(selectableVCs));
+            when(attestationExchangeCommonWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,authorizationRequest.scope())).thenReturn(Mono.just(selectableVCs));
 
             VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder()
                     .selectableVcList(selectableVCs)
@@ -75,8 +70,7 @@ class DomeVpTokenServiceImplTest {
                     )
                     .verifyComplete();
 
-            verify(userDataService).getSelectableVCsByVcTypeList(anyList(), eq(userEntity));
-            verify(brokerService).getEntityById(processId, userId);
+            verify(attestationExchangeCommonWorkflow).getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,authorizationRequest.scope());
     }
     }
     @Test
@@ -93,14 +87,10 @@ class DomeVpTokenServiceImplTest {
             String userId = "userId";
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just(userId));
 
-            String userEntity = "userEntityId";
-            when(brokerService.getEntityById(processId, userId)).thenReturn(Mono.just(Optional.of(userEntity)));
-
-            // Ajusta aquí para usar CredentialsBasicInfo
             List<CredentialsBasicInfo> selectableVCs = List.of(
-                    new CredentialsBasicInfo("vcId1", List.of("vcType1"),List.of(VC_JWT) ,JsonNodeFactory.instance.objectNode().put("example", "data"), expirationDate)
+                    new CredentialsBasicInfo("vcId1", List.of("vcType1"), CredentialStatus.VALID,List.of(VC_JWT),JsonNodeFactory.instance.objectNode().put("example", "data"), expirationDate)
             );
-            when(userDataService.getSelectableVCsByVcTypeList(anyList(), eq(userEntity))).thenReturn(Mono.just(selectableVCs));
+            when(attestationExchangeCommonWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,DEFAULT_VC_TYPES_FOR_DOME_VERIFIER)).thenReturn(Mono.just(selectableVCs));
 
             VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder()
                     .selectableVcList(selectableVCs)
@@ -116,8 +106,7 @@ class DomeVpTokenServiceImplTest {
                     )
                     .verifyComplete();
 
-            verify(userDataService).getSelectableVCsByVcTypeList(anyList(), eq(userEntity));
-            verify(brokerService).getEntityById(processId, userId);
+            verify(attestationExchangeCommonWorkflow).getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,DEFAULT_VC_TYPES_FOR_DOME_VERIFIER);
         }
     }
 }

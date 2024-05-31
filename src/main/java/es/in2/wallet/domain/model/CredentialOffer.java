@@ -21,6 +21,9 @@ public record CredentialOffer(
         @Schema(example = "[\"UniversityDegree\"]")
         @JsonProperty("credentials")
         List<Credential> credentials,
+
+        @JsonProperty("credential_configuration_ids")
+        List<String> credentialConfigurationsIds,
         @Schema(implementation = Grant.class)
         @JsonProperty("grants")
         Grant grant
@@ -68,8 +71,27 @@ public record CredentialOffer(
                 @JsonProperty("pre-authorized_code")
                 String preAuthorizedCode,
                 @JsonProperty("user_pin_required")
-                boolean userPinRequired
+                boolean userPinRequired,
+
+                @JsonProperty("tx_code")
+                TxCode txCode
+
         ) {
+            @Builder
+            @JsonIgnoreProperties(ignoreUnknown = true)
+            public record TxCode(
+                    @JsonProperty("input_mode")
+                    String inputMode,
+
+                    @JsonProperty("length")
+                    Integer length,
+
+                    @JsonProperty("description")
+                    String description
+
+            ) {
+
+            }
         }
     }
 }

@@ -9,6 +9,7 @@ import java.lang.reflect.Modifier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static es.in2.wallet.domain.util.ApplicationRegexPattern.DOME_REDIRECT_URI_PATTERN;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageUtilsTest {
@@ -32,7 +33,7 @@ class MessageUtilsTest {
     @Test
     void testDomeRedirectUriPattern() {
         // Test the DOME_REDIRECT_URI_PATTERN
-        Pattern domePattern = MessageUtils.DOME_REDIRECT_URI_PATTERN;
+        Pattern domePattern = DOME_REDIRECT_URI_PATTERN;
         Matcher matcher = domePattern.matcher("https://example.dome-marketplace.org/path");
         assertTrue(matcher.find(), "URL should match DOME_REDIRECT_URI_PATTERN");
 

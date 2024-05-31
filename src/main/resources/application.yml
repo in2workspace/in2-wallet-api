@@ -4,6 +4,7 @@ spring:
   main:
     web-application-type: reactive
 
+
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
@@ -91,18 +92,19 @@ auth-server:
   external-url:
     scheme: "http"
     domain: "localhost"
-    port: "8080"
-    path: "/cross-keycloak/realms/EAAProvider"
+    port: "9099"
+    path: "/realms/wallet"
   internal-url:
     scheme: "http"
     domain: "localhost"
-    port: "8080"
-    path: "/realms/EAAProvider"
+    port: "9099"
+    path: "/realms/wallet"
   token-url:
     scheme: "http"
     domain: "localhost"
     port: "8080"
     path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
+  jwt-decoder-path: "/protocol/openid-connect/certs"
 
 verifiable-presentation:
   expiration-time: 3
@@ -111,10 +113,10 @@ verifiable-presentation:
 # These properties are used to pass the EBSI Holder Wallet Test
 ebsi:
   test:
-    url: http://localhost:9099/realms/wallet/protocol/openid-connect/token
+    url: "http://localhost:9099/realms/wallet/protocol/openid-connect/token"
     client-secret: "fV51P8jFBo8VnFKMMuP3imw3H3i5mNck"
     client-id: user-registry-client
-    username: adminWallet
+    username: admin
     password: adminPass
 
 wallet-wda:

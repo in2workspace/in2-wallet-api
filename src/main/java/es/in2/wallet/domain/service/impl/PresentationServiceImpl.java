@@ -11,9 +11,9 @@ import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.DomeVerifiablePresentation;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.model.VerifiablePresentation;
+import es.in2.wallet.domain.service.DataService;
 import es.in2.wallet.domain.service.PresentationService;
 import es.in2.wallet.domain.service.SignerService;
-import es.in2.wallet.domain.service.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,8 +24,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.*;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.domain.util.MessageUtils.*;
 
 @Slf4j
 @Service
@@ -33,7 +33,7 @@ import static es.in2.wallet.domain.util.MessageUtils.*;
 public class PresentationServiceImpl implements PresentationService {
 
     private final ObjectMapper objectMapper;
-    private final UserDataService userDataService;
+    private final DataService dataService;
     private final BrokerService brokerService;
     private final SignerService signerService;
 
@@ -74,11 +74,9 @@ public class PresentationServiceImpl implements PresentationService {
 
     private Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken,String nonce, String audience, List<CredentialsBasicInfo> selectedVcList, String format) {
         return  getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> brokerService.getEntityById(processId,userId))
-                .flatMap(optionalEntity -> optionalEntity
-                        .map(entity -> getVerifiableCredentials(entity,selectedVcList, VC_JWT)
+                        .flatMap(userId -> getVerifiableCredentials(processId,userId,selectedVcList, VC_JWT)
                             .flatMap(verifiableCredentialsListJWT -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsListJWT)
-                                    .flatMap(did -> getVerifiableCredentials(entity,selectedVcList, format)
+                                    .flatMap(did -> getVerifiableCredentials(processId,userId,selectedVcList, format)
                                             .flatMap(verifiableCredentialsList -> // Create the unsigned verifiable presentation
                                                     createUnsignedPresentation(verifiableCredentialsList, did,nonce,audience)
                                                             .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp")))
@@ -91,17 +89,12 @@ public class PresentationServiceImpl implements PresentationService {
                                 log.error("Error in creating Verifiable Presentation: ", e);
                                 return Mono.error(e);
                             })
-                        )
-                        .orElseGet(() -> Mono.error(new RuntimeException("Failed to retrieve entity."))
-                        )
-                );
+                        );
     }
 
     private Mono<String> createVerifiablePresentationForDome(String processId, String authorizationToken,List<CredentialsBasicInfo> selectedVcList) {
         return  getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> brokerService.getEntityById(processId,userId))
-                .flatMap(optionalEntity -> optionalEntity
-                        .map(entity -> getVerifiableCredentials(entity,selectedVcList, VC_JSON)
+                .flatMap(userId ->getVerifiableCredentials(processId,userId,selectedVcList, VC_JSON)
                                 .flatMap(this::createEncodedPresentation)
                                 // Log success
                                 .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - DOME Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
@@ -110,21 +103,18 @@ public class PresentationServiceImpl implements PresentationService {
                                     log.error("Error in creating Verifiable Presentation: ", e);
                                     return Mono.error(e);
                                 })
-                        )
-                        .orElseGet(() -> Mono.error(new RuntimeException("Failed to retrieve entity."))
-                        )
                 );
     }
     /**
      * Retrieves a list of Verifiable Credential JWTs based on the VCs selected in the VcSelectorResponse.
      *
-     * @param entity               The entity ID associated with the VCs.
      * @param selectedVcList       The selected VCs.
      * @param format               The format of the VCs
      */
-    private Mono<List<String>> getVerifiableCredentials(String entity, List<CredentialsBasicInfo> selectedVcList, String format) {
+    private Mono<List<String>> getVerifiableCredentials(String processId, String userId, List<CredentialsBasicInfo> selectedVcList, String format) {
         return Flux.fromIterable(selectedVcList)
-                .flatMap(verifiableCredential -> userDataService.getVerifiableCredentialByIdAndFormat(entity,verifiableCredential.id(),format))
+                .flatMap(credential -> brokerService.getCredentialByIdAndUserId(processId,credential.id(),userId))
+                .flatMap(credentialEntity -> dataService.getVerifiableCredentialOnRequestedFormat(credentialEntity,format))
                 .collectList();
     }
 

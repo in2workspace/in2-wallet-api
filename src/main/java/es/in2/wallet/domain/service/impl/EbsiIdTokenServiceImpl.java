@@ -5,14 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.wallet.domain.service.EbsiIdTokenService;
-import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
+import es.in2.wallet.domain.service.EbsiIdTokenService;
 import es.in2.wallet.domain.service.SignerService;
 import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -20,14 +21,12 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM;
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE;
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE_URL_ENCODED_FORM;
 
 @Slf4j
 @Service
@@ -35,6 +34,7 @@ import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FO
 public class EbsiIdTokenServiceImpl implements EbsiIdTokenService {
     private final ObjectMapper objectMapper;
     private final SignerService signerService;
+    private final WebClientConfig webClient;
 
     /**
      * Initiates the ID Token Request process by completing the id token exchange with the Authorisation Server.
@@ -90,12 +90,20 @@ public class EbsiIdTokenServiceImpl implements EbsiIdTokenService {
     private Mono<String> sendIdTokenResponse(String idToken,List<String> params){
         String body = "id_token=" + URLEncoder.encode(idToken, StandardCharsets.UTF_8)
                 + "&state=" + URLEncoder.encode(params.get(1), StandardCharsets.UTF_8);
-        List<Map.Entry<String, String>> headers = new ArrayList<>();
-        headers.add(new AbstractMap.SimpleEntry<>(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
         String redirectUri = params.get(2);
 
-        return postRequest(redirectUri,headers,body)
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while sending Id Token Response")));
+        return webClient.centralizedWebClient()
+                .post()
+                .uri(redirectUri)
+                .header(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM)
+                .bodyValue(body)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("There was an error during the ID token response, error" + response));
+                    } else {
+                        return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
+                    }
+                });
     }
 
     /**

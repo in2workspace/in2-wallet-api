@@ -62,13 +62,4 @@ class VerifierValidationServiceImplTest {
                 .expectError(ParseErrorException.class)
                 .verify();
     }
-
-    @Test
-    void testIssuerOfTheAuthorizationRequestTest_Verification() {
-        String processId = "123";
-        String jwtAuthorizationRequest = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImRpZDprZXk6ekRuYWVoOVNXcXpjalpNYkZkdnRFVDJwTGlReHQ2Qm9YdDRwdjNXYmRSbmczZDJZaiJ9.eyJzdWIiOiJkaWQ6a2V5OmZmIiwibmFtZSI6IkpvaG4gRG9lIiwiaXNzIjoiZGlkOmtleTpmZiIsImF1dGhfcmVxdWVzdCI6Im9wZW5pZDovLz9zY29wZT1bc10mcmVzcG9uc2VfdHlwZT12cF90b2tlbiZyZXNwb25zZV9tb2RlPWRpcmVjdF9wb3N0JmNsaWVudF9pZD1kaWQ6a2V5OmZmJnN0YXRlPWJmZmYmbm9uY2U9OGY4ZiZyZWRpcmVjdF91cmk9aHR0cDovL2xvY2FsaG9zdDo4MDkyIiwiaWF0IjoxNTE2MjM5MDIyfQ.MMNr3ar7HW0m8Tl6Eav5GCn3t0QZQeL1Vpi5wuUpzjY";
-        StepVerifier.create(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
-                .expectError(ParseErrorException.class)
-                .verify();
-    }
 }

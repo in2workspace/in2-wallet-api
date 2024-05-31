@@ -9,10 +9,10 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import es.in2.wallet.application.port.VaultService;
 import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.JWTSType;
 import es.in2.wallet.domain.service.SignerService;
-import es.in2.wallet.application.port.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -24,7 +24,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static es.in2.wallet.domain.model.JWTSType.*;
-import static es.in2.wallet.domain.util.MessageUtils.*;
+import static es.in2.wallet.domain.util.ApplicationConstants.JWT_PROOF_CLAIM;
+import static es.in2.wallet.domain.util.ApplicationConstants.PROCESS_ID;
+import static es.in2.wallet.domain.util.ApplicationRegexPattern.*;
 
 @Slf4j
 @Service
@@ -49,7 +51,7 @@ public class SignerServiceImpl implements SignerService {
                             JWSSigner signer = new ECDSASigner(ecJWK);
 
                             JOSEObjectType joseObjectType = docType.equals(PROOF_JWT) ?
-                                    new JOSEObjectType("openid4vci-proof+jwt") : JOSEObjectType.JWT;
+                                    new JOSEObjectType(JWT_PROOF_CLAIM) : JOSEObjectType.JWT;
 
                             String didWithKey = extractAfterPattern(did);
                             JWSHeader header = new JWSHeader.Builder(jwsAlgorithm)
