@@ -9,6 +9,7 @@ import java.lang.reflect.Modifier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static es.in2.wallet.domain.util.ApplicationRegexPattern.DOME_REDIRECT_URI_PATTERN;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageUtilsTest {

@@ -16,13 +16,16 @@ import java.util.Optional;
 @ConfigurationProperties(prefix = "auth-server")
 public record AuthServerProperties(@NestedConfigurationProperty UrlProperties externalUrl,
                                    @NestedConfigurationProperty UrlProperties internalUrl,
-                                   @NestedConfigurationProperty UrlProperties tokenUrl) {
+                                   @NestedConfigurationProperty UrlProperties tokenUrl,
+                                   String jwtDecoderPath ) {
 
     @ConstructorBinding
-    public AuthServerProperties(UrlProperties externalUrl, UrlProperties internalUrl, UrlProperties tokenUrl) {
+    public AuthServerProperties(UrlProperties externalUrl, UrlProperties internalUrl, UrlProperties tokenUrl, String jwtDecoderPath) {
         this.externalUrl = Optional.ofNullable(externalUrl).orElse(new UrlProperties(null, null, 0, null));
         this.internalUrl = Optional.ofNullable(internalUrl).orElse(new UrlProperties(null, null, 0, null));
         this.tokenUrl = Optional.ofNullable(tokenUrl).orElse(new UrlProperties(null, null, 0, null));
+        this.jwtDecoderPath = Optional.ofNullable(jwtDecoderPath).orElse("/protocol/openid-connect/certs");
+
     }
 
 }

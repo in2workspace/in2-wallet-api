@@ -2,15 +2,15 @@ package es.in2.wallet.api.ebsi.comformance.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.domain.service.impl.EbsiVpTokenServiceImpl;
+import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
 import es.in2.wallet.domain.exception.FailedSerializingException;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
 import es.in2.wallet.domain.model.PresentationDefinition;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.service.PresentationService;
-import es.in2.wallet.domain.service.UserDataService;
+import es.in2.wallet.domain.service.impl.EbsiVpTokenServiceImpl;
 import es.in2.wallet.domain.util.ApplicationUtils;
-import es.in2.wallet.application.port.BrokerService;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,34 +18,33 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFunction;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.GLOBAL_STATE;
 import static es.in2.wallet.domain.util.ApplicationUtils.*;
-import static es.in2.wallet.domain.util.MessageUtils.GLOBAL_STATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class EbsiVpTokenServiceImplTest {
     @Mock
     private ObjectMapper objectMapper;
-
     @Mock
-    private UserDataService userDataService;
-
-    @Mock
-    private BrokerService brokerService;
-
+    private AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
     @Mock
     private PresentationService presentationService;
+    @Mock
+    private WebClientConfig webClientConfig;
 
     @InjectMocks
     private EbsiVpTokenServiceImpl vpTokenService;
@@ -278,11 +277,22 @@ class EbsiVpTokenServiceImplTest {
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("123"));
             when(objectMapper.readValue(anyString(), eq(PresentationDefinition.class))).thenReturn(presentationDefinition);
-            when(userDataService.getSelectableVCsByVcTypeList(anyList(), anyString())).thenReturn(Mono.just(List.of()));
-            when(brokerService.getEntityById(anyString(), anyString())).thenReturn(Mono.just(Optional.of("entity")));
+            when(attestationExchangeCommonWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(eq(processId),eq(authorizationToken),anyList())).thenReturn(Mono.just(List.of()));
             when(presentationService.createSignedVerifiablePresentation(anyString(), anyString(), any(VcSelectorResponse.class), anyString(), anyString())).thenReturn(Mono.just("jwt VP"));
 
-            when(postRequest(anyString(), anyList(), anyString())).thenReturn(Mono.just("redirect response"));
+            ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+            // Create a mock ClientResponse for a successful response
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.FOUND)
+                    .header("Location", "redirect response")
+                    .build();
+
+            // Stub the exchange function to return the mock ClientResponse
+            when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+            WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
             Map<String, String> map = new HashMap<>();
             map.put("code", "1234");
             map.put("state", GLOBAL_STATE);
@@ -295,8 +305,7 @@ class EbsiVpTokenServiceImplTest {
                     })
                     .verifyComplete();
 
-            verify(userDataService).getSelectableVCsByVcTypeList(anyList(), anyString());
-            verify(brokerService).getEntityById(anyString(), anyString());
+            verify(attestationExchangeCommonWorkflow).getSelectableCredentialsRequiredToBuildThePresentation(eq(processId),eq(authorizationToken),anyList());
             verify(presentationService).createSignedVerifiablePresentation(anyString(), anyString(), any(VcSelectorResponse.class), anyString(), anyString());
         }
     }
@@ -531,8 +540,7 @@ class EbsiVpTokenServiceImplTest {
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("123"));
             when(objectMapper.readValue(anyString(), eq(PresentationDefinition.class))).thenReturn(presentationDefinition);
-            when(userDataService.getSelectableVCsByVcTypeList(anyList(), anyString())).thenReturn(Mono.just(List.of()));
-            when(brokerService.getEntityById(anyString(), anyString())).thenReturn(Mono.just(Optional.of("entity")));
+            when(attestationExchangeCommonWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(eq(processId),eq(authorizationToken),anyList())).thenReturn(Mono.just(List.of()));
             when(presentationService.createSignedVerifiablePresentation(anyString(), anyString(), any(VcSelectorResponse.class), anyString(), anyString())).thenReturn(Mono.just("jwt VP"));
 
 

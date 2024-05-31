@@ -5,6 +5,7 @@ import java.util.List;
 public interface AppConfig {
 
     List<String> getWalletDrivingUrls();
+    String getJwtDecoder();
 
     String getAuthServerInternalUrl();
 

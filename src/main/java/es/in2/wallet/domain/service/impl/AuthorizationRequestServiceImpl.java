@@ -1,24 +1,22 @@
 package es.in2.wallet.domain.service.impl;
 
 import com.nimbusds.jose.JWSObject;
-import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.model.AuthorizationRequest;
 import es.in2.wallet.domain.service.AuthorizationRequestService;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.Map;
-
-import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.domain.util.MessageUtils.*;
+import static es.in2.wallet.domain.util.ApplicationConstants.BEARER;
+import static es.in2.wallet.domain.util.ApplicationConstants.HEADER_AUTHORIZATION;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthorizationRequestServiceImpl implements AuthorizationRequestService {
+    private final WebClientConfig webClient;
 
     @Override
     public Mono<String> getAuthorizationRequestFromVcLoginRequest(String processId, String qrContent, String authorizationToken) {
@@ -33,10 +31,19 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
     }
 
     private Mono<String> getJwtAuthorizationRequest(String authorizationRequestUri, String authorizationToken) {
-        List<Map.Entry<String, String>> headers = List.of(
-                Map.entry(HEADER_AUTHORIZATION, BEARER + authorizationToken));
-        return getRequest(authorizationRequestUri, headers)
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching Authorization Request")));
+        return webClient.centralizedWebClient()
+                .get()
+                .uri(authorizationRequestUri)
+                .header(HEADER_AUTHORIZATION, BEARER + authorizationToken)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("There was an error retrieving authorisation request, error" + response));
+                    }
+                    else {
+                        log.info("Authorization request in jwt format: {}", response);
+                        return response.bodyToMono(String.class);
+                    }
+                });
     }
 
     @Override

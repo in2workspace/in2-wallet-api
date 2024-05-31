@@ -3,13 +3,15 @@ package es.in2.wallet.api.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.domain.exception.InvalidPinException;
-import es.in2.wallet.infrastructure.core.config.PinRequestWebSocketHandler;
-import es.in2.wallet.infrastructure.core.config.WebSocketSessionManager;
+import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
 import es.in2.wallet.domain.model.CredentialOffer;
 import es.in2.wallet.domain.model.TokenResponse;
 import es.in2.wallet.domain.service.impl.PreAuthorizedServiceImpl;
 import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.infrastructure.core.config.PinRequestWebSocketHandler;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
+import es.in2.wallet.infrastructure.core.config.WebSocketSessionManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,20 +19,20 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFunction;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.List;
-import java.util.Map;
-
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE;
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE_APPLICATION_JSON;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
-import static es.in2.wallet.domain.util.ApplicationUtils.postRequest;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_URL_ENCODED_FORM;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +44,8 @@ class PreAuthorizedServiceImplTest {
 
     @Mock
     private PinRequestWebSocketHandler pinRequestWebSocketHandler;
+    @Mock
+    private WebClientConfig webClientConfig;
 
     @Mock
     private WebSocketSession mockSession;
@@ -52,7 +56,6 @@ class PreAuthorizedServiceImplTest {
 
     @Test
     void getPreAuthorizedTokenWithoutPinTest() throws JsonProcessingException {
-        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             String token = "ey123";
             CredentialOffer.Grant.PreAuthorizedCodeGrant preAuthorizedCodeGrant = CredentialOffer.Grant.PreAuthorizedCodeGrant.builder().preAuthorizedCode("321").build();
@@ -60,16 +63,25 @@ class PreAuthorizedServiceImplTest {
             CredentialOffer credentialOffer = CredentialOffer.builder().grant(grant).build();
             AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("/token").build();
             TokenResponse expectedTokenResponse = TokenResponse.builder().accessToken("example token").build();
-            List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
+            ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
 
-            when(postRequest(eq(authorisationServerMetadata.tokenEndpoint()), eq(headers), anyString()))
-                    .thenReturn(Mono.just("token response"));
+            // Create a mock ClientResponse for a successful response
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.OK)
+                    .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                    .body("token response")
+                    .build();
+
+            // Stub the exchange function to return the mock ClientResponse
+            when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+            WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
             when(objectMapper.readValue("token response", TokenResponse.class)).thenReturn(expectedTokenResponse);
 
             StepVerifier.create(tokenService.getPreAuthorizedToken(processId,credentialOffer,authorisationServerMetadata,token))
                     .expectNext(expectedTokenResponse)
                     .verifyComplete();
-        }
     }
     @Test
     void getPreAuthorizedTokenWithoutPinExceptionTest(){
@@ -80,12 +92,24 @@ class PreAuthorizedServiceImplTest {
             CredentialOffer.Grant grant = CredentialOffer.Grant.builder().preAuthorizedCodeGrant(preAuthorizedCodeGrant).build();
             CredentialOffer credentialOffer = CredentialOffer.builder().grant(grant).build();
             AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("/token").build();
-            List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
 
-            when(postRequest(eq(authorisationServerMetadata.tokenEndpoint()), eq(headers), anyString())).thenReturn(Mono.error(new RuntimeException()));
+            ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+            // Create a mock ClientResponse for a successful response
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.BAD_REQUEST)
+                    .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                    .body("error")
+                    .build();
+
+            // Stub the exchange function to return the mock ClientResponse
+            when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+            WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
             StepVerifier.create(tokenService.getPreAuthorizedToken(processId,credentialOffer,authorisationServerMetadata,token))
-                    .expectError(RuntimeException.class)
+                    .expectError(InvalidPinException.class)
                     .verify();
         }
     }
@@ -96,21 +120,34 @@ class PreAuthorizedServiceImplTest {
             String token = "ey123";
             String userId = "user123";
             String userPin = "1234";
-            String tokenResponseString = "token response";
+
             CredentialOffer.Grant.PreAuthorizedCodeGrant preAuthorizedCodeGrant = CredentialOffer.Grant.PreAuthorizedCodeGrant.builder()
                     .preAuthorizedCode("321").userPinRequired(true).build();
             CredentialOffer.Grant grant = CredentialOffer.Grant.builder().preAuthorizedCodeGrant(preAuthorizedCodeGrant).build();
             CredentialOffer credentialOffer = CredentialOffer.builder().grant(grant).build();
             AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("/token").build();
             TokenResponse expectedTokenResponse = TokenResponse.builder().accessToken("example token").build();
-            List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
 
             when(getUserIdFromToken(token)).thenReturn(Mono.just(userId));
             when(sessionManager.getSession(userId)).thenReturn(Mono.just(mockSession));
             when(pinRequestWebSocketHandler.getPinResponses(userId)).thenReturn(Flux.just(userPin));
-            when(postRequest(eq(authorisationServerMetadata.tokenEndpoint()), eq(headers), anyString()))
-                    .thenReturn(Mono.just(tokenResponseString));
-            when(objectMapper.readValue(tokenResponseString, TokenResponse.class)).thenReturn(expectedTokenResponse);
+
+            ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+            // Create a mock ClientResponse for a successful response
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.OK)
+                    .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                    .body("token response")
+                    .build();
+
+            // Stub the exchange function to return the mock ClientResponse
+            when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+            WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
+            when(objectMapper.readValue("token response", TokenResponse.class)).thenReturn(expectedTokenResponse);
 
             StepVerifier.create(tokenService.getPreAuthorizedToken(processId,credentialOffer,authorisationServerMetadata,token))
                     .expectNext(expectedTokenResponse)
@@ -118,31 +155,85 @@ class PreAuthorizedServiceImplTest {
         }
     }
     @Test
-    void getPreAuthorizedTokenWithPinInvalidPinException () throws JsonProcessingException {
+    void getPreAuthorizedTokenWithPinParseErrorException () throws JsonProcessingException {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             String token = "ey123";
             String userId = "user123";
             String userPin = "1234";
-            String tokenResponseString = "token response";
             CredentialOffer.Grant.PreAuthorizedCodeGrant preAuthorizedCodeGrant = CredentialOffer.Grant.PreAuthorizedCodeGrant.builder()
                     .preAuthorizedCode("321").userPinRequired(true).build();
             CredentialOffer.Grant grant = CredentialOffer.Grant.builder().preAuthorizedCodeGrant(preAuthorizedCodeGrant).build();
             CredentialOffer credentialOffer = CredentialOffer.builder().grant(grant).build();
             AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("/token").build();
-            List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM));
 
             when(getUserIdFromToken(token)).thenReturn(Mono.just(userId));
             when(sessionManager.getSession(userId)).thenReturn(Mono.just(mockSession));
             when(pinRequestWebSocketHandler.getPinResponses(userId)).thenReturn(Flux.just(userPin));
-            when(postRequest(eq(authorisationServerMetadata.tokenEndpoint()), eq(headers), anyString()))
-                    .thenReturn(Mono.just(tokenResponseString));
-            when(objectMapper.readValue(tokenResponseString, TokenResponse.class)).thenThrow(new RuntimeException());
+
+            ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+            // Create a mock ClientResponse for a successful response
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.OK)
+                    .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                    .body("token response")
+                    .build();
+
+            // Stub the exchange function to return the mock ClientResponse
+            when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+            WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
+            when(objectMapper.readValue("token response", TokenResponse.class)).thenThrow(new RuntimeException());
 
             StepVerifier.create(tokenService.getPreAuthorizedToken(processId,credentialOffer,authorisationServerMetadata,token))
-                    .expectError(InvalidPinException.class)
+                    .expectError(ParseErrorException.class)
                     .verify();
         }
     }
 
+    @Test
+    void getPreAuthorizedTokenWithTxCodeTest() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
+            String processId = "123";
+            String token = "ey123";
+            String userId = "user123";
+            String userPin = "1234";
+            CredentialOffer.Grant.PreAuthorizedCodeGrant preAuthorizedCodeGrant = CredentialOffer.Grant.PreAuthorizedCodeGrant.builder()
+                    .preAuthorizedCode("321").txCode(
+                            CredentialOffer.Grant.PreAuthorizedCodeGrant.TxCode.builder().description("example").build()
+                    ).build();
+            CredentialOffer.Grant grant = CredentialOffer.Grant.builder().preAuthorizedCodeGrant(preAuthorizedCodeGrant).build();
+            CredentialOffer credentialOffer = CredentialOffer.builder().grant(grant).build();
+            AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("/token").build();
+            TokenResponse expectedTokenResponse = TokenResponse.builder().accessToken("example token").build();
+
+            when(getUserIdFromToken(token)).thenReturn(Mono.just(userId));
+            when(sessionManager.getSession(userId)).thenReturn(Mono.just(mockSession));
+            when(pinRequestWebSocketHandler.getPinResponses(userId)).thenReturn(Flux.just(userPin));
+
+            ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+
+            // Create a mock ClientResponse for a successful response
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.OK)
+                    .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                    .body("token response")
+                    .build();
+
+            // Stub the exchange function to return the mock ClientResponse
+            when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+            WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+
+            when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
+            when(objectMapper.readValue("token response", TokenResponse.class)).thenReturn(expectedTokenResponse);
+
+            StepVerifier.create(tokenService.getPreAuthorizedToken(processId,credentialOffer,authorisationServerMetadata,token))
+                    .expectNext(expectedTokenResponse)
+                    .verifyComplete();
+        }
+    }
 }

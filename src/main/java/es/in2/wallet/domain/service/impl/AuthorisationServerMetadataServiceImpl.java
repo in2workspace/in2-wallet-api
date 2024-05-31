@@ -2,22 +2,18 @@ package es.in2.wallet.domain.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.AppConfig;
-import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.AuthorisationServerMetadata;
 import es.in2.wallet.domain.model.CredentialIssuerMetadata;
 import es.in2.wallet.domain.service.AuthorisationServerMetadataService;
+import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.Map;
-
-import static es.in2.wallet.domain.util.ApplicationUtils.getRequest;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE;
-import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_APPLICATION_JSON;
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE;
+import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE_APPLICATION_JSON;
 
 @Slf4j
 @Service
@@ -25,6 +21,7 @@ import static es.in2.wallet.domain.util.MessageUtils.CONTENT_TYPE_APPLICATION_JS
 public class AuthorisationServerMetadataServiceImpl implements AuthorisationServerMetadataService {
     private final ObjectMapper objectMapper;
     private final AppConfig appConfig;
+    private final WebClientConfig webClient;
 
     @Override
     public Mono<AuthorisationServerMetadata> getAuthorizationServerMetadataFromCredentialIssuerMetadata(String processId, CredentialIssuerMetadata credentialIssuerMetadata) {
@@ -40,7 +37,6 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
     }
 
     private Mono<String> getAuthorizationServerMetadata(CredentialIssuerMetadata credentialIssuerMetadata) {
-        List<Map.Entry<String, String>> headers = List.of(Map.entry(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON));
         String authServer;
         if (credentialIssuerMetadata.authorizationServer() != null){
             authServer = credentialIssuerMetadata.authorizationServer();
@@ -48,8 +44,19 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
         else {
             authServer = credentialIssuerMetadata.credentialIssuer();
         }
-        return getRequest(authServer + "/.well-known/openid-configuration", headers)
-                .onErrorResume(e -> Mono.error(new FailedCommunicationException("Error while fetching Authorisation Server Metadata from the Auth Server")));
+        return webClient.centralizedWebClient()
+                .get()
+                .uri(authServer + "/.well-known/openid-configuration")
+                .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("There was an error retrieving authorisation server metadata, error" + response));
+                    }
+                    else {
+                        log.info("Authorization server metadata: {}", response);
+                        return response.bodyToMono(String.class);
+                    }
+                });
     }
 
     /**

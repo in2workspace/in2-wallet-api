@@ -21,12 +21,30 @@ public class BrokerServiceImpl implements BrokerService {
         return brokerAdapter.postEntity(processId, requestBody);
     }
 
-    public Mono<Optional<String>>  getEntityById(String processId, String userId) {
-        return brokerAdapter.getEntityById(processId, userId);
+    public Mono<Optional<String>> getEntityById(String processId, String id) {
+        return brokerAdapter.getEntityById(processId, id);
     }
 
-    public Mono<Void> updateEntity(String processId, String userId, String requestBody) {
-        return brokerAdapter.updateEntity(processId, userId, requestBody);
+    public Mono<Void> updateEntity(String processId, String id, String requestBody) {
+        return brokerAdapter.updateEntityById(processId, id, requestBody);
+    }
+    public Mono<String> getAllCredentialsByUserId(String processId, String userId){
+        return brokerAdapter.getAllCredentialsByUserId(processId,userId);
+    }
+    public Mono<String> getCredentialByIdAndUserId(String processId, String  userId, String credentialId){
+        return brokerAdapter.getCredentialByIdAndUserId(processId,userId,credentialId);
+    }
+    public Mono<Void> deleteCredentialByIdAndUserId(String processId, String  userId, String credentialId){
+        return brokerAdapter.deleteCredentialByIdAndUserId(processId,userId,credentialId);
+    }
+    public Mono<String> getCredentialByCredentialTypeAndUserId(String processId, String  userId, String credentialType){
+        return brokerAdapter.getCredentialByCredentialTypeAndUserId(processId,userId,credentialType);
+    }
+    public Mono<String> getTransactionThatIsLinkedToACredential(String processId, String credentialId) {
+        return brokerAdapter.getTransactionThatIsLinkedToACredential(processId,credentialId);
+    }
+    public Mono<Void> deleteTransactionByTransactionId(String processId, String transactionId){
+        return brokerAdapter.deleteTransactionByTransactionId(processId,transactionId);
     }
     
 }
