@@ -33,7 +33,7 @@ class MessageUtilsTest {
     void testDomeRedirectUriPattern() {
         // Test the DOME_REDIRECT_URI_PATTERN
         Pattern domePattern = MessageUtils.DOME_REDIRECT_URI_PATTERN;
-        Matcher matcher = domePattern.matcher("https://example.dome-marketplace.org/path");
+        Matcher matcher = domePattern.matcher("https://dome-marketplace.org/path");
         assertTrue(matcher.find(), "URL should match DOME_REDIRECT_URI_PATTERN");
 
         assertTrue(domePattern.matcher("https://another.dome-marketplace.org/other").find(),
