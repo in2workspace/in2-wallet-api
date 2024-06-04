@@ -13,7 +13,7 @@ public class ApplicationRegexPattern {
     public static final Pattern CREDENTIAL_OFFER_PATTERN = Pattern.compile("(https|http)\\S*(credential-offer)\\S*");
     public static final Pattern OPENID_CREDENTIAL_OFFER_PATTERN = Pattern.compile("openid-credential-offer://\\S*");
     public static final Pattern EBSI_CREDENTIAL_OFFER_PATTERN = Pattern.compile("\\S*(conformance.ebsi)\\S*");
-    public static final Pattern DOME_LOGIN_REQUEST_PATTERN = Pattern.compile("\\S*(did:web:dome)\\S*");
+    public static final Pattern DOME_LOGIN_REQUEST_PATTERN = Pattern.compile("\\S*(dome)\\S*");
     public static final Pattern DOME_REDIRECT_URI_PATTERN = Pattern.compile("\\S*(dome)\\S*");
     public static final Pattern OPENID_AUTHENTICATION_REQUEST_PATTERN = Pattern.compile("openid://\\S*");
 }
