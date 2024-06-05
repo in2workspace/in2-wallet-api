@@ -21,9 +21,9 @@ public record AuthServerProperties(@NestedConfigurationProperty UrlProperties ex
 
     @ConstructorBinding
     public AuthServerProperties(UrlProperties externalUrl, UrlProperties internalUrl, UrlProperties tokenUrl, String jwtDecoderPath) {
-        this.externalUrl = Optional.ofNullable(externalUrl).orElse(new UrlProperties(null, null, 0, null));
-        this.internalUrl = Optional.ofNullable(internalUrl).orElse(new UrlProperties(null, null, 0, null));
-        this.tokenUrl = Optional.ofNullable(tokenUrl).orElse(new UrlProperties(null, null, 0, null));
+        this.externalUrl = Optional.ofNullable(externalUrl).orElse(new UrlProperties(null, null, null, null));
+        this.internalUrl = Optional.ofNullable(internalUrl).orElse(new UrlProperties(null, null, null, null));
+        this.tokenUrl = Optional.ofNullable(tokenUrl).orElse(new UrlProperties(null, null, null, null));
         this.jwtDecoderPath = Optional.ofNullable(jwtDecoderPath).orElse("/protocol/openid-connect/certs");
 
     }

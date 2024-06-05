@@ -7,6 +7,7 @@ import com.nimbusds.jwt.SignedJWT;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
@@ -112,5 +113,20 @@ public class ApplicationUtils {
             SignedJWT signedJwt = SignedJWT.parse(jwt);
             return signedJwt.getJWTClaimsSet().getClaim("response_type").toString();
         });
+    }
+    public static String formatUrl(String scheme, String domain, Integer port, String path) {
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance()
+                .scheme(scheme)
+                .host(domain);
+
+        if (port != null && port != 443) {
+            uriBuilder.port(port);
+        }
+
+        if (path != null) {
+            uriBuilder.path(path);
+        }
+
+        return uriBuilder.toUriString();
     }
 }

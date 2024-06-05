@@ -1,25 +1,25 @@
 package es.in2.wallet.infrastructure.broker.config;
 
-import es.in2.wallet.infrastructure.appconfiguration.service.GenericConfigAdapter;
-import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Optional;
+
+import static es.in2.wallet.domain.util.ApplicationUtils.formatUrl;
 
 @Configuration
 public class BrokerConfig {
 
     private final BrokerProperties brokerProperties;
-    private final GenericConfigAdapter genericConfigAdapter;
 
     private String externalDomain;
 
     @PostConstruct
     public void init() {
-        externalDomain = initExternalUrl();
+        externalDomain = initInternalUrl();
     }
 
-    public BrokerConfig(ConfigAdapterFactory configAdapterFactory, BrokerProperties brokerProperties) {
-        this.genericConfigAdapter = configAdapterFactory.getAdapter();
+    public BrokerConfig(BrokerProperties brokerProperties) {
         this.brokerProperties = brokerProperties;
     }
 
@@ -31,11 +31,11 @@ public class BrokerConfig {
         return externalDomain;
     }
 
-    private String initExternalUrl() {
-        return String.format("%s://%s:%d",
-                brokerProperties.externalUrl().scheme(),
-                genericConfigAdapter.getConfiguration(brokerProperties.externalUrl().domain()),
-                brokerProperties.externalUrl().port());
+    private String initInternalUrl() {
+        return formatUrl(brokerProperties.internalUrl().scheme(),
+                brokerProperties.internalUrl().domain(),
+                brokerProperties.internalUrl().port(),
+                null);
     }
 
     public String getEntitiesPath() {
