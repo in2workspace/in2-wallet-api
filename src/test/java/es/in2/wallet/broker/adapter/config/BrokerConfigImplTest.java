@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,15 +24,12 @@ class BrokerConfigImplTest {
 
         @BeforeEach
         void setUp() {
-            MockitoAnnotations.openMocks(this);
-            UrlProperties urlProperties = new UrlProperties("https","example.com",8080,"/entities");
+            UrlProperties urlProperties = new UrlProperties("http", "example.com", 8080, "/entities");
             when(brokerProperties.internalUrl()).thenReturn(urlProperties);
-//            // Mock broker properties
-//            when(brokerProperties.internalUrl().scheme()).thenReturn("https");
-//            when(brokerProperties.internalUrl().domain()).thenReturn("example.com");
-//            when(brokerProperties.internalUrl().port()).thenReturn(443);
 
-            // Initialize BrokerConfig
+            BrokerProperties.BrokerPathProperties brokerPathProperties = new BrokerProperties.BrokerPathProperties("/entities");
+            when(brokerProperties.paths()).thenReturn(brokerPathProperties);
+
             brokerConfig = new BrokerConfig(brokerProperties);
             brokerConfig.init();
         }
@@ -45,14 +41,13 @@ class BrokerConfigImplTest {
         }
 
         @Test
-        void testGetExternalUrl() {
-            String expectedUrl = "https://example.com";
-            assertEquals(expectedUrl, brokerConfig.getExternalUrl());
+        void testGetInternalUrl() {
+            String expectedUrl = "http://example.com:8080";
+            assertEquals(expectedUrl, brokerConfig.getInternalUrl());
         }
 
         @Test
         void testGetEntitiesPath() {
-            when(brokerProperties.paths().entities()).thenReturn("/entities");
             String expectedPath = "/entities";
             assertEquals(expectedPath, brokerConfig.getEntitiesPath());
         }
