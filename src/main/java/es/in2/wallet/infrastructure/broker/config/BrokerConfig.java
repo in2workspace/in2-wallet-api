@@ -10,11 +10,11 @@ public class BrokerConfig {
 
     private final BrokerProperties brokerProperties;
 
-    private String externalDomain;
+    private String internal;
 
     @PostConstruct
     public void init() {
-        externalDomain = initInternalUrl();
+        internal = initInternalUrl();
     }
 
     public BrokerConfig(BrokerProperties brokerProperties) {
@@ -25,8 +25,8 @@ public class BrokerConfig {
         return brokerProperties.provider();
     }
 
-    public String getExternalUrl() {
-        return externalDomain;
+    public String getInternalUrl() {
+        return internal;
     }
 
     private String initInternalUrl() {
