@@ -3,8 +3,6 @@ package es.in2.wallet.infrastructure.broker.config;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Optional;
-
 import static es.in2.wallet.domain.util.ApplicationUtils.formatUrl;
 
 @Configuration
