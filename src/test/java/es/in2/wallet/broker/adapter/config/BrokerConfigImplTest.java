@@ -34,7 +34,7 @@ class BrokerConfigImplTest {
         void testGetInternalUrl() {
             initWithUrlProperties();
 
-            var expectedUrl = "http://example.com:8080";
+            var expectedUrl = "https://example.com:8080";
 
             var result = brokerConfig.getInternalUrl();
 
@@ -72,7 +72,7 @@ class BrokerConfigImplTest {
     }
 
     private void setInternalUrl() {
-        UrlProperties urlProperties = new UrlProperties("http", "example.com", 8080, "/entities");
+        UrlProperties urlProperties = new UrlProperties("https", "example.com", 8080, "/entities");
         when(brokerProperties.internalUrl()).thenReturn(urlProperties);
     }
 
