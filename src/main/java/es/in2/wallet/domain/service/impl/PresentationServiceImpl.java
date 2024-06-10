@@ -70,7 +70,7 @@ public class PresentationServiceImpl implements PresentationService {
 
     @Override
     public Mono<String> createEncodedVerifiablePresentationForDome(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse) {
-        return createVerifiablePresentationForDome(processId, authorizationToken,vcSelectorResponse.selectedVcList());
+        return createVerifiablePresentationForDome(processId, authorizationToken,vcSelectorResponse);
     }
 
     private Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken,String nonce, String audience, List<CredentialsBasicInfo> selectedVcList, String format) {
@@ -81,7 +81,7 @@ public class PresentationServiceImpl implements PresentationService {
                                             .flatMap(verifiableCredentialsList -> // Create the unsigned verifiable presentation
                                                     createUnsignedPresentation(verifiableCredentialsList, did,nonce,audience)
                                                             .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp"))
-                                                            .flatMap(this::createDomePresentation))
+                                                            .flatMap(this::encodePresentation))
                                     )
                             )
                             // Log success
@@ -94,10 +94,15 @@ public class PresentationServiceImpl implements PresentationService {
                         );
     }
 
-    private Mono<String> createVerifiablePresentationForDome(String processId, String authorizationToken,List<CredentialsBasicInfo> selectedVcList) {
+    private Mono<String> createVerifiablePresentationForDome(String processId, String authorizationToken,VcSelectorResponse vcSelectorResponse) {
         return  getUserIdFromToken(authorizationToken)
-                .flatMap(userId ->getVerifiableCredentials(processId,userId,selectedVcList, VC_JSON)
-                        .flatMap(this::createDomePresentation)
+                .flatMap(userId ->getVerifiableCredentials(processId,userId,vcSelectorResponse.selectedVcList(), VC_JWT)
+                        .flatMap(verifiableCredentialsList -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsList)
+                                .flatMap(did -> createUnsignedPresentation(verifiableCredentialsList, did, vcSelectorResponse.nonce(), null)
+                                        .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp")))
+                                .flatMap(this::encodePresentation)
+
+                        )
                         // Log success
                         .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - DOME Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
                         // Handle errors
@@ -173,17 +178,21 @@ public class PresentationServiceImpl implements PresentationService {
             Instant issueTime = Instant.now();
             Instant expirationTime = issueTime.plus(appConfig.getCredentialPresentationExpirationTime(), ChronoUnit.valueOf(appConfig.getCredentialPresentationExpirationUnit().toUpperCase()));
             Map<String, Object> vpParsed = JWTClaimsSet.parse(objectMapper.writeValueAsString(vpBuilder)).getClaims();
-            JWTClaimsSet payload = new JWTClaimsSet.Builder()
+            JWTClaimsSet.Builder payloadBuilder = new JWTClaimsSet.Builder()
                     .issuer(holderDid)
                     .subject(holderDid)
-                    .audience(audience)
                     .notBeforeTime(java.util.Date.from(issueTime))
                     .expirationTime(java.util.Date.from(expirationTime))
                     .issueTime(java.util.Date.from(issueTime))
                     .jwtID(id)
                     .claim("vp", vpParsed)
-                    .claim("nonce", nonce)
-                    .build();
+                    .claim("nonce", nonce);
+
+            if (audience != null) {
+                payloadBuilder.audience(audience);
+            }
+
+            JWTClaimsSet payload = payloadBuilder.build();
             log.debug(payload.toString());
             return objectMapper.readTree(payload.toString());
         });
@@ -194,7 +203,7 @@ public class PresentationServiceImpl implements PresentationService {
      *
      * @param vcs       The list of VC JWTs to include in the VP.
      */
-    private Mono<String> createDomePresentation(
+    private Mono<String> encodePresentation(
             List<String> vcs) {
         try {
             List<JsonNode> vcsJsonList = vcs.stream()
@@ -217,13 +226,13 @@ public class PresentationServiceImpl implements PresentationService {
 
             String vpJson = objectMapper.writeValueAsString(vp);
 
-            return createDomePresentation(vpJson);
+            return encodePresentation(vpJson);
         }
         catch (JsonProcessingException e){
             return Mono.error(e);
         }
     }
-    private Mono<String> createDomePresentation(String vp) {
+    private Mono<String> encodePresentation(String vp) {
         return Mono.fromCallable(() -> Base64.getUrlEncoder().withoutPadding().encodeToString(vp.getBytes()));
     }
 }

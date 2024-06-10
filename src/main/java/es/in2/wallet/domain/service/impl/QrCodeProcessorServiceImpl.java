@@ -43,19 +43,17 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
                                     .doOnSuccess(credential -> log.info("ProcessID: {} - Credential Issued: {}", processId, credential))
                                     .doOnError(e -> log.error("ProcessID: {} - Error while issuing credential: {}", processId, e.getMessage()));
                         }
-                        case VC_LOGIN_REQUEST: {
-                            log.info("ProcessID: {} - Processing a Verifiable Credential Login Request", processId);
-                            return attestationExchangeCommonWorkflow.processAuthorizationRequest(processId, authorizationToken, qrContent)
-                                    .doOnSuccess(credential -> log.info("ProcessID: {} - Attestation Exchange", processId))
-                                    .doOnError(e -> log.error("ProcessID: {} - Error while processing Attestation Exchange: {}", processId, e.getMessage()));
-                        }
-                        case OPENID_AUTHENTICATION_REQUEST: {
-                            log.info("ProcessID: {} - Processing an Authentication Request", processId);
-                            return Mono.error(new NoSuchQrContentException("OpenID Authentication Request not implemented yet"));
-                        }
-                        case DOME_VC_LOGIN_REQUEST: {
-                            log.info("ProcessID: {} - Processing an Authentication Request from DOME", processId);
-                            return attestationExchangeDOMEWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,qrContent);
+                        case VP_TOKEN_AUTHENTICATION_REQUEST: {
+                            if (DOME_LOGIN_REQUEST_PATTERN.matcher(qrContent).matches()){
+                                log.info("ProcessID: {} - Processing an Authentication Request from DOME", processId);
+                                return attestationExchangeDOMEWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,qrContent);
+                            }
+                            else {
+                                log.info("ProcessID: {} - Processing a Verifiable Credential Login Request for common workflow", processId);
+                                return attestationExchangeCommonWorkflow.processAuthorizationRequest(processId, authorizationToken, qrContent)
+                                        .doOnSuccess(credential -> log.info("ProcessID: {} - Attestation Exchange", processId))
+                                        .doOnError(e -> log.error("ProcessID: {} - Error while processing Attestation Exchange: {}", processId, e.getMessage()));
+                            }
                         }
                         case UNKNOWN: {
                             String errorMessage = "The received QR content cannot be processed";
@@ -71,20 +69,16 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
 
     private Mono<QrType> identifyQrContentType(String qrContent) {
         return Mono.fromSupplier(() -> {
-            if(DOME_LOGIN_REQUEST_PATTERN.matcher(qrContent).matches()){
-                return DOME_VC_LOGIN_REQUEST;
+            if(VP_TOKEN_AUTHENTICATION_REQUEST_PATTERN.matcher(qrContent).matches()){
+                return VP_TOKEN_AUTHENTICATION_REQUEST;
             }
-            else if (LOGIN_REQUEST_PATTERN.matcher(qrContent).matches()) {
-                return VC_LOGIN_REQUEST;
-            } else if (CREDENTIAL_OFFER_PATTERN.matcher(qrContent).matches()) {
+            else if (CREDENTIAL_OFFER_PATTERN.matcher(qrContent).matches()) {
                 return QrType.CREDENTIAL_OFFER_URI;
             } else if (EBSI_CREDENTIAL_OFFER_PATTERN.matcher(qrContent).matches()){
                 return EBSI_CREDENTIAL_OFFER;
             } else if (OPENID_CREDENTIAL_OFFER_PATTERN.matcher(qrContent).matches()) {
                 return OPENID_CREDENTIAL_OFFER;
-            } else if (OPENID_AUTHENTICATION_REQUEST_PATTERN.matcher(qrContent).matches()) {
-                return OPENID_AUTHENTICATION_REQUEST;
-            } else {
+            }  else {
                 log.warn("Unknown QR content type: {}", qrContent);
                 return UNKNOWN;
             }

@@ -15,5 +15,5 @@ public class ApplicationRegexPattern {
     public static final Pattern EBSI_CREDENTIAL_OFFER_PATTERN = Pattern.compile("\\S*(conformance.ebsi)\\S*");
     public static final Pattern DOME_LOGIN_REQUEST_PATTERN = Pattern.compile("\\S*(dome)\\S*");
     public static final Pattern DOME_REDIRECT_URI_PATTERN = Pattern.compile("\\S*(dome)\\S*");
-    public static final Pattern OPENID_AUTHENTICATION_REQUEST_PATTERN = Pattern.compile("openid://\\S*");
+    public static final Pattern VP_TOKEN_AUTHENTICATION_REQUEST_PATTERN = Pattern.compile("\\S*(response_type=vp_token)\\S*");
 }
