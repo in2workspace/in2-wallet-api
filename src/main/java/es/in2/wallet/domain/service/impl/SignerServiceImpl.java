@@ -45,7 +45,6 @@ public class SignerServiceImpl implements SignerService {
                     .flatMap(docType -> Mono.fromCallable(() -> {
                         try {
                             ECKey ecJWK = JWK.parse(privateKey.value().toString()).toECKey();
-                            log.debug("ECKey: {}", ecJWK);
 
                             JWSAlgorithm jwsAlgorithm = mapToJWSAlgorithm(ecJWK.getAlgorithm());
                             JWSSigner signer = new ECDSASigner(ecJWK);
