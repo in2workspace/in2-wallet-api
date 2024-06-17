@@ -57,7 +57,7 @@ class QrCodeProcessorServiceImplTest {
 
     @Test
     void processQrContentVcLoginRequestFailure() {
-        String qrContent = "https://authentication-request";
+        String qrContent = "https://authentication-request?=response_type=vp_token";
         String processId = "processId";
         String authorizationToken = "authToken";
 
@@ -70,7 +70,7 @@ class QrCodeProcessorServiceImplTest {
 
     @Test
     void processQrContentVcLoginRequestSuccess() {
-        String qrContent = "https://authentication-request";
+        String qrContent = "https://authentication-request?response_type=vp_token";
         String processId = "processId";
         String authorizationToken = "authToken";
         VcSelectorRequest vcSelectorRequest = VcSelectorRequest.builder().build();
@@ -154,7 +154,7 @@ class QrCodeProcessorServiceImplTest {
 
     @Test
     void processQrContentDOMEVCLoginRequestTestSuccess() {
-        String qrContent = "auth_request=https%3A%2F%2Fdid:web:dome-marketplace.org";
+        String qrContent = "https%3A%2F%2Fdid:web:dome-marketplace.org?response_type=vp_token";
         String processId = "processId";
         String authorizationToken = "authToken";
         VcSelectorRequest vcSelectorRequest = VcSelectorRequest.builder().build();

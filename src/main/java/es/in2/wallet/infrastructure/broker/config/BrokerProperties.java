@@ -23,8 +23,8 @@ public record BrokerProperties(String provider, @NestedConfigurationProperty Url
     @ConstructorBinding
     public BrokerProperties(String provider, UrlProperties externalUrl, UrlProperties internalUrl, BrokerPathProperties paths) {
         this.provider = provider;
-        this.externalUrl = Optional.ofNullable(externalUrl).orElse(new UrlProperties(null, null, 0, null));
-        this.internalUrl = Optional.ofNullable(internalUrl).orElse(new UrlProperties(null, null, 0, null));
+        this.externalUrl = Optional.ofNullable(externalUrl).orElse(new UrlProperties(null, null, null, null));
+        this.internalUrl = Optional.ofNullable(internalUrl).orElse(new UrlProperties(null, null, null, null));
         this.paths = Optional.ofNullable(paths).orElse(new BrokerPathProperties(null));
     }
 

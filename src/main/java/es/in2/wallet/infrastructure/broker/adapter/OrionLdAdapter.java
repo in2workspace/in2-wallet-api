@@ -38,7 +38,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<Void> postEntity(String processId, String requestBody) {
         return webClient.post()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath())
+                .uri(brokerConfig.getInternalUrl() + brokerConfig.getEntitiesPath())
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
@@ -49,7 +49,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<Optional<String>> getEntityById(String processId, String id) {
         return webClient.get()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + id)
+                .uri(brokerConfig.getInternalUrl() + brokerConfig.getEntitiesPath() + "/" + id)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .onStatus(status -> status != null && status.is4xxClientError(), response -> response.createException().flatMap(Mono::error))
@@ -63,7 +63,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<String> getAllCredentialsByUserId(String processId, String userId) {
         return webClient.get()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "?type=Credential&q=belongsTo==" + USER_ENTITY_PREFIX + userId)
+                .uri(brokerConfig.getInternalUrl() + brokerConfig.getEntitiesPath() + "?type=Credential&q=belongsTo==" + USER_ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(String.class)
@@ -73,7 +73,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<String> getCredentialByIdAndUserId(String processId, String credentialId, String userId) {
         return webClient.get()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
+                .uri(brokerConfig.getInternalUrl() + brokerConfig.getEntitiesPath() + "/" + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(String.class)
@@ -83,7 +83,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<Void> deleteCredentialByIdAndUserId(String processId, String credentialId, String userId) {
         return webClient.delete()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
+                .uri(brokerConfig.getInternalUrl() + brokerConfig.getEntitiesPath() + "/" + credentialId + "?q=belongsTo==" + USER_ENTITY_PREFIX + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(Void.class)
@@ -93,7 +93,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<String> getCredentialByCredentialTypeAndUserId(String processId, String credentialType, String userId) {
         return webClient.get()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
+                .uri(brokerConfig.getInternalUrl() + brokerConfig.getEntitiesPath() +
                         "?type=Credential&q=belongsTo==" + USER_ENTITY_PREFIX + userId + ";credentialType==" + credentialType)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
@@ -105,7 +105,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<String> getTransactionThatIsLinkedToACredential(String processId, String credentialId) {
         return webClient.get()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "?type=Transaction&q=linkedTo==" + credentialId)
+                .uri(brokerConfig.getInternalUrl() + brokerConfig.getEntitiesPath() + "?type=Transaction&q=linkedTo==" + credentialId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(String.class)
@@ -115,7 +115,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<Void> updateEntityById(String processId, String id, String requestBody) {
         return webClient.post()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() + "/" + id + ATTRIBUTES)
+                .uri(brokerConfig.getInternalUrl() + brokerConfig.getEntitiesPath() + "/" + id + ATTRIBUTES)
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
@@ -128,7 +128,7 @@ public class OrionLdAdapter implements GenericBrokerService {
     @Override
     public Mono<Void> deleteTransactionByTransactionId(String processId, String transactionId) {
         return webClient.delete()
-                .uri(brokerConfig.getExternalUrl() + brokerConfig.getEntitiesPath() +
+                .uri(brokerConfig.getInternalUrl() + brokerConfig.getEntitiesPath() +
                         "/" + transactionId)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()

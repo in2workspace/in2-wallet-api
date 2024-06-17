@@ -9,6 +9,8 @@ import java.util.List;
 public record VcSelectorResponse(
         @JsonProperty("redirectUri") String redirectUri,
         @JsonProperty("state") String state,
+        @JsonProperty("nonce") String nonce,
         @JsonProperty("selectedVcList") List<CredentialsBasicInfo> selectedVcList
+
 ) {
 }

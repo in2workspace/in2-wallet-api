@@ -2,16 +2,18 @@ package es.in2.wallet.infrastructure.appconfiguration.service;
 
 
 import es.in2.wallet.application.port.AppConfig;
+import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import es.in2.wallet.infrastructure.core.config.properties.AuthServerProperties;
 import es.in2.wallet.infrastructure.core.config.properties.VerifiablePresentationProperties;
 import es.in2.wallet.infrastructure.core.config.properties.WalletDrivingApplicationProperties;
 import es.in2.wallet.infrastructure.ebsi.config.properties.EbsiProperties;
-import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
+
+import static es.in2.wallet.domain.util.ApplicationUtils.formatUrl;
 
 @Configuration
 @Slf4j
@@ -59,7 +61,7 @@ public class AppConfigImpl implements AppConfig {
                     String domain = "localhost".equalsIgnoreCase(urlProperties.domain()) ?
                             urlProperties.domain() :
                             genericConfigAdapter.getConfiguration(urlProperties.domain());
-                    return formatUrl(urlProperties.scheme(), domain, urlProperties.port());
+                    return formatUrl(urlProperties.scheme(), domain, urlProperties.port(), null);
                 })
                 .toList();
     }
@@ -134,20 +136,6 @@ public class AppConfigImpl implements AppConfig {
     @Override
     public String getCredentialPresentationExpirationUnit() {
         return verifiablePresentationProperties.expirationUnit();
-    }
-
-    private String formatUrl(String scheme, String domain, int port) {
-        if (port == 443) {
-            return String.format("%s://%s", scheme, domain);
-        }
-        return String.format("%s://%s:%d", scheme, domain, port);
-    }
-
-    private String formatUrl(String scheme, String domain, int port, String path) {
-        if (port == 443) {
-            return String.format("%s://%s%s", scheme, domain, path);
-        }
-        return String.format("%s://%s:%d%s", scheme, domain, port, path);
     }
 
     private String getAuthServerJwtDecoderPath() {
