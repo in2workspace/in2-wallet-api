@@ -6,7 +6,9 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.application.port.AppConfig;
 import es.in2.wallet.application.port.BrokerService;
+import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
+import es.in2.wallet.domain.model.DomeVerifiablePresentation;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.model.VerifiablePresentation;
 import es.in2.wallet.domain.service.DataService;
@@ -76,7 +78,7 @@ public class PresentationServiceImpl implements PresentationService {
                             .flatMap(verifiableCredentialsListJWT -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsListJWT)
                                     .flatMap(did -> getVerifiableCredentials(processId,userId,selectedVcList, format)
                                             .flatMap(verifiableCredentialsList -> // Create the unsigned verifiable presentation
-                                                    createUnsignedPresentation(verifiableCredentialsList, did,nonce,audience)
+                                                    createUnsignedPresentationForSigning(verifiableCredentialsList, did,nonce,audience)
                                                             .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp"))
                                                             .flatMap(this::encodePresentation))
                                     )
@@ -93,12 +95,9 @@ public class PresentationServiceImpl implements PresentationService {
 
     private Mono<String> createVerifiablePresentationForDome(String processId, String authorizationToken,VcSelectorResponse vcSelectorResponse) {
         return  getUserIdFromToken(authorizationToken)
-                .flatMap(userId ->getVerifiableCredentials(processId,userId,vcSelectorResponse.selectedVcList(), VC_JWT)
-                        .flatMap(verifiableCredentialsList -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsList)
-                                .flatMap(did -> createUnsignedPresentation(verifiableCredentialsList, did, vcSelectorResponse.nonce(), null)
-                                        .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp")))
+                .flatMap(userId ->getVerifiableCredentials(processId,userId,vcSelectorResponse.selectedVcList(), VC_JSON)
+                                .flatMap(verifiableCredentialsList -> createDomePresentation(verifiableCredentialsList, vcSelectorResponse.nonce()))
                                 .flatMap(this::encodePresentation)
-
                         )
                         // Log success
                         .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - DOME Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
@@ -106,8 +105,7 @@ public class PresentationServiceImpl implements PresentationService {
                         .onErrorResume(e -> {
                             log.error("Error in creating Verifiable Presentation: ", e);
                             return Mono.error(e);
-                        })
-                );
+                        });
     }
     /**
      * Retrieves a list of Verifiable Credential JWTs based on the VCs selected in the VcSelectorResponse.
@@ -155,7 +153,7 @@ public class PresentationServiceImpl implements PresentationService {
      * @param nonce     A unique nonce for the VP.
      * @param audience  The intended audience of the VP.
      */
-    private Mono<JsonNode> createUnsignedPresentation(
+    private Mono<JsonNode> createUnsignedPresentationForSigning(
             List<String> vcs,
             String holderDid,
             String nonce,
@@ -195,7 +193,41 @@ public class PresentationServiceImpl implements PresentationService {
         });
     }
 
+    /**
+     * Creates an unsigned Verifiable Presentation containing the selected VCs.
+     *
+     * @param vcs       The list of VC JWTs to include in the VP.
+     */
+    private Mono<String> createDomePresentation(
+            List<String> vcs, String nonce) {
+        return Mono.fromCallable(() -> {
+            List<JsonNode> vcsJsonList = vcs.stream()
+                    .map(vc -> {
+                        try {
+                            return objectMapper.readTree(vc);
+                        } catch (Exception e) {
+                            throw new ParseErrorException("Error parsing VC string to JsonNode");
+                        }
+                    })
+                    .toList();
+
+            DomeVerifiablePresentation vp = DomeVerifiablePresentation
+                    .builder()
+                    .holder("did:my:wallet")
+                    .nonce(nonce)
+                    .context(List.of(JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1))
+                    .type(List.of(VERIFIABLE_PRESENTATION))
+                    .verifiableCredential(vcsJsonList)
+                    .build();
+
+            return objectMapper.writeValueAsString(vp);
+
+        });
+    }
+
     private Mono<String> encodePresentation(String vp) {
         return Mono.fromCallable(() -> Base64.getUrlEncoder().withoutPadding().encodeToString(vp.getBytes()));
     }
+
+
 }
