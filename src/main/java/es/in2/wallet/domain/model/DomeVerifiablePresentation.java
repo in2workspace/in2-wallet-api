@@ -16,6 +16,8 @@ public record DomeVerifiablePresentation(
 
         @JsonProperty("holder")
         String holder,
+        @JsonProperty("nonce")
+        String nonce,
 
         @JsonProperty("verifiableCredential")
         List<JsonNode> verifiableCredential
