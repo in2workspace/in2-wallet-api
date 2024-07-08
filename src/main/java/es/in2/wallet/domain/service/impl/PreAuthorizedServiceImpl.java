@@ -121,16 +121,15 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
                 .uri(tokenURL)
                 .header(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM)
                 .bodyValue(xWwwFormUrlencodedBody)
-                .exchangeToMono(response ->
-                        response.bodyToMono(String.class).flatMap(responseBody -> {
+                .exchangeToMono(response ->{
                             if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
-                                String responseMessage = String.format("[Response:[statusCode=%s, body=%s, headers=%s]]", response.statusCode(), responseBody, response.headers().asHttpHeaders());
+                                String responseMessage = String.format("[Response:[statusCode=%s, headers=%s]]", response.statusCode(), response.headers().asHttpHeaders());
                                 return Mono.error(new InvalidPinException(("Error: Incorrect PIN. " + responseMessage)));
                             } else {
                                 log.info("DOME attestation exchange completed");
                                 return response.bodyToMono(String.class);
                             }
-                        }));
+                });
     }
 
     private Mono<TokenResponse> parseTokenResponse(String response) {
