@@ -495,6 +495,22 @@ public class DataServiceImpl implements DataService {
     }
 
     @Override
+    public Mono<String> extractTypeFromVerifiableCredential(String credentialJson) {
+        return Mono.fromCallable(() -> {
+            // Deserialize the credential JSON into a CredentialEntity object
+            CredentialEntity credential = objectMapper.readValue(credentialJson, CredentialEntity.class);
+
+            // Find the first credential type that is not "VerifiableCredential"
+            Optional<String> credentialType = credential.credentialTypeAttribute().value().stream()
+                    .filter(type -> !"VerifiableCredential".equals(type))
+                    .findFirst();
+
+            // Return the found type or null if none is found
+            return credentialType.orElse(null);
+        }).onErrorMap(JsonProcessingException.class, e -> new RuntimeException("Error processing VC JSON", e));
+    }
+
+    @Override
     public Mono<String> saveTransaction(String credentialId, String transactionId, String accessToken, String deferredEndpoint) {
         // Construct the Transaction Entity
         TransactionEntity transactionEntity = TransactionEntity.builder()

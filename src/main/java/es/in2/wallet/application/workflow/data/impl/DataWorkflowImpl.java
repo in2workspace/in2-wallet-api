@@ -46,14 +46,34 @@ public class DataWorkflowImpl implements DataWorkflow {
      * @param userId       The unique identifier of the user from whom the VC is to be deleted.
      */
 
+//    @Override
+//    public Mono<Void> deleteCredentialByIdAndUserId(String processId, String credentialId, String userId) {
+//        return brokerService.getCredentialByIdAndUserId(processId,credentialId,userId)
+//                .flatMap(dataService::extractDidFromVerifiableCredential)
+//                .flatMap(vaultService::deleteSecretByKey)
+//                .then(brokerService.deleteCredentialByIdAndUserId(processId, credentialId, userId))
+//                .doOnSuccess(list -> log.info("Delete VC with Id: {}", credentialId))
+//                .onErrorResume(Mono::error);
+//    }
     @Override
     public Mono<Void> deleteCredentialByIdAndUserId(String processId, String credentialId, String userId) {
-        return brokerService.getCredentialByIdAndUserId(processId,credentialId,userId)
-                .flatMap(dataService::extractDidFromVerifiableCredential)
-                .flatMap(vaultService::deleteSecretByKey)
-                .then(brokerService.deleteCredentialByIdAndUserId(processId, credentialId, userId))
-                .doOnSuccess(list -> log.info("Delete VC with Id: {}", credentialId))
-                .onErrorResume(Mono::error);
+        return brokerService.getCredentialByIdAndUserId(processId, credentialId, userId)
+                .flatMap(credentialData ->
+                        dataService.extractTypeFromVerifiableCredential(credentialData)
+                                .flatMap(credentialType -> {
+                                    if ("LEARCredentialEmployee".equals(credentialType)) {
+                                        return dataService.extractDidFromVerifiableCredential(credentialData)
+                                                .flatMap(vaultService::deleteSecretByKey);
+                                    }
+                                    return Mono.empty(); // No-op if the type is not LEARCredential
+                                })
+                                .then(brokerService.deleteCredentialByIdAndUserId(processId, credentialId, userId))
+                )
+                .doOnSuccess(ignored -> log.info("Deleted VC with Id: {}", credentialId))
+                .onErrorResume(e -> {
+                    log.error("Error deleting VC with Id: {}", credentialId, e);
+                    return Mono.error(e);
+                });
     }
 
 }

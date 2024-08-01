@@ -242,7 +242,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
 
             CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder()
                     .credentialsConfigurationsSupported(Map.of("LEARCredential",
-                            CredentialIssuerMetadata.CredentialsConfigurationsSupported.builder().format(JWT_VC).build()))
+                            CredentialIssuerMetadata.CredentialsConfigurationsSupported.builder().format(JWT_VC).cryptographicBindingMethodsSupported(List.of("did:key")).build()))
                     .credentialIssuer("issuer")
                     .deferredCredentialEndpoint("https://example.com/deferred")
                     .build();

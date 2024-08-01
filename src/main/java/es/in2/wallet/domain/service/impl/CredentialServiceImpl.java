@@ -150,14 +150,18 @@ public class CredentialServiceImpl implements CredentialService {
     }
 
     private Mono<?> buildCredentialRequest(String jwt, String format, List<String> types){
-        if (types == null){
+        if (types == null && jwt == null){
+            return Mono.just(CredentialRequest.builder()
+                            .format(format)
+                            .build())
+                    .doOnNext(requestBody -> log.debug("Credential Request Body for DOME Profile: {}", requestBody));
+        } else if (types == null){
             return Mono.just(CredentialRequest.builder()
                     .format(format)
                     .proof(CredentialRequest.Proof.builder().proofType("jwt").jwt(jwt).build())
                     .build())
                     .doOnNext(requestBody -> log.debug("Credential Request Body for DOME Profile: {}", requestBody));
-        }
-        else if (types.size() > 1){
+        } else if (types.size() > 1){
             return Mono.just(CredentialRequest.builder()
                             .format(format)
                             .types(types)

@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static es.in2.wallet.domain.util.ApplicationConstants.USER_ENTITY_PREFIX;
 import static es.in2.wallet.domain.util.ApplicationUtils.extractResponseType;
@@ -82,15 +84,45 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
     /**
      * Orchestrates the flow to obtain a credential with a pre-authorized code.
      */
+//    private Mono<Void> getCredentialWithPreAuthorizedCodeDomeProfile(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
+//        log.info("ProcessId: {} - Getting Dome Profile Credential with Pre-Authorized Code", processId);
+//        return generateDid().flatMap(did ->
+//                getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
+//                .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0),credentialIssuerMetadata)
+//                        .flatMap( format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
+//                                .flatMap(jwt -> credentialService.getCredential(jwt,tokenResponse,credentialIssuerMetadata,format,null))
+//                                .flatMap(credentialResponse -> persistTransactionIdAndProcessUserEntityForDomeProfile(processId,authorizationToken,credentialResponse,tokenResponse,credentialIssuerMetadata))
+//                )));
+//    }
+
     private Mono<Void> getCredentialWithPreAuthorizedCodeDomeProfile(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
         log.info("ProcessId: {} - Getting Dome Profile Credential with Pre-Authorized Code", processId);
-        return generateDid().flatMap(did ->
-                getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
-                .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0),credentialIssuerMetadata)
-                        .flatMap( format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
-                                .flatMap(jwt -> credentialService.getCredential(jwt,tokenResponse,credentialIssuerMetadata,format,null))
-                                .flatMap(credentialResponse -> persistTransactionIdAndProcessUserEntityForDomeProfile(processId,authorizationToken,credentialResponse,tokenResponse,credentialIssuerMetadata))
-                )));
+
+        return retrieveCredentialBindingMethodFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0), credentialIssuerMetadata)
+                .flatMap(optionalBindingMethod -> {
+                    if (optionalBindingMethod.isPresent()) {
+                        // If bindingMethod is present, proceed with the binding flow
+                        log.info("Binding method found: {}", optionalBindingMethod.get());
+                        return generateDid().flatMap(did ->
+                                getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
+                                        .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0), credentialIssuerMetadata)
+                                                .flatMap(format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
+                                                        .flatMap(jwt -> credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, format, null))
+                                                        .flatMap(credentialResponse -> persistTransactionIdAndProcessUserEntityForDomeProfile(processId, authorizationToken, credentialResponse, tokenResponse, credentialIssuerMetadata))
+                                                )
+                                        )
+                        );
+                    } else {
+                        // If bindingMethod is not present, proceed without binding
+                        log.info("No binding method found, proceeding with alternative flow");
+                        return getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
+                                .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0), credentialIssuerMetadata)
+                                        .flatMap(format -> credentialService.getCredential(null, tokenResponse, credentialIssuerMetadata, format, null)
+                                                .flatMap(credentialResponse -> persistTransactionIdAndProcessUserEntityForDomeProfile(processId, authorizationToken, credentialResponse, tokenResponse, credentialIssuerMetadata))
+                                        )
+                                );
+                    }
+                });
     }
 
     /**
@@ -212,6 +244,22 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                 .map(configurationsSupported -> configurationsSupported.get(credentialConfigurationId))
                 .map(CredentialIssuerMetadata.CredentialsConfigurationsSupported::format)
                 .switchIfEmpty(Mono.error(new NoSuchElementException("No configuration found for ID: " + credentialConfigurationId)));
+    }
+
+    private Mono<Optional<String>> retrieveCredentialBindingMethodFromCredentialIssuerMetadataByCredentialConfigurationId(
+            String credentialConfigurationId, CredentialIssuerMetadata credentialIssuerMetadata) {
+        return Mono.justOrEmpty(credentialIssuerMetadata.credentialsConfigurationsSupported())
+                .flatMap(configurationsSupported -> Mono.justOrEmpty(configurationsSupported.get(credentialConfigurationId)))
+                .map(config -> {
+                    List<String> bindingMethods = config.cryptographicBindingMethodsSupported();
+                    if (bindingMethods != null && !bindingMethods.isEmpty()) {
+                        return Optional.of(bindingMethods.get(0));
+                    } else {
+                        log.warn("No Cryptographic Binding Methods Supported found for ID: {}", credentialConfigurationId);
+                        return Optional.<String>empty();
+                    }
+                })
+                .defaultIfEmpty(Optional.empty());
     }
 
     private Mono<Void> persistTransactionIdAndProcessUserEntityForDomeProfile(String processId, String authorizationToken, CredentialResponse credential, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata) {

@@ -79,6 +79,7 @@ class DataWorkflowImplTest {
 
         when(brokerService.getCredentialByIdAndUserId(processId, credentialId,userId)).thenReturn(Mono.just(credentialEntity));
         when(dataService.extractDidFromVerifiableCredential(credentialEntity)).thenReturn(Mono.just(did));
+        when(dataService.extractTypeFromVerifiableCredential(credentialEntity)).thenReturn(Mono.just("LEARCredentialEmployee"));
         when(vaultService.deleteSecretByKey(did)).thenReturn(Mono.empty());
         when(brokerService.deleteCredentialByIdAndUserId(processId, credentialId, userId)).thenReturn(Mono.empty());
 

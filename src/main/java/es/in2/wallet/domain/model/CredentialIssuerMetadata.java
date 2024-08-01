@@ -22,7 +22,8 @@ public record CredentialIssuerMetadata(
     @Builder
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record CredentialsConfigurationsSupported(
-            @JsonProperty("format") String format
+            @JsonProperty("format") String format,
+            @JsonProperty("cryptographic_binding_methods_supported") List<String> cryptographicBindingMethodsSupported
     ){
 
     }
