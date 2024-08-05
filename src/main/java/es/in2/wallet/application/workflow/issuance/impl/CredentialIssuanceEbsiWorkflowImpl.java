@@ -153,7 +153,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
 
     private Mono<Void> getCredential(String processId, String authorizationToken, TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce) {
             return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
-                    .flatMap(jwt -> credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
+                    .flatMap(jwt -> credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types(), null))
                     .flatMap(credentialResponse -> saveCredential(processId,authorizationToken,credentialResponse));
     }
 

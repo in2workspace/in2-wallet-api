@@ -28,10 +28,10 @@ public class CredentialServiceImpl implements CredentialService {
     private final WebClientConfig webClient;
 
     @Override
-    public Mono<CredentialResponse> getCredential(String jwt, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types) {
+    public Mono<CredentialResponse> getCredential(String jwt, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types, String credentialIdentifier) {
         String processId = MDC.get(PROCESS_ID);
         // build CredentialRequest
-        return buildCredentialRequest(jwt,format,types)
+        return buildCredentialRequest(jwt,format,types, credentialIdentifier)
                 .doOnSuccess(credentialRequest -> log.info("ProcessID: {} - CredentialRequest: {}", processId, credentialRequest))
                 // post CredentialRequest
                 .flatMap(credentialRequest -> postCredential(tokenResponse.accessToken(), credentialIssuerMetadata.credentialEndpoint(), credentialRequest))
@@ -149,18 +149,35 @@ public class CredentialServiceImpl implements CredentialService {
         }
     }
 
-    private Mono<?> buildCredentialRequest(String jwt, String format, List<String> types){
-        if (types == null && jwt == null){
-            return Mono.just(CredentialRequest.builder()
-                            .format(format)
-                            .build())
-                    .doOnNext(requestBody -> log.debug("Credential Request Body for DOME Profile: {}", requestBody));
-        } else if (types == null){
-            return Mono.just(CredentialRequest.builder()
-                    .format(format)
-                    .proof(CredentialRequest.Proof.builder().proofType("jwt").jwt(jwt).build())
-                    .build())
-                    .doOnNext(requestBody -> log.debug("Credential Request Body for DOME Profile: {}", requestBody));
+    private Mono<?> buildCredentialRequest(String jwt, String format, List<String> types, String credentialIdentifier){
+        if (types == null){
+            if (format == null) {
+                if (jwt == null) {
+                    return Mono.just(CredentialRequest.builder()
+                                    .credentialIdentifier(credentialIdentifier)
+                                    .build())
+                            .doOnNext(requestBody -> log.debug("Credential Request Body for DOME Profile without binding: {}", requestBody));
+                } else {
+                    return Mono.just(CredentialRequest.builder()
+                                    .credentialIdentifier(credentialIdentifier)
+                                    .proof(CredentialRequest.Proof.builder().proofType("jwt").jwt(jwt).build())
+                                    .build())
+                            .doOnNext(requestBody -> log.debug("Credential Request Body for DOME Profile with binding: {}", requestBody));
+                }
+            } else {
+                if (jwt == null) {
+                    return Mono.just(CredentialRequest.builder()
+                                    .format(format)
+                                    .build())
+                            .doOnNext(requestBody -> log.debug("Credential Request Body for DOME Profile without binding: {}", requestBody));
+                } else {
+                    return Mono.just(CredentialRequest.builder()
+                                    .format(format)
+                                    .proof(CredentialRequest.Proof.builder().proofType("jwt").jwt(jwt).build())
+                                    .build())
+                            .doOnNext(requestBody -> log.debug("Credential Request Body for DOME Profile with binding: {}", requestBody));
+                }
+            }
         } else if (types.size() > 1){
             return Mono.just(CredentialRequest.builder()
                             .format(format)

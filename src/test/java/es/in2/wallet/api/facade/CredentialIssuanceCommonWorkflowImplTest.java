@@ -94,7 +94,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
-            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
+            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types(), null)).thenReturn(Mono.just(credentialResponse));
             when(brokerService.getEntityById(processId, USER_ENTITY_PREFIX + "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
             when(dataService.saveVC(processId,"userId", credentialResponse)).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
@@ -132,7 +132,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
-            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
+            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types(), null)).thenReturn(Mono.just(credentialResponse));
             when(brokerService.getEntityById(processId, USER_ENTITY_PREFIX + "userId")).thenReturn(Mono.just(Optional.empty())) //First interaction return empty because it's a new user
                     .thenReturn(Mono.just(Optional.of(userEntity)));
             when(dataService.createUserEntity("userId")).thenReturn(Mono.just("NewUserEntity"));
@@ -178,7 +178,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
             when(ebsiAuthorisationService.sendTokenRequest("codeVerifier", did, authorisationServerMetadata, mockedMap)).thenReturn(Mono.just(tokenResponse));
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
-            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
+            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types(), null)).thenReturn(Mono.just(credentialResponse));
             when(brokerService.getEntityById(processId, USER_ENTITY_PREFIX + "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
             when(dataService.saveVC(processId,"userId", credentialResponse)).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
@@ -221,7 +221,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
             when(ebsiAuthorisationService.sendTokenRequest("codeVerifier", did, authorisationServerMetadata, mockedMap)).thenReturn(Mono.just(tokenResponse));
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
-            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponse));
+            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types(), null)).thenReturn(Mono.just(credentialResponse));
             when(brokerService.getEntityById(processId, USER_ENTITY_PREFIX + "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
             when(dataService.saveVC(processId,"userId", credentialResponse)).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
@@ -247,7 +247,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
                     .deferredCredentialEndpoint("https://example.com/deferred")
                     .build();
 
-            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
+            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").authorizationDetails(List.of(TokenResponse.AuthorizationDetail.builder().credentialConfigurationId("LEARCredential").build())).build();
             CredentialResponse credentialResponse = CredentialResponse.builder().credential("unsigned_credential").format(VC_JSON).transactionId("123").build();
             String did = "did:ebsi:123";
             String userEntity = "existingUserEntity";
@@ -310,7 +310,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
-            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(credentialResponse));
+            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, null, null, credentialOffer.credentialConfigurationsIds().get(0))).thenReturn(Mono.just(credentialResponse));
             when(brokerService.getEntityById(processId, USER_ENTITY_PREFIX + "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
             when(dataService.saveDOMEUnsignedCredential("userId", credentialResponse.credential())).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());

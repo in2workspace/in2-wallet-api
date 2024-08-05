@@ -70,7 +70,7 @@ class CredentialServiceImplTest {
             WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
             when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
-            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, List.of("VerifiableCredential","LEARCredential")))
+            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, List.of("VerifiableCredential","LEARCredential"), null))
                     .expectNext(mockCredentialResponse)
                     .verifyComplete();
     }
@@ -100,7 +100,7 @@ class CredentialServiceImplTest {
         WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
         when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
-        StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, List.of("VerifiableCredential","LEARCredential")))
+        StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, List.of("VerifiableCredential","LEARCredential"), null))
                 .expectError(RuntimeException.class)
                 .verify();
     }
@@ -132,7 +132,7 @@ class CredentialServiceImplTest {
             WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
             when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
-            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, null))
+            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, null, null))
                     .expectNext(mockCredentialResponse)
                     .verifyComplete();
     }
@@ -165,7 +165,7 @@ class CredentialServiceImplTest {
             WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
             when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
-            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, List.of("LEARCredential")))
+            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata,JWT_VC, List.of("LEARCredential"), null))
                     .expectNext(mockCredentialResponse)
                     .verifyComplete();
     }
@@ -194,7 +194,7 @@ class CredentialServiceImplTest {
             WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
             when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
-            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata ,JWT_VC, List.of("LEARCredential")))
+            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata ,JWT_VC, List.of("LEARCredential"), null))
                     .expectError(RuntimeException.class)
                     .verify();
     }
@@ -225,7 +225,7 @@ class CredentialServiceImplTest {
             WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
             when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
-            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata ,JWT_VC, List.of("LEARCredential")))
+            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata ,JWT_VC, List.of("LEARCredential"), null))
                     .expectError(FailedDeserializingException.class)
                     .verify();
     }
@@ -245,7 +245,7 @@ class CredentialServiceImplTest {
             when(objectMapper.writeValueAsString(any()))
                     .thenThrow(new JsonProcessingException("Serialization error") {});
 
-            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata ,JWT_VC, List.of("LEARCredential")))
+            StepVerifier.create(credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata ,JWT_VC, List.of("LEARCredential"), null))
                     .expectError(FailedSerializingException.class)
                     .verify();
     }
@@ -317,7 +317,7 @@ class CredentialServiceImplTest {
             when(objectMapper.readValue("finalCredentialResponse", CredentialResponse.class))
                     .thenReturn(mockFinalCredentialResponse);
 
-            StepVerifier.withVirtualTime(() -> credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata, credentials.get(0).format(), credentials.get(0).types()))
+            StepVerifier.withVirtualTime(() -> credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata, credentials.get(0).format(), credentials.get(0).types(), null))
                     .thenAwait(Duration.ofSeconds(10))
                     .expectNext(mockFinalCredentialResponse)
                     .verifyComplete();
@@ -363,7 +363,7 @@ class CredentialServiceImplTest {
             when(objectMapper.readValue("deferredResponseRecursive", CredentialResponse.class))
                     .thenThrow(new IllegalStateException("No credential or new acceptance token received") {});
 
-            StepVerifier.withVirtualTime(() -> credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata, credentials.get(0).format(), credentials.get(0).types()))
+            StepVerifier.withVirtualTime(() -> credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata, credentials.get(0).format(), credentials.get(0).types(), null))
                     .thenAwait(Duration.ofSeconds(10))
                     .expectError(FailedDeserializingException.class)
                     .verify();
@@ -407,7 +407,7 @@ class CredentialServiceImplTest {
         when(objectMapper.readValue("deferredResponse", CredentialResponse.class)).thenReturn(mockDeferredResponse1);
 
 
-        StepVerifier.withVirtualTime(() -> credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata, credentials.get(0).format(), credentials.get(0).types()))
+        StepVerifier.withVirtualTime(() -> credentialService.getCredential(jwt,tokenResponse, credentialIssuerMetadata, credentials.get(0).format(), credentials.get(0).types(), null))
                 .thenAwait(Duration.ofSeconds(10))
                 .expectError(RuntimeException.class)
                 .verify();

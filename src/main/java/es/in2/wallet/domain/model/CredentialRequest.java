@@ -8,15 +8,13 @@ import java.util.List;
 @Builder
 public record CredentialRequest(
         @JsonProperty("types") List<String> types,
-
         @JsonProperty("format") String format,
-
+        @JsonProperty("credential_identifier") String credentialIdentifier,
         @JsonProperty("proof") Proof proof
 ) {
     @Builder
     public record Proof(
             @JsonProperty("proof_type") String proofType,
-
             @JsonProperty("jwt") String jwt
     ) {
     }

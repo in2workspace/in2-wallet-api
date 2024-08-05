@@ -132,4 +132,16 @@ public class GlobalExceptionHandler {
                 .path(path)
                 .build());
     }
+
+    @ExceptionHandler(CredentialConfigurationIdNotCompatible.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public Mono<GlobalErrorMessage> credentialConfigurationIdNotCompatible(CredentialConfigurationIdNotCompatible credentialConfigurationIdNotCompatible, ServerHttpRequest request) {
+        String path = String.valueOf(request.getPath());
+        return Mono.just(GlobalErrorMessage.builder()
+                .title("JwtInvalidFormatException")
+                .message(credentialConfigurationIdNotCompatible.getMessage())
+                .path(path)
+                .build());
+    }
 }
