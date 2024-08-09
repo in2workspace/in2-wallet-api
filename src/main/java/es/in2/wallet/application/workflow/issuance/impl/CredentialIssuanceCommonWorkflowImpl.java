@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceCommonWorkflow;
+import es.in2.wallet.domain.exception.BindingMethodUnsupportedException;
 import es.in2.wallet.domain.exception.CredentialConfigurationIdNotCompatible;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.*;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.DID_KEY;
 import static es.in2.wallet.domain.util.ApplicationConstants.USER_ENTITY_PREFIX;
 import static es.in2.wallet.domain.util.ApplicationUtils.extractResponseType;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
@@ -105,14 +107,18 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                 .flatMap(optionalBindingMethod -> {
                     if (optionalBindingMethod.isPresent()) {
                         log.info("Binding method found: {}", optionalBindingMethod.get());
-                        return generateDid().flatMap(did ->
-                                getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
-                                        .flatMap(tokenResponse ->
-                                                processCredentialRequest(credentialConfigurationId, credentialIssuerMetadata, did, tokenResponse, authorizationToken, processId)
-                                        )
-                        );
+                        if(optionalBindingMethod.get().equals(DID_KEY)){
+                            return generateDid().flatMap(did ->
+                                    getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
+                                            .flatMap(tokenResponse ->
+                                                    processCredentialRequest(credentialConfigurationId, credentialIssuerMetadata, did, tokenResponse, authorizationToken, processId)
+                                            )
+                            );
+                        } else {
+                            throw new BindingMethodUnsupportedException("Binding method: "+optionalBindingMethod.get()+" is not supported");
+                        }
                     } else {
-                        log.info("No binding method found, proceeding with alternative flow");
+                        log.info("No binding method found, proceeding without binding");
                         return getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
                                 .flatMap(tokenResponse ->
                                         processCredentialRequest(credentialConfigurationId, credentialIssuerMetadata, null, tokenResponse, authorizationToken, processId)
@@ -136,6 +142,7 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
             boolean isCompatible = tokenResponse.authorizationDetails().stream()
                     .anyMatch(detail -> credentialConfigurationId.equals(detail.credentialConfigurationId()));
 
+            // If there is no match throw an exception
             if (isCompatible) {
                 return true;
             } else {
@@ -151,14 +158,14 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                 .flatMap(format -> {
                     // If credentialConfigurationId is compatible with token response set format to null else set the correct format
                     String finalFormat = Boolean.TRUE.equals(isCredentialConfigurationIdCompatible) ? null : format;
-                    //if did different to null then we create the jwt proof
+                    //if did different to null then create the jwt proof
                     if (did != null) {
                         return buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
                                 .flatMap(jwt -> credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, finalFormat, null, finalCredentialConfigurationId))
                                 .flatMap(credentialResponse -> persistTransactionIdAndProcessUserEntityForDomeProfile(processId, authorizationToken, credentialResponse, tokenResponse, credentialIssuerMetadata));
                     } else {
                         return credentialService.getCredential(null, tokenResponse, credentialIssuerMetadata, finalFormat, null, finalCredentialConfigurationId)
-                                .flatMap(credentialResponse -> persistTransactionIdAndProcessUserEntityForDomeProfile(processId, authorizationToken, credentialResponse, tokenResponse, credentialIssuerMetadata));
+                                .flatMap(credentialResponse -> saveCredential(processId, authorizationToken, credentialResponse));
                     }
                 });
     }

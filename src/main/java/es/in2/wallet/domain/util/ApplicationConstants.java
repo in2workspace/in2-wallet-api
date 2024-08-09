@@ -53,4 +53,5 @@ public class ApplicationConstants {
     public static final String ISO_8601_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ssX";
     public static final List<String> DEFAULT_VC_TYPES_FOR_DOME_VERIFIER = List.of("LegalPersonCredential","LEARCredentialEmployee");
     public static final List<String> DEFAULT_SCOPE_FOR_DOME_VERIFIER = List.of("didRead", "defaultScope");
+    public static final String DID_KEY = "did:key";
 }
