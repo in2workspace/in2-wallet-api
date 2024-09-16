@@ -1,12 +1,13 @@
 name: Release IN2
 on:
-  pull_request:
+  push:
     branches:
       - develop
 jobs:
   release-local:
     name: release-local
     runs-on: ubuntu-latest
+    if: "!contains(github.event.pull_request.head.ref, 'release/')"
     environment: local
     steps:
       - name: Checkout Repository
