@@ -1,40 +1,35 @@
-name: Deploy Production
-
+name: Release IN2
 on:
   pull_request:
-    branches: [ "main" ]
-
+    branches:
+      - develop
 jobs:
-
-  deploy-prod:
-    name: deploy-prod
+  release-local:
+    name: release-local
     runs-on: ubuntu-latest
-    environment: prod
-
+    environment: local
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'adopt'
           java-version: '17'
-
       - name: Make Gradlew Executable
         run: chmod +x ./gradlew
-
       - name: Build and Push docker image
         run: |
           ./gradlew printVersion
           ./gradlew printProjectName
           VERSION=$(./gradlew -q printVersion)
           PROJECT_NAME=$(./gradlew -q printProjectName)
-          IMAGE_TAG="$PROJECT_NAME:v$VERSION"
+          IMAGE_TAG="$PROJECT_NAME:v$VERSION$SUFFIX"
           docker build --file Dockerfile --build-arg SKIP_TESTS=true --tag $DOCKER_HUB_CLIENT_NAME/$IMAGE_TAG .
           echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
           docker push $DOCKER_HUB_CLIENT_NAME/$IMAGE_TAG
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DOCKER_HUB_CLIENT_NAME: ${{ secrets.DOCKER_HUB_CLIENT_NAME }}
+          DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_TOKEN }}
+          DOCKER_HUB_CLIENT_NAME: in2workspace
+          SUFFIX: -snapshot
