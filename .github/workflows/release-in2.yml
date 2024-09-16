@@ -1,6 +1,6 @@
 name: Release IN2
 on:
-  push:
+  pull_request:
     branches:
       - develop
 jobs:
