@@ -8,11 +8,11 @@ We love your input! We want to make contributing to this project as easy and tra
 - Proposing new features
 - Becoming a maintainer
 
-## We Develop with Github
+## We Develop with GitHub
 
 We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
 
-## We Use [Github Flow](https://guides.github.com/introduction/flow/index.html), So All Code Changes Happen Through Pull Requests
+## We Use [GitHub Flow](https://guides.github.com/introduction/flow/index.html), So All Code Changes Happen Through Pull Requests
 
 Pull requests are the best way to propose changes to the codebase. We actively welcome your pull requests:
 
@@ -27,9 +27,9 @@ Pull requests are the best way to propose changes to the codebase. We actively w
 
 As we want your work to be as open and accessible as others in the project.
 
-## Report bugs using Github's [Issues](https://github.com/in2workspace/wallet-server/issues)
+## Report bugs using GitHub's [Issues](https://github.com/in2workspace/in2-wallet-api/issues)
 
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/in2workspace/wallet-server/issues/new); it's that easy!
+We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/in2workspace/in2-wallet-api/issues/new); it's that easy!
 
 ## Write Bug Reports With Detail, Background, and Sample Code
 
