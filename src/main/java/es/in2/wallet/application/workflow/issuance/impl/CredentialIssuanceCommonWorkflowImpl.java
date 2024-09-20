@@ -90,6 +90,7 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                         .flatMap( format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
                                 .flatMap(jwt -> credentialService.getCredential(jwt,tokenResponse,credentialIssuerMetadata,format,null))
                                 .flatMap(credentialResponse -> {
+                                    //aqui va la logica de manejar diferentes modelos de datos de credential response
                                     if(credentialResponse.transactionId()!=null){
                                         return persistTransactionIdAndProcessUserEntityForDomeProfile(processId,authorizationToken,credentialResponse,tokenResponse,credentialIssuerMetadata);
                                     } else{
