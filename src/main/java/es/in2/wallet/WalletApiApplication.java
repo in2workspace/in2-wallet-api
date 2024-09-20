@@ -13,19 +13,15 @@ import org.springframework.context.annotation.Bean;
 @ConfigurationPropertiesScan
 public class WalletApiApplication {
 
-	private static final ObjectMapper OBJECT_MAPPER =
-			JsonMapper.builder()
-					.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
-					.serializationInclusion(JsonInclude.Include.NON_NULL)
-					.build();
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true).serializationInclusion(JsonInclude.Include.NON_NULL).build();
 
-	public static void main(String[] args) {
-		SpringApplication.run(WalletApiApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(WalletApiApplication.class, args);
+    }
 
-	@Bean
-	public ObjectMapper objectMapper() {
-		return OBJECT_MAPPER;
-	}
+    @Bean
+    public ObjectMapper objectMapper() {
+        return OBJECT_MAPPER;
+    }
 
 }
