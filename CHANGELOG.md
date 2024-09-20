@@ -4,10 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.2.1](https://github.com/in2workspace/wallet-server/releases/tag/v1.2.0) - 2024-09-18
+## [v1.2.1](https://github.com/in2workspace/in2-wallet-api/tag/v1.2.0) - 2024-09-20
 ### Fixed
 - Support for immediate(sync) issuance for DOME
-## [v1.2.0](https://github.com/in2workspace/wallet-server/releases/tag/v1.2.0) - 2024-05-22
+
+## [v1.2.0](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.2.0) - 2024-05-22
 ### Added
 - Feature for requesting the Signed Credential described in the [OIDC4VCI DOME Profile Deferred Flow - 8 February 2024](https://dome-marketplace.github.io/OpenID4VCI-DOMEprofile/openid-4-verifiable-credential-issuance-wg-draft.html).
 - Implement lifecycle status management for the credentials based on [EUDI DOC ARF v1.3.0](https://github.com/eu-digital-identity-wallet/eudi-doc-architecture-and-reference-framework/blob/main/docs/arf.md#422-pid-and-qeaa-lifecycles).
