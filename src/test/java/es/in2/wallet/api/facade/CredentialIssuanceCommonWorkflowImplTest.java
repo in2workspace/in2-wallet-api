@@ -15,6 +15,11 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DefaultDataBufferFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.util.function.Tuples;
@@ -310,7 +315,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
-            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(credentialResponse));
+//            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(credentialResponse));
             when(brokerService.getEntityById(processId, USER_ENTITY_PREFIX + "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
             when(dataService.saveDOMEUnsignedCredential("userId", credentialResponse.credential())).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
@@ -322,6 +327,17 @@ class CredentialIssuanceCommonWorkflowImplTest {
                     credentialIssuerMetadata.deferredCredentialEndpoint()))
                     .thenReturn(Mono.just("transaction entity"));
             when(brokerService.postEntity(processId, "transaction entity")).thenReturn(Mono.empty());
+
+            String body = "{\"credential\": \"unsigned_credential\",\"format\": \"json_vc\",\"transaction_id\": \"123\"}";
+            DataBuffer dataBuffer = new DefaultDataBufferFactory().wrap(body.getBytes());
+
+            // Create the ClientResponse using the builder
+            ClientResponse clientResponse = ClientResponse.create(HttpStatus.ACCEPTED)  // Set the status
+                    .header("Content-Type", "application/json") // Optional headers
+                    .body(Flux.just(dataBuffer)) // Set the body as a Flux<DataBuffer>
+                    .build(); // Build the ClientResponse
+
+            when(credentialService.getCredentialForDome(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(clientResponse));
 
             StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
         }
