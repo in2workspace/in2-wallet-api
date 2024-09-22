@@ -318,7 +318,6 @@ class CredentialIssuanceCommonWorkflowImplTest {
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
             when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
-//            when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(credentialResponse));
             when(brokerService.getEntityById(processId, USER_ENTITY_PREFIX + "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
             when(dataService.saveDOMEUnsignedCredential("userId", credentialResponse.credential())).thenReturn(Mono.just(credentialEntity));
             when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
@@ -331,19 +330,113 @@ class CredentialIssuanceCommonWorkflowImplTest {
                     .thenReturn(Mono.just("transaction entity"));
             when(brokerService.postEntity(processId, "transaction entity")).thenReturn(Mono.empty());
 
-
-//            DataBuffer dataBuffer = new DefaultDataBufferFactory().wrap(body.getBytes());
-//
-//            // Create the ClientResponse using the builder
-//            ClientResponse clientResponse = ClientResponse.create(HttpStatus.ACCEPTED)  // Set the status
-//                    .header("Content-Type", "application/json") // Optional headers
-//                    .body(Flux.just(dataBuffer)) // Set the body as a Flux<DataBuffer>
-//                    .build(); // Build the ClientResponse
-
             CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.ACCEPTED).credentialResponse(body).build();
 
             when(credentialService.getCredentialForDome(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(credentialResponseWithStatus));
             when(objectMapper.readValue(body, DomeCredentialResponse.class)).thenReturn(domeCredentialResponse);
+
+            StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
+        }
+    }
+
+    @Test
+    void getCredentialWithPreAuthorizedCodeDOMEProfile_UserEntityExists_UpdatesEntityWithCredentialImmediate() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
+            String processId = "processId";
+            String authorizationToken = "authToken";
+            String qrContent = "qrContent";
+            CredentialOffer.Grant grant = CredentialOffer.Grant.builder().preAuthorizedCodeGrant(CredentialOffer.Grant.PreAuthorizedCodeGrant.builder().build()).build();
+            CredentialOffer credentialOffer = CredentialOffer.builder().grant(grant).credentialConfigurationsIds(List.of("LEARCredential")).build();
+            AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().build();
+
+            CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder()
+                    .credentialsConfigurationsSupported(Map.of("LEARCredential",
+                            CredentialIssuerMetadata.CredentialsConfigurationsSupported.builder().format(JWT_VC).build()))
+                    .credentialIssuer("issuer")
+                    .deferredCredentialEndpoint("https://example.com/deferred")
+                    .build();
+
+            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
+            CredentialResponse credentialResponse = CredentialResponse.builder().credential("unsigned_credential").format(VC_JSON).transactionId("123").build();
+            String did = "did:ebsi:123";
+            String userEntity = "existingUserEntity";
+            String credentialEntity = "credentialEntity";
+            String json = "{\"credential_request\":\"example\"}";
+            ObjectMapper objectMapper2 = new ObjectMapper();
+            JsonNode jsonNode = objectMapper2.readTree(json);
+            String jwtProof = "jwt";
+
+            String jsonCredential = """
+                        {
+                            "type": [
+                              "VerifiableCredential",
+                              "LEARCredential"
+                            ],
+                            "@context": [
+                              "https://www.w3.org/2018/credentials/v1",
+                              "https://dome-marketplace.eu//2022/credentials/learcredential/v1"
+                            ],
+                            "id": "urn:uuid:8700bee5-4621-4720-94de-e866fb7197e9",
+                            "issuer": "did:key:zQ3shtcEQP3yuxbkZ1SjN51T8fQmRyXnjrXm8E84WLXKDQbRn",
+                            "issuanceDate": "2023-10-24T08:07:35Z",
+                            "issued": "2023-10-24T08:07:35Z",
+                            "validFrom": "2023-10-24T08:07:35Z",
+                            "expirationDate": "2023-11-23T08:07:35Z",
+                            "credentialSubject": {
+                              "id": "did:example:123",
+                              "title": "Mr.",
+                              "first_name": "John",
+                              "last_name": "Doe",
+                              "gender": "M",
+                              "postal_address": "",
+                              "email": "johndoe@goodair.com",
+                              "telephone": "",
+                              "fax": "",
+                              "mobile_phone": "+34787426623",
+                              "legalRepresentative": {
+                                "cn": "56565656V Jesus Ruiz",
+                                "serialNumber": "56565656V",
+                                "organizationIdentifier": "VATES-12345678",
+                                "o": "GoodAir",
+                                "c": "ES"
+                              },
+                              "rolesAndDuties": [
+                                {
+                                  "type": "LEARCredential",
+                                  "id": "https://dome-marketplace.eu//lear/v1/6484994n4r9e990494"
+                                }
+                              ]
+                            }
+                          }
+                """;
+            JsonNode jsonNodeCredential = objectMapper2.readTree(jsonCredential);
+            String body = "{\"credential\": \"signed_credential\"}";
+            SingleCredentialResponse singleCredentialResponse = objectMapper2.readValue(body, SingleCredentialResponse.class);
+
+            when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId, credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
+            when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId, credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
+            when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
+            when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
+            when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
+            when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
+            when(brokerService.getEntityById(processId, USER_ENTITY_PREFIX + "userId")).thenReturn(Mono.just(Optional.of(userEntity)));
+            when(dataService.saveSignedVC(processId,"userId", singleCredentialResponse)).thenReturn(Mono.just(credentialEntity));
+            when(brokerService.postEntity(processId, credentialEntity)).thenReturn(Mono.empty());
+//            when(objectMapper.readTree(anyString())).thenReturn(jsonNodeCredential);
+//            when(dataService.saveTransaction(
+//                    "urn:uuid:8700bee5-4621-4720-94de-e866fb7197e9",
+//                    credentialResponse.transactionId(),
+//                    tokenResponse.accessToken(),
+//                    credentialIssuerMetadata.deferredCredentialEndpoint()))
+//                    .thenReturn(Mono.just("transaction entity"));
+//            when(brokerService.postEntity(processId, "transaction entity")).thenReturn(Mono.empty());
+
+            CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.OK).credentialResponse(body).build();
+
+            when(credentialService.getCredentialForDome(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(credentialResponseWithStatus));
+            when(objectMapper.readValue(body, SingleCredentialResponse.class)).thenReturn(singleCredentialResponse);
 
             StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
         }

@@ -123,28 +123,23 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
     private Mono<Void> handleCredentialResponse(CredentialResponseWithStatus credentialResponseWithStatus, String processId, String authorizationToken,
                                                 TokenResponse tokenResponse,
                                                 CredentialIssuerMetadata credentialIssuerMetadata){
-
-        if(credentialResponseWithStatus.statusCode().equals(HttpStatus.ACCEPTED)) {
-            try {
+        try {
+            if (credentialResponseWithStatus.statusCode().equals(HttpStatus.ACCEPTED)) {
+                // In case of ACCEPTED status the flow is deferred
                 DomeCredentialResponse domeCredentialResponse = objectMapper.readValue(credentialResponseWithStatus.credentialResponse(), DomeCredentialResponse.class);
                 return persistTransactionIdAndProcessUserEntityForDomeDeferredFlow(processId, authorizationToken, domeCredentialResponse, tokenResponse, credentialIssuerMetadata);
-            } catch (Exception e) {
-                log.error("Error while processing CredentialResponse", e);
-                return Mono.error(new FailedDeserializingException("Error processing CredentialResponse: " + credentialResponseWithStatus.credentialResponse()));
-            }
-        } else if (credentialResponseWithStatus.statusCode().equals(HttpStatus.OK)){
-            try {
+            } else if (credentialResponseWithStatus.statusCode().equals(HttpStatus.OK)) {
+                // In case of OK status the flow is immediate
                 SingleCredentialResponse singleCredentialResponse = objectMapper.readValue(credentialResponseWithStatus.credentialResponse(), SingleCredentialResponse.class);
                 return persistCredentialAndProcessUserEntityForImmediateFlow(processId, authorizationToken, singleCredentialResponse);
-            } catch (Exception e) {
-                log.error("Error while processing CredentialResponse", e);
-                return Mono.error(new FailedDeserializingException("Error processing CredentialResponse: " + credentialResponseWithStatus.credentialResponse()));
+            } else {
+                return Mono.error(new IllegalArgumentException("Unexpected status code"));
             }
-        } else {
-            return Mono.error(new IllegalArgumentException("Unexpected status code"));
+        } catch (Exception e) {
+            log.error("Error while processing CredentialResponse", e);
+            return Mono.error(new FailedDeserializingException("Error processing CredentialResponse: " + credentialResponseWithStatus.credentialResponse()));
         }
     }
-
 
     /**
      * Handles the credential acquisition flow using an authorization code grant.
