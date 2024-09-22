@@ -5,18 +5,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceCommonWorkflow;
-import es.in2.wallet.domain.exception.FailedSerializingException;
+import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.NoSuchElementException;
 
 import static es.in2.wallet.domain.util.ApplicationConstants.USER_ENTITY_PREFIX;
@@ -110,23 +109,6 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
     /**
      * Orchestrates the flow to get a credential with a pre-authorized code.
      */
-//    private Mono<Void> getCredentialWithPreAuthorizedCodeDomeProfile(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
-//        log.info("ProcessId: {} - Getting Dome Profile Credential with Pre-Authorized Code", processId);
-//        return generateDid().flatMap(did ->
-//                getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
-//                .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0),credentialIssuerMetadata)
-//                        .flatMap( format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
-//                                .flatMap(jwt -> credentialService.getCredential(jwt,tokenResponse,credentialIssuerMetadata,format,null))
-//                                .flatMap(credentialResponse -> {
-//                                    //aqui va la logica de manejar diferentes modelos de datos de credential response
-//                                    if(credentialResponse.transactionId()!=null){
-//                                        return persistTransactionIdAndProcessUserEntityForDomeProfile(processId,authorizationToken,credentialResponse,tokenResponse,credentialIssuerMetadata);
-//                                    } else{
-//                                        return saveCredential(processId, authorizationToken, credentialResponse);
-//                                    }
-//                                    })
-//                )));
-//    }
     private Mono<Void> getCredentialWithPreAuthorizedCodeDomeProfile(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
         log.info("ProcessId: {} - Getting Dome Profile Credential with Pre-Authorized Code", processId);
         return generateDid().flatMap(did ->
@@ -134,24 +116,31 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                         .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0),credentialIssuerMetadata)
                                 .flatMap( format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
                                         .flatMap(jwt -> credentialService.getCredentialForDome(jwt,tokenResponse,credentialIssuerMetadata,format,null))
-                                        .flatMap(clientResponse -> handleCredentialResponse(clientResponse, processId, authorizationToken,tokenResponse,credentialIssuerMetadata))
+                                        .flatMap(credentialResponseWithStatus -> handleCredentialResponse(credentialResponseWithStatus, processId, authorizationToken,tokenResponse,credentialIssuerMetadata))
                                 )));
     }
 
-    private Mono<Void> handleCredentialResponse(ClientResponse clientResponse, String processId, String authorizationToken,
+    private Mono<Void> handleCredentialResponse(CredentialResponseWithStatus credentialResponseWithStatus, String processId, String authorizationToken,
                                                 TokenResponse tokenResponse,
                                                 CredentialIssuerMetadata credentialIssuerMetadata){
-        HttpStatusCode statusCode = clientResponse.statusCode();
-        if(statusCode.equals(HttpStatus.ACCEPTED)){
-            log.info("---------Entro al ACCEPTED");
-            return clientResponse.bodyToMono(DomeCredentialResponse.class)
-                    .flatMap(domeCredentialResponse -> persistTransactionIdAndProcessUserEntityForDomeDeferredFlow(processId,authorizationToken,domeCredentialResponse,tokenResponse,credentialIssuerMetadata));
-        } else if (statusCode.equals(HttpStatus.OK)){
-            log.info("---------Entro al OK");
-            return clientResponse.bodyToMono(SingleCredentialResponse.class)
-                    .flatMap(singleCredentialResponse -> persistCredentialAndProcessUserEntityForImmediateFlow(processId,authorizationToken,singleCredentialResponse));
+
+        if(credentialResponseWithStatus.statusCode().equals(HttpStatus.ACCEPTED)) {
+            try {
+                DomeCredentialResponse domeCredentialResponse = objectMapper.readValue(credentialResponseWithStatus.credentialResponse(), DomeCredentialResponse.class);
+                return persistTransactionIdAndProcessUserEntityForDomeDeferredFlow(processId, authorizationToken, domeCredentialResponse, tokenResponse, credentialIssuerMetadata);
+            } catch (Exception e) {
+                log.error("Error while processing CredentialResponse", e);
+                return Mono.error(new FailedDeserializingException("Error processing CredentialResponse: " + credentialResponseWithStatus.credentialResponse()));
+            }
+        } else if (credentialResponseWithStatus.statusCode().equals(HttpStatus.OK)){
+            try {
+                SingleCredentialResponse singleCredentialResponse = objectMapper.readValue(credentialResponseWithStatus.credentialResponse(), SingleCredentialResponse.class);
+                return persistCredentialAndProcessUserEntityForImmediateFlow(processId, authorizationToken, singleCredentialResponse);
+            } catch (Exception e) {
+                log.error("Error while processing CredentialResponse", e);
+                return Mono.error(new FailedDeserializingException("Error processing CredentialResponse: " + credentialResponseWithStatus.credentialResponse()));
+            }
         } else {
-            log.info("---------Entro al else");
             return Mono.error(new IllegalArgumentException("Unexpected status code"));
         }
     }
@@ -312,25 +301,6 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                 .map(configurationsSupported -> configurationsSupported.get(credentialConfigurationId))
                 .map(CredentialIssuerMetadata.CredentialsConfigurationsSupported::format)
                 .switchIfEmpty(Mono.error(new NoSuchElementException("No configuration found for ID: " + credentialConfigurationId)));
-    }
-
-    private Mono<Void> persistTransactionIdAndProcessUserEntityForDomeProfile(String processId, String authorizationToken,
-                                                                              CredentialResponse credential,
-                                                                              TokenResponse tokenResponse,
-                                                                              CredentialIssuerMetadata credentialIssuerMetadata) {
-        return saveCredential(processId, authorizationToken, credential)
-                .then(Mono.defer(() -> {
-                    try {
-                        JsonNode credentialJson = objectMapper.readTree(credential.credential());
-                        String credentialId = credentialJson.get("id").asText();
-                        return dataService.saveTransaction(credentialId, credential.transactionId(),
-                                tokenResponse.accessToken(), credentialIssuerMetadata.deferredCredentialEndpoint());
-                    } catch (JsonProcessingException e) {
-                        log.error("Error deserializing credential for transaction saving", e);
-                        return Mono.error(new RuntimeException("Failed to deserialize credential JSON", e));
-                    }
-                }))
-                .flatMap(transactionEntity -> brokerService.postEntity(processId, transactionEntity));
     }
 
     private Mono<Void> persistTransactionIdAndProcessUserEntityForDomeDeferredFlow(String processId, String authorizationToken,

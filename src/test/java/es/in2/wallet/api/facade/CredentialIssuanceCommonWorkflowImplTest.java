@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -306,6 +307,8 @@ class CredentialIssuanceCommonWorkflowImplTest {
                           }
                 """;
             JsonNode jsonNodeCredential = objectMapper2.readTree(jsonCredential);
+            String body = "{\"credential\": \"unsigned_credential\",\"transaction_id\": \"123\",\"c_nonce\": \"asdas123\",\"c_nonce_expires_in\": 123}";
+            DomeCredentialResponse domeCredentialResponse = objectMapper2.readValue(body, DomeCredentialResponse.class);
 
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
             when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
@@ -328,16 +331,19 @@ class CredentialIssuanceCommonWorkflowImplTest {
                     .thenReturn(Mono.just("transaction entity"));
             when(brokerService.postEntity(processId, "transaction entity")).thenReturn(Mono.empty());
 
-            String body = "{\"credential\": \"unsigned_credential\",\"format\": \"json_vc\",\"transaction_id\": \"123\"}";
-            DataBuffer dataBuffer = new DefaultDataBufferFactory().wrap(body.getBytes());
 
-            // Create the ClientResponse using the builder
-            ClientResponse clientResponse = ClientResponse.create(HttpStatus.ACCEPTED)  // Set the status
-                    .header("Content-Type", "application/json") // Optional headers
-                    .body(Flux.just(dataBuffer)) // Set the body as a Flux<DataBuffer>
-                    .build(); // Build the ClientResponse
+//            DataBuffer dataBuffer = new DefaultDataBufferFactory().wrap(body.getBytes());
+//
+//            // Create the ClientResponse using the builder
+//            ClientResponse clientResponse = ClientResponse.create(HttpStatus.ACCEPTED)  // Set the status
+//                    .header("Content-Type", "application/json") // Optional headers
+//                    .body(Flux.just(dataBuffer)) // Set the body as a Flux<DataBuffer>
+//                    .build(); // Build the ClientResponse
 
-            when(credentialService.getCredentialForDome(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(clientResponse));
+            CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.ACCEPTED).credentialResponse(body).build();
+
+            when(credentialService.getCredentialForDome(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(credentialResponseWithStatus));
+            when(objectMapper.readValue(body, DomeCredentialResponse.class)).thenReturn(domeCredentialResponse);
 
             StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
         }

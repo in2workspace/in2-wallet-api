@@ -1,7 +1,6 @@
 package es.in2.wallet.domain.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.exception.FailedSerializingException;
 import es.in2.wallet.domain.model.*;
@@ -11,17 +10,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
 
 import static es.in2.wallet.domain.util.ApplicationConstants.*;
-import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
 
 @Slf4j
 @Service
@@ -46,14 +42,14 @@ public class CredentialServiceImpl implements CredentialService {
     }
 
     @Override
-    public Mono<ClientResponse> getCredentialForDome(String jwt, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types) {
+    public Mono<CredentialResponseWithStatus> getCredentialForDome(String jwt, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types) {
         String processId = MDC.get(PROCESS_ID);
         // build CredentialRequest
         return buildCredentialRequest(jwt,format,types)
                 .doOnSuccess(credentialRequest -> log.info("ProcessID: {} - CredentialRequest: {}", processId, credentialRequest))
                 // post CredentialRequest
                 .flatMap(credentialRequest -> postCredentialRequest(tokenResponse.accessToken(), credentialIssuerMetadata.credentialEndpoint(), credentialRequest))
-                .doOnSuccess(response -> log.info("ProcessID: {} - Credential Post Response: {}", processId, response));
+                .doOnSuccess(response -> log.info("ProcessID: {} - Credential Post Response: {}", processId, response.credentialResponse()));
     }
 
     @Override
@@ -165,7 +161,7 @@ public class CredentialServiceImpl implements CredentialService {
         }
     }
 
-    private Mono<ClientResponse> postCredentialRequest(String accessToken,
+    private Mono<CredentialResponseWithStatus> postCredentialRequest(String accessToken,
                                                 String credentialEndpoint,
                                                 Object credentialRequest) {
         try {
@@ -180,7 +176,8 @@ public class CredentialServiceImpl implements CredentialService {
                             return Mono.error(new RuntimeException("There was an error during the credential request, error" + response));
                         } else {
                             log.info("Credential response retrieved: {}", response);
-                            return Mono.just(response);
+                            return response.bodyToMono(String.class)
+                                    .map(responseBody -> CredentialResponseWithStatus.builder().credentialResponse(responseBody).statusCode(response.statusCode()).build());
                         }
                     });
         } catch (Exception e) {
