@@ -150,6 +150,86 @@ class DataImplTest {
     }
 
     @Test
+    void testSaveSignedVCWithJwtFormatNewEntity() throws JsonProcessingException {
+        String processId = "123";
+        // Sample JWT token for a verifiable credential
+        String vcJwt = "eyJraWQiOiJkaWQ6a2V5OnpRM3NodGNFUVAzeXV4YmtaMVNqTjUxVDhmUW1SeVhuanJYbThFODRXTFhLRFFiUm4jelEzc2h0Y0VRUDN5dXhia1oxU2pONTFUOGZRbVJ5WG5qclhtOEU4NFdMWEtEUWJSbiIsInR5cCI6IkpXVCIsImFsZyI6IkVTMjU2SyJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlZnk3amhwY0ZCanp0TXJFSktFVHdFU0NoUXd4cEpuVUpLb3ZzWUQ1ZkpabXAiLCJuYmYiOjE2OTgxMzQ4NTUsImlzcyI6ImRpZDprZXk6elEzc2h0Y0VRUDN5dXhia1oxU2pONTFUOGZRbVJ5WG5qclhtOEU4NFdMWEtEUWJSbiIsImV4cCI6MTcwMDcyNjg1NSwiaWF0IjoxNjk4MTM0ODU1LCJ2YyI6eyJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiTEVBUkNyZWRlbnRpYWwiXSwiQGNvbnRleHQiOlsiaHR0cHM6Ly93d3cudzMub3JnLzIwMTgvY3JlZGVudGlhbHMvdjEiLCJodHRwczovL2RvbWUtbWFya2V0cGxhY2UuZXUvLzIwMjIvY3JlZGVudGlhbHMvbGVhcmNyZWRlbnRpYWwvdjEiXSwiaWQiOiJ1cm46dXVpZDo4NzAwYmVlNS00NjIxLTQ3MjAtOTRkZS1lODY2ZmI3MTk3ZTkiLCJpc3N1ZXIiOnsiaWQiOiJkaWQ6a2V5OnpRM3NodGNFUVAzeXV4YmtaMVNqTjUxVDhmUW1SeVhuanJYbThFODRXTFhLRFFiUm4ifSwiaXNzdWFuY2VEYXRlIjoiMjAyMy0xMC0yNFQwODowNzozNVoiLCJpc3N1ZWQiOiIyMDIzLTEwLTI0VDA4OjA3OjM1WiIsInZhbGlkRnJvbSI6IjIwMjMtMTAtMjRUMDg6MDc6MzVaIiwiZXhwaXJhdGlvbkRhdGUiOiIyMDIzLTExLTIzVDA4OjA3OjM1WiIsImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImlkIjoiZGlkOmtleTp6RG5hZWZ5N2pocGNGQmp6dE1yRUpLRVR3RVNDaFF3eHBKblVKS292c1lENWZKWm1wIiwidGl0bGUiOiJNci4iLCJmaXJzdF9uYW1lIjoiSm9obiIsImxhc3RfbmFtZSI6IkRvZSIsImdlbmRlciI6Ik0iLCJwb3N0YWxfYWRkcmVzcyI6IiIsImVtYWlsIjoiam9obmRvZUBnb29kYWlyLmNvbSIsInRlbGVwaG9uZSI6IiIsImZheCI6IiIsIm1vYmlsZV9waG9uZSI6IiszNDc4NzQyNjYyMyIsImxlZ2FsUmVwcmVzZW50YXRpdmUiOnsiY24iOiI1NjU2NTY1NlYgSmVzdXMgUnVpeiIsInNlcmlhbE51bWJlciI6IjU2NTY1NjU2ViIsIm9yZ2FuaXphdGlvbklkZW50aWZpZXIiOiJWQVRFUy0xMjM0NTY3OCIsIm8iOiJHb29kQWlyIiwiYyI6IkVTIn0sInJvbGVzQW5kRHV0aWVzIjpbeyJ0eXBlIjoiTEVBUkNyZWRlbnRpYWwiLCJpZCI6Imh0dHBzOi8vZG9tZS1tYXJrZXRwbGFjZS5ldS8vbGVhci92MS82NDg0OTk0bjRyOWU5OTA0OTQifV0sImtleSI6InZhbHVlIn19LCJqdGkiOiJ1cm46dXVpZDo4NzAwYmVlNS00NjIxLTQ3MjAtOTRkZS1lODY2ZmI3MTk3ZTkifQ.2_YNY515CaohirD4AHDBMvzDagEn-p8uAsaiMT0H4ltK2uVfG8IWWqV_OOR6lFlXMzUhJd7nKsaWkhnAQY8kyA";
+        String jwtPayload = """
+                        {
+                          "sub": "did:key:zDnaefy7jhpcFBjztMrEJKETwESChQwxpJnUJKovsYD5fJZmp",
+                          "nbf": 1698134855,
+                          "iss": "did:key:zQ3shtcEQP3yuxbkZ1SjN51T8fQmRyXnjrXm8E84WLXKDQbRn",
+                          "exp": 1700726855,
+                          "iat": 1698134855,
+                          "vc": {
+                            "type": [
+                              "VerifiableCredential",
+                              "LEARCredential"
+                            ],
+                            "@context": [
+                              "https://www.w3.org/2018/credentials/v1",
+                              "https://dome-marketplace.eu//2022/credentials/learcredential/v1"
+                            ],
+                            "id": "urn:uuid:8700bee5-4621-4720-94de-e866fb7197e9",
+                            "issuer": {
+                              "id": "did:key:zQ3shtcEQP3yuxbkZ1SjN51T8fQmRyXnjrXm8E84WLXKDQbRn"
+                            },
+                            "issuanceDate": "2023-10-24T08:07:35Z",
+                            "issued": "2023-10-24T08:07:35Z",
+                            "validFrom": "2023-10-24T08:07:35Z",
+                            "expirationDate": "2023-11-23T08:07:35Z",
+                            "credentialSubject": {
+                              "id": "did:key:zDnaefy7jhpcFBjztMrEJKETwESChQwxpJnUJKovsYD5fJZmp",
+                              "title": "Mr.",
+                              "first_name": "John",
+                              "last_name": "Doe",
+                              "gender": "M",
+                              "postal_address": "",
+                              "email": "johndoe@goodair.com",
+                              "telephone": "",
+                              "fax": "",
+                              "mobile_phone": "+34787426623",
+                              "legalRepresentative": {
+                                "cn": "56565656V Jesus Ruiz",
+                                "serialNumber": "56565656V",
+                                "organizationIdentifier": "VATES-12345678",
+                                "o": "GoodAir",
+                                "c": "ES"
+                              },
+                              "rolesAndDuties": [
+                                {
+                                  "type": "LEARCredential",
+                                  "id": "https://dome-marketplace.eu//lear/v1/6484994n4r9e990494"
+                                }
+                              ],
+                              "key": "value"
+                            }
+                          },
+                          "jti": "urn:uuid:8700bee5-4621-4720-94de-e866fb7197e9"
+                        }
+                """;
+
+        //CredentialResponse credentials= CredentialResponse.builder().credential(vcJwt).format(JWT_VC).build();
+        SingleCredentialResponse ingleCredentialResponse = SingleCredentialResponse.builder().credential(vcJwt).build();
+
+        when(brokerService.getEntityById(eq(processId),anyString())).thenReturn(Mono.just(Optional.empty()));
+        ObjectWriter mockWriter = mock(ObjectWriter.class);
+        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
+        when(mockWriter.writeValueAsString(any())).thenReturn("user entity with updated credential");
+
+        ObjectMapper objectMapper2 = new ObjectMapper();
+        JsonNode jsonNode = objectMapper2.readTree(jwtPayload);
+
+        when(objectMapper.readTree(anyString())).thenReturn(jsonNode);
+
+
+        // Executing the method under test
+        StepVerifier.create(userDataServiceImpl.saveSignedVC(processId,"entity not updated", ingleCredentialResponse))
+                .expectNext("user entity with updated credential")
+                .verifyComplete();
+    }
+
+    @Test
     void testSaveVCWithUnsupportedFormat() {
         String processId = "123";
         // Sample JWT token for a verifiable credential

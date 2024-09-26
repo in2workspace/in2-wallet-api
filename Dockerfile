@@ -18,5 +18,5 @@ RUN addgroup -S nonroot \
     && adduser -S nonroot -G nonroot
 USER nonroot
 WORKDIR /app
-COPY --from=TEMP_BUILD /home/gradle/src/build/libs/*.jar /app/wallet-api.jar
-ENTRYPOINT ["java", "-jar", "/app/wallet-api.jar"]
+COPY --from=TEMP_BUILD /home/gradle/src/build/libs/*.jar /app/in2-wallet-api.jar
+ENTRYPOINT ["java", "-jar", "/app/in2-wallet-api.jar"]
