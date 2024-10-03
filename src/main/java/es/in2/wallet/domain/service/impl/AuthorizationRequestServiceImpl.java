@@ -1,7 +1,8 @@
 package es.in2.wallet.domain.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JWSObject;
-import es.in2.wallet.domain.model.AuthorizationRequest;
+import es.in2.wallet.domain.model.AuthorizationRequestOIDC4VP;
 import es.in2.wallet.domain.service.AuthorizationRequestService;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
@@ -9,63 +10,86 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.BEARER;
-import static es.in2.wallet.domain.util.ApplicationConstants.HEADER_AUTHORIZATION;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static es.in2.wallet.domain.util.ApplicationConstants.SCOPE_CLAIM;
+import static es.in2.wallet.domain.util.ApplicationUtils.extractAllQueryParams;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthorizationRequestServiceImpl implements AuthorizationRequestService {
     private final WebClientConfig webClient;
+    private final ObjectMapper objectMapper;
 
     @Override
-    public Mono<String> getAuthorizationRequestFromVcLoginRequest(String processId, String qrContent, String authorizationToken) {
-        log.info("Processing a Verifiable Credential Login Request");
+    public Mono<String> getJwtRequestObjectFromUri(String processId, String qrContent) {
+        log.info("Processing a auth request object");
         // Get Authorization Request executing the VC Login Request
-        return getJwtAuthorizationRequest(qrContent, authorizationToken)
-                .doOnSuccess(response -> log.info("ProcessID: {} - Authorization Request Response: {}", processId, response))
+        return extractAllQueryParams(qrContent)
+                .flatMap(this::getJwtRequestObject)
+                .doOnSuccess(response -> log.info("ProcessID: {} - Request Response: {}", processId, response))
                 .onErrorResume(e -> {
-                    log.error("ProcessID: {} - Error while processing Authorization Request from the Issuer: {}", processId, e.getMessage());
-                    return Mono.error(new RuntimeException("Error while processing Authorization Request from the Issuer"));
+                    log.error("ProcessID: {} - Error while processing Request Object from the Issuer: {}", processId, e.getMessage());
+                    return Mono.error(new RuntimeException("Error while processing Request Object from the Issuer"));
                 });
     }
 
-    private Mono<String> getJwtAuthorizationRequest(String authorizationRequestUri, String authorizationToken) {
-        return webClient.centralizedWebClient()
-                .get()
-                .uri(authorizationRequestUri)
-                .header(HEADER_AUTHORIZATION, BEARER + authorizationToken)
-                .exchangeToMono(response -> {
-                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
-                        return Mono.error(new RuntimeException("There was an error retrieving authorisation request, error" + response));
-                    }
-                    else {
-                        log.info("Authorization request in jwt format: {}", response);
-                        return response.bodyToMono(String.class);
-                    }
-                });
+    private Mono<String> getJwtRequestObject(Map<String, String> params) {
+        if (params.get("request_uri") != null) {
+            String requestUri = params.get("request_uri");
+            return webClient.centralizedWebClient()
+                    .get()
+                    .uri(requestUri)
+                    .exchangeToMono(response -> {
+                        if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                            return Mono.error(new RuntimeException("There was an error retrieving the authorisation request, error" + response));
+                        }
+                        else {
+                            log.info("Authorization request: {}", response);
+                            return response.bodyToMono(String.class);
+                        }
+                    });
+        } else if (params.get("request") != null) {
+            return Mono.just(params.get("request"));
+        } else {
+            return Mono.error(new IllegalArgumentException("theres any request found in parameters"));
+        }
     }
 
     @Override
-    public Mono<AuthorizationRequest> getAuthorizationRequestFromJwtAuthorizationRequestClaim(String processId, String jwtAuthorizationRequestClaim) {
+    public Mono<AuthorizationRequestOIDC4VP> getAuthorizationRequestFromJwtAuthorizationRequestJWT(String processId, String jwtAuthorizationRequestClaim) {
         try {
+            // Step 1: Parse the JWT to extract the claims
             JWSObject jwsObject = JWSObject.parse(jwtAuthorizationRequestClaim);
-            String authorizationRequestClaim = jwsObject.getPayload().toJSONObject().get("auth_request").toString();
-            return Mono.fromCallable(() -> AuthorizationRequest.fromString(authorizationRequestClaim));
+            Map<String, Object> authorizationRequestClaim = getAuthorizationRequestClaim(jwsObject);
+
+            // Step 4: Convert the map to a JSON string
+            String jsonString = objectMapper.writeValueAsString(authorizationRequestClaim);
+
+            // Step 5: Deserialize the JSON string into AuthorizationRequestOIDC4VP
+            return Mono.fromCallable(() -> objectMapper.readValue(jsonString, AuthorizationRequestOIDC4VP.class));
+
         } catch (Exception e) {
             log.error("ProcessID: {} - Error while parsing Authorization Request: {}", processId, e.getMessage());
             return Mono.error(new RuntimeException("Error while parsing Authorization Request"));
         }
     }
 
-    @Override
-    public Mono<AuthorizationRequest> getAuthorizationRequestFromAuthorizationRequestClaims(String processId, String authorizationRequestClaims) {
-        try {
-            return Mono.fromCallable(() -> AuthorizationRequest.fromString(authorizationRequestClaims));
-        } catch (Exception e) {
-            log.error("ProcessID: {} - Error while parsing Authorization Request: {}", processId, e.getMessage());
-            return Mono.error(new RuntimeException("Error while parsing Authorization Request"));
+    private static Map<String, Object> getAuthorizationRequestClaim(JWSObject jwsObject) {
+        Map<String, Object> authorizationRequestClaim = jwsObject.getPayload().toJSONObject();
+
+        // Step 2: Check if the "scope" claim exists and is a single string
+        if (authorizationRequestClaim.containsKey(SCOPE_CLAIM) && authorizationRequestClaim.get(SCOPE_CLAIM) instanceof String scopeString) {
+
+            // Step 3: Split the scope string into a list of strings
+            List<String> scopeList = Arrays.asList(scopeString.split(" "));
+            authorizationRequestClaim.put(SCOPE_CLAIM, scopeList); // Replace the string with the list in the map
         }
+        return authorizationRequestClaim;
     }
+
 
 }

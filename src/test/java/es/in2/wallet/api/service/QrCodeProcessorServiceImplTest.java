@@ -3,7 +3,6 @@ package es.in2.wallet.api.service;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceEbsiWorkflow;
 import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
-import es.in2.wallet.application.workflow.presentation.AttestationExchangeDOMEWorkflow;
 import es.in2.wallet.domain.exception.NoSuchQrContentException;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.service.impl.QrCodeProcessorServiceImpl;
@@ -25,9 +24,6 @@ class QrCodeProcessorServiceImplTest {
     private CredentialIssuanceEbsiWorkflow credentialIssuanceEbsiWorkflow;
     @Mock
     private AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
-
-    @Mock
-    private AttestationExchangeDOMEWorkflow attestationExchangeDOMEWorkflow;
 
     @InjectMocks
     private QrCodeProcessorServiceImpl qrCodeProcessorService;
@@ -150,19 +146,5 @@ class QrCodeProcessorServiceImplTest {
                 .expectErrorMatches(throwable -> throwable instanceof NoSuchQrContentException &&
                         expectedErrorMessage.equals(throwable.getMessage()))
                 .verify();
-    }
-
-    @Test
-    void processQrContentDOMEVCLoginRequestTestSuccess() {
-        String qrContent = "https%3A%2F%2Fdid:web:dome-marketplace.org?response_type=vp_token";
-        String processId = "processId";
-        String authorizationToken = "authToken";
-        VcSelectorRequest vcSelectorRequest = VcSelectorRequest.builder().build();
-
-        when(attestationExchangeDOMEWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, qrContent)).thenReturn(Mono.just(vcSelectorRequest));
-
-        StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
-                .expectNext(vcSelectorRequest)
-                .verifyComplete();
     }
 }

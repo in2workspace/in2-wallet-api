@@ -132,4 +132,16 @@ public class GlobalExceptionHandler {
                 .path(path)
                 .build());
     }
+
+    @ExceptionHandler(IssuerNotAuthorizedException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public Mono<GlobalErrorMessage> issuerNotAuthorizedException(IssuerNotAuthorizedException issuerNotAuthorizedException, ServerHttpRequest request) {
+        String path = String.valueOf(request.getPath());
+        return Mono.just(GlobalErrorMessage.builder()
+                .title("IssuerNotAuthorizedException")
+                .message(issuerNotAuthorizedException.getMessage())
+                .path(path)
+                .build());
+    }
 }

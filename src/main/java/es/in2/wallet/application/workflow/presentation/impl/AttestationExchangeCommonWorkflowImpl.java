@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
-import es.in2.wallet.domain.model.AuthorizationRequest;
+import es.in2.wallet.domain.model.AuthorizationRequestOIDC4VP;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.model.VcSelectorResponse;
@@ -15,12 +15,10 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 
+import static es.in2.wallet.domain.util.ApplicationConstants.LEAR_CREDENTIAL_EMPLOYEE_SCOPE;
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
 
 @Slf4j
@@ -38,9 +36,9 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
     @Override
     public Mono<VcSelectorRequest> processAuthorizationRequest(String processId, String authorizationToken, String qrContent) {
         log.info("ProcessID: {} - Processing a Verifiable Credential Login Request", processId);
-        return authorizationRequestService.getAuthorizationRequestFromVcLoginRequest(processId, qrContent, authorizationToken)
+        return authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent)
                 .flatMap(jwtAuthorizationRequest -> verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
-                .flatMap(jwtAuthorizationRequest -> authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestClaim(processId, jwtAuthorizationRequest))
+                .flatMap(jwtAuthorizationRequest -> authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
                 .flatMap(authorizationRequest -> getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, authorizationRequest.scope())
                 .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
     }
@@ -50,8 +48,16 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
     public Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> scope) {
         return getUserIdFromToken(authorizationToken)
                 .flatMap(userId -> Flux.fromIterable(scope)
-                        .flatMap(element -> brokerService.getCredentialByCredentialTypeAndUserId(processId, element, userId)
-                                .flatMap(dataService::getUserVCsInJson))
+                        .flatMap(element -> {
+                            // Verificar si el elemento es igual a LEAR_CREDENTIAL_EMPLOYEE_SCOPE
+                            String credentialType = element.equals(LEAR_CREDENTIAL_EMPLOYEE_SCOPE)
+                                    ? "LEARCredentialEmployee" // Cambia a lo que sea necesario
+                                    : element;
+
+                            // Llamar al brokerService con el tipo de credencial adecuado
+                            return brokerService.getCredentialByCredentialTypeAndUserId(processId, credentialType, userId)
+                                    .flatMap(dataService::getUserVCsInJson);
+                        })
                         .collectList()  // This will collect all lists into a single list
                         .flatMap(lists -> {
                             List<CredentialsBasicInfo> allCredentials = new ArrayList<>();
@@ -61,11 +67,11 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                 );
     }
 
-
-    private Mono<VcSelectorRequest> buildSelectableVCsRequest(AuthorizationRequest authorizationRequest, List<CredentialsBasicInfo> selectableVCs) {
+    private Mono<VcSelectorRequest> buildSelectableVCsRequest(AuthorizationRequestOIDC4VP authorizationRequestOIDC4VP, List<CredentialsBasicInfo> selectableVCs) {
         return Mono.fromCallable(() -> VcSelectorRequest.builder()
-                .redirectUri(authorizationRequest.redirectUri())
-                .state(authorizationRequest.state())
+                .redirectUri(authorizationRequestOIDC4VP.responseUri())
+                .state(authorizationRequestOIDC4VP.state())
+                .nonce(authorizationRequestOIDC4VP.nonce())
                 .selectableVcList(selectableVCs)
                 .build());
     }
@@ -75,11 +81,10 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
         // Get the Verifiable Credentials which will be used for the Presentation from the Wallet Data Service
         return
                 // Create the Verifiable Presentation
-                generateNonce()
-                        .flatMap(nonce -> generateAudience()
-                                .flatMap(audience -> presentationService.createSignedVerifiablePresentation(processId, authorizationToken, vcSelectorResponse, nonce, audience)
-                                )
-                        )
+               generateAudience()
+                       .flatMap(audience -> presentationService.createSignedVerifiablePresentation(processId, authorizationToken, vcSelectorResponse, vcSelectorResponse.nonce(), audience)
+                       )
+
                 // Build the Authentication Response
                 // Send the Authentication Response to the Verifier
                 .flatMap(verifiablePresentation ->
@@ -93,19 +98,9 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                 .then();
     }
 
-    private static Mono<String> generateNonce() {
-        return Mono.fromCallable(() -> {
-            UUID randomUUID = UUID.randomUUID();
-            ByteBuffer byteBuffer = ByteBuffer.wrap(new byte[16]);
-            byteBuffer.putLong(randomUUID.getMostSignificantBits());
-            byteBuffer.putLong(randomUUID.getLeastSignificantBits());
-            byte[] uuidBytes = byteBuffer.array();
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(uuidBytes);
-        });
-    }
 
     private static Mono<String> generateAudience() {
-        return Mono.just("vpWeb");
+        return Mono.just("https://self-issued.me/v2");
     }
 
 }

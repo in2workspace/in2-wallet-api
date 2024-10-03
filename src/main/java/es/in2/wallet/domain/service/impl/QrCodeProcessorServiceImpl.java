@@ -3,7 +3,6 @@ package es.in2.wallet.domain.service.impl;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceEbsiWorkflow;
 import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
-import es.in2.wallet.application.workflow.presentation.AttestationExchangeDOMEWorkflow;
 import es.in2.wallet.domain.exception.NoSuchQrContentException;
 import es.in2.wallet.domain.model.QrType;
 import es.in2.wallet.domain.service.QrCodeProcessorService;
@@ -23,8 +22,6 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
     private final CredentialIssuanceCommonWorkflow credentialIssuanceCommonWorkflow;
     private final CredentialIssuanceEbsiWorkflow credentialIssuanceEbsiWorkflow;
     private final AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
-    private final AttestationExchangeDOMEWorkflow attestationExchangeDOMEWorkflow;
-
     @Override
     public Mono<Object> processQrContent(String processId, String authorizationToken, String qrContent) {
         log.debug("ProcessID: {} - Processing QR content: {}", processId, qrContent);
@@ -44,16 +41,11 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
                                     .doOnError(e -> log.error("ProcessID: {} - Error while issuing credential: {}", processId, e.getMessage()));
                         }
                         case VP_TOKEN_AUTHENTICATION_REQUEST: {
-                            if (DOME_LOGIN_REQUEST_PATTERN.matcher(qrContent).matches()){
-                                log.info("ProcessID: {} - Processing an Authentication Request from DOME", processId);
-                                return attestationExchangeDOMEWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,qrContent);
-                            }
-                            else {
-                                log.info("ProcessID: {} - Processing a Verifiable Credential Login Request for common workflow", processId);
-                                return attestationExchangeCommonWorkflow.processAuthorizationRequest(processId, authorizationToken, qrContent)
-                                        .doOnSuccess(credential -> log.info("ProcessID: {} - Attestation Exchange", processId))
-                                        .doOnError(e -> log.error("ProcessID: {} - Error while processing Attestation Exchange: {}", processId, e.getMessage()));
-                            }
+                            log.info("ProcessID: {} - Processing a Verifiable Credential Login Request for common workflow", processId);
+                            return attestationExchangeCommonWorkflow.processAuthorizationRequest(processId, authorizationToken, qrContent)
+                                    .doOnSuccess(credential -> log.info("ProcessID: {} - Attestation Exchange", processId))
+                                    .doOnError(e -> log.error("ProcessID: {} - Error while processing Attestation Exchange: {}", processId, e.getMessage()));
+
                         }
                         case UNKNOWN: {
                             String errorMessage = "The received QR content cannot be processed";
@@ -69,7 +61,7 @@ public class QrCodeProcessorServiceImpl implements QrCodeProcessorService {
 
     private Mono<QrType> identifyQrContentType(String qrContent) {
         return Mono.fromSupplier(() -> {
-            if(VP_TOKEN_AUTHENTICATION_REQUEST_PATTERN.matcher(qrContent).matches()){
+            if(VP_TOKEN_AUTHENTICATION_REQUEST_PATTERN.matcher(qrContent).matches() || OPENID_VP_TOKEN_AUTHENTICATION_REQUEST_PATTERN.matcher(qrContent).matches()){
                 return VP_TOKEN_AUTHENTICATION_REQUEST;
             }
             else if (CREDENTIAL_OFFER_PATTERN.matcher(qrContent).matches()) {
