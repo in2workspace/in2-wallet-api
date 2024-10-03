@@ -1,5 +1,6 @@
 package es.in2.wallet.api.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.domain.model.AuthorizationRequestOIDC4VP;
 import es.in2.wallet.domain.service.impl.AuthorizationRequestServiceImpl;
@@ -123,15 +124,18 @@ class AuthorizationRequestOIDC4VPServiceImplTest {
     }
 
     @Test
-    void getAuthorizationRequestFromJwtAuthorizationRequestWithoutClaimTest() {
+    void getAuthorizationRequestFromJwtAuthorizationRequestWithExceptionTest() throws Exception {
         String processId = "123";
         String jwtAuthorizationRequestClaim = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+        when(objectMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("Error serializing") {});
 
-        Mono<AuthorizationRequestOIDC4VP> result = authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId,jwtAuthorizationRequestClaim);
+        Mono<AuthorizationRequestOIDC4VP> result = authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequestClaim);
 
+        // Verificación de que se lanza la excepción correctamente
         StepVerifier.create(result)
-                .expectError(RuntimeException.class)
+                .expectErrorMatches(throwable -> throwable instanceof RuntimeException &&
+                        throwable.getMessage().equals("Error while parsing Authorization Request"))
                 .verify();
-
     }
+
 }
