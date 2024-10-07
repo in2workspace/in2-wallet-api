@@ -37,7 +37,7 @@ class AuthorizationRequestOIDC4VPServiceImplTest {
     private AuthorizationRequestServiceImpl authorizationRequestService;
 
     @Test
-    void getAuthorizationRequestFromVcLoginRequestTest() {
+    void getAuthorizationRequestObjectFromUriTestRequestUri() {
             String processId = "123";
             String qrContent = "https://example/authentication-requests?request_uri=https://redirect.com";
 
@@ -59,6 +59,16 @@ class AuthorizationRequestOIDC4VPServiceImplTest {
             StepVerifier.create(authorizationRequestService.getJwtRequestObjectFromUri(processId,qrContent))
                     .expectNext("response")
                     .verifyComplete();
+
+    }
+    @Test
+    void getAuthorizationRequestObjectFromUriTestRequest() {
+        String processId = "123";
+        String qrContent = "https://example/authentication-requests?request=ey1234...";
+
+        StepVerifier.create(authorizationRequestService.getJwtRequestObjectFromUri(processId,qrContent))
+                .expectNext("ey1234...")
+                .verifyComplete();
 
     }
 
