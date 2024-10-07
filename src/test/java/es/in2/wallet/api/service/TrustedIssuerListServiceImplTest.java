@@ -1,5 +1,6 @@
 package es.in2.wallet.api.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.IssuerNotAuthorizedException;
@@ -90,7 +91,7 @@ class TrustedIssuerListServiceImplTest {
     @Test
     void testGetTrustedIssuerListData_404Error() {
         // Arrange
-        String id = "nonExistentIssuer";
+        String id = "1234";
         ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
         ClientResponse clientResponse = ClientResponse.create(HttpStatus.NOT_FOUND).build();
         when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
@@ -105,7 +106,29 @@ class TrustedIssuerListServiceImplTest {
         // Assert
         StepVerifier.create(result)
                 .expectErrorMatches(throwable -> throwable instanceof IssuerNotAuthorizedException &&
-                        throwable.getMessage().equals("Issuer with id: nonExistentIssuer not found."))
+                        throwable.getMessage().equals("Issuer with id: 1234 not found."))
+                .verify();
+    }
+
+    @Test
+    void testGetTrustedIssuerListData_403Error() {
+        // Arrange
+        String id = "1234";
+        ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+        ClientResponse clientResponse = ClientResponse.create(HttpStatus.FORBIDDEN).build();
+        when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+        WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+        when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+        when(trustedIssuerListProperties.uri()).thenReturn("https://example.com/issuers/");
+
+        // Act
+        Mono<List<IssuerCredentialsCapabilities>> result = trustedIssuerListService.getTrustedIssuerListData(id);
+
+        // Assert
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable -> throwable instanceof FailedCommunicationException &&
+                        throwable.getMessage().equals("Client error while fetching issuer data"))
                 .verify();
     }
 
@@ -159,5 +182,36 @@ class TrustedIssuerListServiceImplTest {
                         throwable.getMessage().contains("Error parsing JSON"))
                 .verify();
     }
+    @Test
+    void testGetTrustedIssuerListData_JsonProcessingException() throws Exception {
+        // Arrange
+        String id = "issuer123";
+        String responseBody = "{\"invalidJson\":}"; // JSON malformado para disparar la excepción
+
+        // Configurar el WebClient para devolver una respuesta exitosa con JSON malformado
+        ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+        ClientResponse clientResponse = ClientResponse.create(HttpStatus.OK)
+                .header("Content-Type", "application/json")
+                .body(responseBody)
+                .build();
+        when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+        WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
+        when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+        when(trustedIssuerListProperties.uri()).thenReturn("https://example.com/issuers/");
+
+        // Simular que ObjectMapper lanza una JsonProcessingException
+        when(objectMapper.readValue(responseBody, IssuerResponse.class)).thenThrow(new JsonProcessingException("Error parsing JSON") {});
+
+        // Act
+        Mono<List<IssuerCredentialsCapabilities>> result = trustedIssuerListService.getTrustedIssuerListData(id);
+
+        // Assert
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable -> throwable instanceof JsonReadingException &&
+                        throwable.getMessage().contains("Error mapping response to IssuerResponse"))
+                .verify();
+    }
+
 }
 

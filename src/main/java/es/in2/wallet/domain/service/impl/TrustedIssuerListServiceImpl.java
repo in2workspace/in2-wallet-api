@@ -1,5 +1,6 @@
 package es.in2.wallet.domain.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.domain.exception.FailedCommunicationException;
 import es.in2.wallet.domain.exception.IssuerNotAuthorizedException;
@@ -64,7 +65,7 @@ public class TrustedIssuerListServiceImpl implements TrustedIssuerListService {
                         return Flux.fromIterable(issuerResponse.attributes())
                                 .flatMap(this::decodeAndMapIssuerAttributeBody) // Use reactive sub-method
                                 .collectList(); // Collect all capabilities into a list
-                    } catch (IOException e) {
+                    } catch (JsonProcessingException e) {
                         log.error("Error mapping response to IssuerResponse: {}", e.getMessage());
                         return Mono.error(new JsonReadingException("Error mapping response to IssuerResponse"));
                     }
