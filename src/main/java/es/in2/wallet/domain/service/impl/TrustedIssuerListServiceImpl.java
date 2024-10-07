@@ -50,8 +50,8 @@ public class TrustedIssuerListServiceImpl implements TrustedIssuerListService {
                 .onStatus(
                         status -> status != null && status.is5xxServerError(),
                         response -> {
-                            log.error("Server error while fetching issuer data. Status code: {}", response.statusCode());
-                            return response.createException().flatMap(Mono::error);
+                            log.error("Client error while fetching issuer data. Status code: {}", response.statusCode());
+                            return Mono.error(new FailedCommunicationException("Client error while fetching issuer data"));
                         }
                 )
                 .bodyToMono(String.class)
