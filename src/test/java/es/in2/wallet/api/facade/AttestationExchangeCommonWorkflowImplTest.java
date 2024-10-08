@@ -3,7 +3,7 @@ package es.in2.wallet.api.facade;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import es.in2.wallet.application.port.BrokerService;
 import es.in2.wallet.application.workflow.presentation.impl.AttestationExchangeCommonWorkflowImpl;
-import es.in2.wallet.domain.model.AuthorizationRequest;
+import es.in2.wallet.domain.model.AuthorizationRequestOIDC4VP;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorRequest;
 import es.in2.wallet.domain.model.VcSelectorResponse;
@@ -22,8 +22,6 @@ import reactor.test.StepVerifier;
 import java.util.List;
 
 import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,14 +48,14 @@ class AttestationExchangeCommonWorkflowImplTest {
             String authorizationToken = "authToken";
             String qrContent = "qrContent";
             String jwtAuthorizationRequest = "authRequest";
-            AuthorizationRequest authorizationRequest = AuthorizationRequest.builder().scope(List.of("scope1")).redirectUri("redirectUri").state("state").build();
+            AuthorizationRequestOIDC4VP authorizationRequestOIDC4VP = AuthorizationRequestOIDC4VP.builder().scope(List.of("scope1")).responseUri("responseUri").state("state").build();
             CredentialsBasicInfo credentialsBasicInfo = CredentialsBasicInfo.builder().build();
-            VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder().redirectUri("redirectUri").state("state").selectableVcList(List.of(credentialsBasicInfo)).build();
-            when(authorizationRequestService.getAuthorizationRequestFromVcLoginRequest(processId, qrContent, authorizationToken)).thenReturn(Mono.just(jwtAuthorizationRequest));
+            VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder().redirectUri("responseUri").state("state").selectableVcList(List.of(credentialsBasicInfo)).build();
+            when(authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent)).thenReturn(Mono.just(jwtAuthorizationRequest));
             when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(jwtAuthorizationRequest));
-            when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestClaim(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(authorizationRequest));
+            when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(authorizationRequestOIDC4VP));
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(brokerService.getCredentialByCredentialTypeAndUserId(processId,authorizationRequest.scope().get(0),"userId")).thenReturn(Mono.just("credentialEntity"));
+            when(brokerService.getCredentialByCredentialTypeAndUserId(processId, authorizationRequestOIDC4VP.scope().get(0),"userId")).thenReturn(Mono.just("credentialEntity"));
             when(dataService.getUserVCsInJson("credentialEntity")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
 
             StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))
@@ -70,15 +68,16 @@ class AttestationExchangeCommonWorkflowImplTest {
     void buildVerifiablePresentationWithSelectedVCsTest() throws JsonProcessingException {
         String processId = "123";
         String authorizationToken = "authToken";
-        VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().build();
+        String nonce = "321";
+        VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().nonce(nonce).build();
         String verifiablePresentation = "vp";
 
         when(presentationService.createSignedVerifiablePresentation(
-                eq(processId),
-                eq(authorizationToken),
-                eq(vcSelectorResponse),
-                anyString(),
-                eq("vpWeb")
+                processId,
+                authorizationToken,
+                vcSelectorResponse,
+                nonce,
+                "https://self-issued.me/v2"
         )).thenReturn(Mono.just(verifiablePresentation));
         when(authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation, authorizationToken)).thenReturn(Mono.empty());
 

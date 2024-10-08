@@ -77,7 +77,7 @@ hashicorp:
     host: localhost
     port: 8201
     scheme: http
-    token: "1234"
+    token: 
 
 azure:
   app:
@@ -92,12 +92,12 @@ auth-server:
   external-url:
     scheme: "http"
     domain: "localhost"
-    port: "9099"
+    port: "7002"
     path: "/realms/wallet"
   internal-url:
     scheme: "http"
     domain: "localhost"
-    port: "9099"
+    port: "7002"
     path: "/realms/wallet"
   token-url:
     scheme: "http"
@@ -123,4 +123,7 @@ wallet-wda:
   urls:
     - scheme: http
       domain: localhost
-      port: 4200
+      port: 4202
+
+trustedIssuerList:
+  uri: "http://localhost:8082/v4/issuers/"

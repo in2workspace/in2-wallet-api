@@ -124,3 +124,6 @@ wallet-wda:
     - scheme: http
       domain: localhost
       port: 4200
+
+trustedIssuerList:
+  uri:

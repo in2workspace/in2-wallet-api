@@ -348,8 +348,14 @@ public class DataServiceImpl implements DataService {
     @Override
     public Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String credentialsJson) {
         try {
-            List<CredentialEntity> credentials = objectMapper.readValue(credentialsJson, new TypeReference<>() {
-            });
+            // Deserialize the JSON into a list of CredentialEntity objects
+            List<CredentialEntity> credentials = objectMapper.readValue(credentialsJson, new TypeReference<>() {});
+
+            // Check if the list is empty and throw an exception if it is
+            if (credentials.isEmpty()) {
+                log.error("Credential list is empty");
+                return Mono.error(new NoSuchVerifiableCredentialException("The credentials list is empty. Cannot proceed."));
+            }
 
             List<CredentialsBasicInfo> credentialsInfo = new ArrayList<>();
             for (CredentialEntity credential : credentials) {

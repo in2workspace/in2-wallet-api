@@ -1,7 +1,6 @@
 package es.in2.wallet.api.controller;
 
 import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
-import es.in2.wallet.application.workflow.presentation.AttestationExchangeDOMEWorkflow;
 import es.in2.wallet.application.workflow.presentation.AttestationExchangeTurnstileWorkflow;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.model.VcSelectorResponse;
@@ -24,8 +23,6 @@ class VerifiablePresentationControllerTest {
     private AttestationExchangeTurnstileWorkflow attestationExchangeTurnstileWorkflow;
     @Mock
     private AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
-    @Mock
-    private AttestationExchangeDOMEWorkflow attestationExchangeDOMEWorkflow;
     @InjectMocks
     private VerifiablePresentationController verifiablePresentationController;
 
@@ -36,26 +33,6 @@ class VerifiablePresentationControllerTest {
         VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().redirectUri("https://redirect.uri.com").build();
 
         when(attestationExchangeCommonWorkflow.buildVerifiablePresentationWithSelectedVCs(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
-                .thenReturn(Mono.empty());
-
-        WebTestClient
-                .bindToController(verifiablePresentationController)
-                .build()
-                .post()
-                .uri("/api/v1/vp")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorizationToken)
-                .bodyValue(vcSelectorResponse)
-                .exchange()
-                .expectStatus().isCreated();
-    }
-
-    @Test
-    void testCreateVerifiablePresentationDomeCase() {
-        // Arrange
-        String authorizationToken = "authToken";
-        VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().redirectUri("https://dome-marketplace.org").build();
-
-        when(attestationExchangeDOMEWorkflow.publishAuthorisationResponseWithSelectedVCs(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
                 .thenReturn(Mono.empty());
 
         WebTestClient
