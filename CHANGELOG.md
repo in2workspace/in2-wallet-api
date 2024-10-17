@@ -4,16 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.4.0]
-### Changed
-- Added sending of the signed VP using the ES256
-### Removed
-- Custom logic for the DOME verifier removed
-
 ## [v1.3.0]
 ### Added
 - Data models for new cases in credential response
 - Support for immediate(sync) issuance for DOME
+### Changed
+- Added sending of the signed VP using the ES256
+### Removed
+- Custom logic for the DOME verifier removed
 
 ## [v1.2.0](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.2.0) - 2024-05-22
 ### Added
