@@ -42,6 +42,17 @@ public class CredentialServiceImpl implements CredentialService {
     }
 
     @Override
+    public Mono<CredentialResponseWithStatus> getCredentialForDome(String jwt, TokenResponse tokenResponse, CredentialIssuerMetadata credentialIssuerMetadata, String format, List<String> types) {
+        String processId = MDC.get(PROCESS_ID);
+        // build CredentialRequest
+        return buildCredentialRequest(jwt,format,types)
+                .doOnSuccess(credentialRequest -> log.info("ProcessID: {} - CredentialRequest: {}", processId, credentialRequest))
+                // post CredentialRequest
+                .flatMap(credentialRequest -> postCredentialRequest(tokenResponse.accessToken(), credentialIssuerMetadata.credentialEndpoint(), credentialRequest))
+                .doOnSuccess(response -> log.info("ProcessID: {} - Credential Post Response: {}", processId, response.credentialResponse()));
+    }
+
+    @Override
     public Mono<CredentialResponse> getCredentialDomeDeferredCase(String transactionId, String accessToken, String deferredEndpoint) {
         String processId = MDC.get(PROCESS_ID);
         DeferredCredentialRequest deferredCredentialRequest = DeferredCredentialRequest.builder().transactionId(transactionId).build();
@@ -82,6 +93,7 @@ public class CredentialServiceImpl implements CredentialService {
             return Mono.error(new FailedDeserializingException("Error processing CredentialResponse: " + response));
         }
     }
+
 
     private Mono<CredentialResponse> handleDeferredCredential(String acceptanceToken, CredentialIssuerMetadata credentialIssuerMetadata) {
         // Logic to handle the deferred credential request using acceptanceToken
@@ -141,6 +153,31 @@ public class CredentialServiceImpl implements CredentialService {
                         } else {
                             log.info("Credential response retrieved: {}", response);
                             return response.bodyToMono(String.class);
+                        }
+                    });
+        } catch (Exception e) {
+            log.error("Error while serializing CredentialRequest: {}", e.getMessage());
+            return Mono.error(new FailedSerializingException("Error while serializing Credential Request"));
+        }
+    }
+
+    private Mono<CredentialResponseWithStatus> postCredentialRequest(String accessToken,
+                                                String credentialEndpoint,
+                                                Object credentialRequest) {
+        try {
+            return webClient.centralizedWebClient()
+                    .post()
+                    .uri(credentialEndpoint)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header(HttpHeaders.AUTHORIZATION, BEARER + accessToken)
+                    .bodyValue(objectMapper.writeValueAsString(credentialRequest))
+                    .exchangeToMono(response -> {
+                        if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                            return Mono.error(new RuntimeException("There was an error during the credential request, error" + response));
+                        } else {
+                            log.info("Credential response retrieved: {}", response);
+                            return response.bodyToMono(String.class)
+                                    .map(responseBody -> CredentialResponseWithStatus.builder().credentialResponse(responseBody).statusCode(response.statusCode()).build());
                         }
                     });
         } catch (Exception e) {

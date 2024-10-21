@@ -6,6 +6,7 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.domain.exception.JwtInvalidFormatException;
 import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.UVarInt;
+import es.in2.wallet.domain.service.TrustedIssuerListService;
 import es.in2.wallet.domain.service.VerifierValidationService;
 import io.ipfs.multibase.Base58;
 import lombok.RequiredArgsConstructor;
@@ -30,12 +31,13 @@ import static es.in2.wallet.domain.util.ApplicationConstants.*;
 @Service
 @RequiredArgsConstructor
 public class VerifierValidationServiceImpl implements VerifierValidationService {
+    private final TrustedIssuerListService trustedIssuerListService;
     @Override
     public Mono<String> verifyIssuerOfTheAuthorizationRequest(String processId, String jwtAuthorizationRequest) {
         // Parse the Authorization Request in JWT format
         return parseAuthorizationRequestInJwtFormat(processId, jwtAuthorizationRequest)
                 // Extract and verify client_id claim from the Authorization Request
-                .flatMap(signedJwt -> validateClientIdClaim(processId, signedJwt))
+                .flatMap(signedJwt -> validateVerifierClaims(processId, signedJwt))
                 .flatMap(signedJwt -> getEcPublicKey(processId, signedJwt)
                         // Verify the Authorization Request
                         .flatMap(publicKey -> verifySignedJwtWithPublicKey(processId, publicKey))
@@ -55,30 +57,34 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
                 .onErrorResume(e -> Mono.error(new JwtInvalidFormatException("Error parsing signed JWT " + e)));
     }
 
-    private Mono<SignedJWT> validateClientIdClaim(String processId, SignedJWT signedJWTAuthorizationRequest) {
+    private Mono<SignedJWT> validateVerifierClaims(String processId, SignedJWT signedJWTAuthorizationRequest) {
         Map<String, Object> jsonPayload = signedJWTAuthorizationRequest.getPayload().toJSONObject();
-        String iss = jsonPayload.get(ISSUER_TOKEN_PROPERTY_NAME).toString();
-        String sub = jsonPayload.get(ISSUER_SUB).toString();
+        String iss = jsonPayload.get(JWT_ISS_CLAIM).toString();
+        String scope = (String) jsonPayload.get(SCOPE_CLAIM);
+        String clientId = (String) jsonPayload.get("client_id");
+
         return Mono.fromCallable(() -> {
-                    String authenticationRequestClaim = jsonPayload.get("auth_request").toString();
-                    Pattern pattern = Pattern.compile("client_id=([^&]+)");
-                    Matcher matcher = pattern.matcher(authenticationRequestClaim);
-                    if (matcher.find()) {
-                        return matcher.group(1);
+                    if (clientId == null || clientId.isEmpty()) {
+                        throw new IllegalArgumentException("client_id not found in the auth_request");
                     }
-                    throw new IllegalArgumentException("client_id not found in the auth_request");
+                    return clientId;
                 })
-                .doOnSuccess(clientId -> log.info("ProcessID: {} - client_id retrieved successfully: {}", processId, clientId))
-                .flatMap(clientId -> {
-                    if (!clientId.equals(iss) || !iss.equals(sub)) {
-                        return Mono.error(new IllegalStateException("iss and sub MUST be the DID of the RP and must correspond to the " +
-                                "client_id parameter in the Authorization Request"));
+                .doOnSuccess(id -> log.info("ProcessID: {} - client_id retrieved successfully: {}", processId, id))
+                .flatMap(id -> {
+                    if (!id.equals(iss)) {
+                        return Mono.error(new IllegalStateException("iss and sub MUST be the DID of the RP and must correspond to the client_id parameter in the Authorization Request"));
                     } else {
-                        return Mono.just(signedJWTAuthorizationRequest);
+                        // Validación adicional basada en el scope
+                        if (LEAR_CREDENTIAL_EMPLOYEE_SCOPE.equals(scope)) {
+                            log.info("ProcessID: {} - LEAR_CREDENTIAL_EMPLOYEE_SCOPE detected, validating identity", processId);
+                            return trustedIssuerListService.getTrustedIssuerListData(clientId)
+                                    .thenReturn(signedJWTAuthorizationRequest);
+                        }
+                        return Mono.just(signedJWTAuthorizationRequest); // Continuar si no se necesita validación adicional
                     }
                 })
-                .doOnSuccess(clientId -> log.info("ProcessID: {} - client_id validated successfully: {}", processId, clientId))
-                .onErrorResume(e -> Mono.error(new ParseErrorException("Error parsing client_id" + e)));
+                .doOnSuccess(id -> log.info("ProcessID: {} - client_id and scope validated successfully: {}", processId, id))
+                .onErrorResume(e -> Mono.error(new ParseErrorException("Error parsing client_id or validating scope: " + e)));
     }
 
     private Mono<ECPublicKey> getEcPublicKey(String processId, SignedJWT signedJWTAuthorizationRequest) {

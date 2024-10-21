@@ -20,10 +20,7 @@ import reactor.core.publisher.Mono;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static es.in2.wallet.domain.util.ApplicationConstants.*;
@@ -47,26 +44,6 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                 .flatMap(presentationSubmissionString ->
                         postAuthorizationResponse(processId, vcSelectorResponse, verifiablePresentation,
                                 presentationSubmissionString, authorizationToken));
-    }
-
-    @Override
-    public Mono<Void> sendDomeAuthorizationResponse(String vpToken, VcSelectorResponse vcSelectorResponse) {
-        String body = "vp_token=" + vpToken;
-
-        String urlWithState = vcSelectorResponse.redirectUri() + "?state=" + vcSelectorResponse.state();
-        return webClient.centralizedWebClient()
-                .post()
-                .uri(urlWithState)
-                .header(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM)
-                .bodyValue(body)
-                .exchangeToMono(response -> {
-                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
-                        return Mono.error(new RuntimeException("There was an error during the DOME attestation exchange, error" + response));
-                    } else {
-                        log.info("DOME attestation exchange completed");
-                        return Mono.empty();
-                    }
-                });
     }
 
     private Mono<DescriptorMap> generateDescriptorMapping(String verifiablePresentationString) throws JsonProcessingException {
@@ -96,15 +73,26 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
 
     private Mono<VerifiablePresentation> parseVerifiablePresentationFromString(String verifiablePresentationString) throws JsonProcessingException {
         try {
-            JWT jwt = JWTParser.parse(verifiablePresentationString);
+            // Step 1: Decode the input string from Base64
+            byte[] decodedBytes = Base64.getDecoder().decode(verifiablePresentationString);
+            String decodedString = new String(decodedBytes, StandardCharsets.UTF_8);
+
+            // Step 2: Parse the decoded string as JWT
+            JWT jwt = JWTParser.parse(decodedString);
             JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
+
+            // Step 3: Extract the "vp" claim and convert it into VerifiablePresentation
             JsonNode rootNode = objectMapper.valueToTree(claimsSet.getClaim("vp"));
             VerifiablePresentation verifiablePresentation = objectMapper.treeToValue(rootNode, VerifiablePresentation.class);
+
             return Mono.just(verifiablePresentation);
         } catch (ParseException e) {
             return Mono.error(new FailedDeserializingException("Error while deserializing Verifiable Presentation: " + e));
+        } catch (IllegalArgumentException e) {
+            return Mono.error(new FailedDeserializingException("Error decoding Verifiable Presentation from Base64: " + e));
         }
     }
+
 
     private Mono<VerifiableCredential> parseVerifiableCredentialFromString(String verifiableCredentialString) throws JsonProcessingException {
         try {

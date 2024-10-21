@@ -6,10 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static es.in2.wallet.domain.util.ApplicationRegexPattern.DOME_REDIRECT_URI_PATTERN;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageUtilsTest {
@@ -30,14 +27,4 @@ class MessageUtilsTest {
         // Add assertions for other constants as well
     }
 
-    @Test
-    void testDomeRedirectUriPattern() {
-        // Test the DOME_REDIRECT_URI_PATTERN
-        Pattern domePattern = DOME_REDIRECT_URI_PATTERN;
-        Matcher matcher = domePattern.matcher("https://dome-marketplace.org/path");
-        assertTrue(matcher.find(), "URL should match DOME_REDIRECT_URI_PATTERN");
-
-        assertTrue(domePattern.matcher("https://another.dome-marketplace.org/other").find(),
-                "Another URL should match DOME_REDIRECT_URI_PATTERN");
-    }
 }

@@ -40,7 +40,9 @@ class GlobalExceptionHandlerTest {
                 NoSuchVerifiableCredentialException.class,
                 NoSuchTransactionException.class,
                 InvalidPinException.class,
-                CredentialNotAvailableException.class
+                CredentialNotAvailableException.class,
+                IssuerNotAuthorizedException.class
+
         ));
 
         List<String> messages = new ArrayList<>(Arrays.asList(
@@ -53,7 +55,8 @@ class GlobalExceptionHandlerTest {
                 "NoSuchVerifiableCredential",
                 "NoSuchTransaction",
                 "InvalidPin",
-                "CredentialNotAvailable"
+                "CredentialNotAvailable",
+                "IssuerNotAuthorizedException"
         ));
 
         List<BiFunction<Exception, ServerHttpRequest, Mono<GlobalErrorMessage>>> methods = new ArrayList<>(Arrays.asList(
@@ -66,7 +69,8 @@ class GlobalExceptionHandlerTest {
                 (ex, req) -> globalExceptionHandler.noSuchVerifiableCredentialException((NoSuchVerifiableCredentialException) ex, req),
                 (ex, req) -> globalExceptionHandler.noSuchTransactionException((NoSuchTransactionException) ex, req),
                 (ex, req) -> globalExceptionHandler.invalidPinException((InvalidPinException) ex, req),
-                (ex, req) -> globalExceptionHandler.credentialNotAvailableException((CredentialNotAvailableException) ex, req)
+                (ex, req) -> globalExceptionHandler.credentialNotAvailableException((CredentialNotAvailableException) ex, req),
+                (ex, req) -> globalExceptionHandler.issuerNotAuthorizedException((IssuerNotAuthorizedException) ex, req)
 
         ));
 
@@ -81,6 +85,7 @@ class GlobalExceptionHandlerTest {
         exceptionMethodNames.put(NoSuchTransactionException.class, "NoSuchTransactionException");
         exceptionMethodNames.put(InvalidPinException.class, "InvalidPinException");
         exceptionMethodNames.put(CredentialNotAvailableException.class, "CredentialNotAvailableException");
+        exceptionMethodNames.put(IssuerNotAuthorizedException.class, "IssuerNotAuthorizedException");
 
         return IntStream.range(0, classes.size())
                 .mapToObj(i -> Arguments.of(classes.get(i), messages.get(i), methods.get(i % methods.size()), exceptionMethodNames));

@@ -1,11 +1,10 @@
 package es.in2.wallet.domain.service;
 
-import es.in2.wallet.domain.model.AuthorizationRequest;
+import es.in2.wallet.domain.model.AuthorizationRequestOIDC4VP;
 import reactor.core.publisher.Mono;
 
 public interface AuthorizationRequestService {
-    Mono<String> getAuthorizationRequestFromVcLoginRequest(String processId, String qrContent, String authorizationToken);
+    Mono<String> getJwtRequestObjectFromUri(java.lang.String processId, java.lang.String qrContent);
 
-    Mono<AuthorizationRequest> getAuthorizationRequestFromJwtAuthorizationRequestClaim(String processId, String jwtAuthorizationRequestClaim);
-    Mono<AuthorizationRequest> getAuthorizationRequestFromAuthorizationRequestClaims(String processId, String authorizationRequestClaims);
+    Mono<AuthorizationRequestOIDC4VP> getAuthorizationRequestFromJwtAuthorizationRequestJWT(String processId, String jwtAuthorizationRequestClaim);
 }
