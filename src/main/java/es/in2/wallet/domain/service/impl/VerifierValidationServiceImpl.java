@@ -29,6 +29,7 @@ import static es.in2.wallet.domain.util.ApplicationConstants.JWT_ISS_CLAIM;
 @Service
 @RequiredArgsConstructor
 public class VerifierValidationServiceImpl implements VerifierValidationService {
+    
     @Override
     public Mono<String> verifyIssuerOfTheAuthorizationRequest(String processId, String jwtAuthorizationRequest) {
         // Parse the Authorization Request in JWT format
@@ -58,7 +59,6 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
         Map<String, Object> jsonPayload = signedJWTAuthorizationRequest.getPayload().toJSONObject();
         String iss = jsonPayload.get(JWT_ISS_CLAIM).toString();
         String clientId = (String) jsonPayload.get("client_id");
-
         return Mono.fromCallable(() -> {
                     if (clientId == null || clientId.isEmpty()) {
                         throw new IllegalArgumentException("client_id not found in the auth_request");
@@ -90,21 +90,15 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
         if (!didKey.startsWith(DID_KEY_PREFIX)) {
             throw new IllegalArgumentException("Invalid DID Key format");
         }
-
         String encodedMultiBase58 = didKey.substring(DID_KEY_PREFIX.length());
-
         int multiCodecKeyCodeForSecp256r1 = 0x1200;
-
         byte[] publicKey = decodeRawPublicKeyBytesFromMultibase58String(encodedMultiBase58, multiCodecKeyCodeForSecp256r1);
-
         return decodeKey(publicKey);
     }
 
     private byte[] decodeRawPublicKeyBytesFromMultibase58String(String encodedMultiBase58, int code) {
         UVarInt codeVarInt = new UVarInt(code);
-
         byte[] multiCodeAndRawKey = Base58.decode(encodedMultiBase58);
-
         return Arrays.copyOfRange(multiCodeAndRawKey, codeVarInt.getLength(), multiCodeAndRawKey.length);
     }
 
@@ -131,4 +125,5 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
             return Mono.error(new ParseErrorException("Error verifying Jwt with Public EcKey" + e));
         }
     }
+    
 }
