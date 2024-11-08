@@ -106,6 +106,22 @@ public class DataServiceImpl implements DataService {
                 });
     }
 
+    @Override
+    public Mono<String> saveSignedVC(String processId, String userId, SingleCredentialResponse credential) {
+        Map<String, CredentialAttribute> formatMap = new HashMap<>();
+        formatMap.put(JWT_VC, new CredentialAttribute(PROPERTY_TYPE, credential.credential()));
+
+        // Since only signed formats will be processed, the status is always VALID
+        CredentialStatus status = CredentialStatus.VALID;
+        // Build and save the credential entity based on the processed data
+        return buildAndSaveCredentialEntity(processId,formatMap, status, userId)
+                .doOnSuccess(entity -> log.info("Verifiable Credential saved successfully: {}", entity))
+                .onErrorResume(e -> {
+                    log.error("Error saving Verifiable Credential: {}", e.getMessage());
+                    return Mono.error(new RuntimeException("Error processing Verifiable Credential", e));
+                });
+    }
+
     private void processCredentialFormat(CredentialResponse credential, Map<String, CredentialAttribute> formatMap, List<String> errors) {
             switch (credential.format()) {
                 case JWT_VC, JWT_VC_JSON:
@@ -332,8 +348,14 @@ public class DataServiceImpl implements DataService {
     @Override
     public Mono<List<CredentialsBasicInfo>> getUserVCsInJson(String credentialsJson) {
         try {
-            List<CredentialEntity> credentials = objectMapper.readValue(credentialsJson, new TypeReference<>() {
-            });
+            // Deserialize the JSON into a list of CredentialEntity objects
+            List<CredentialEntity> credentials = objectMapper.readValue(credentialsJson, new TypeReference<>() {});
+
+            // Check if the list is empty and throw an exception if it is
+            if (credentials.isEmpty()) {
+                log.error("Credential list is empty");
+                return Mono.error(new NoSuchVerifiableCredentialException("The credentials list is empty. Cannot proceed."));
+            }
 
             List<CredentialsBasicInfo> credentialsInfo = new ArrayList<>();
             for (CredentialEntity credential : credentials) {

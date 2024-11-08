@@ -32,8 +32,8 @@ public class ApplicationConstants {
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String CONTENT_TYPE_APPLICATION_JSON = "application/json";
     public static final String CONTENT_TYPE_URL_ENCODED_FORM = "application/x-www-form-urlencoded";
-    public static final String ISSUER_TOKEN_PROPERTY_NAME = "iss";
-    public static final String ISSUER_SUB = "sub";
+    public static final String JWT_ISS_CLAIM = "iss";
+    public static final String SCOPE_CLAIM = "scope";
     public static final String VC_JWT = "jwt_vc";
     public static final String VC_JSON = "json_vc";
     public static final String VC_CWT = "cwt_vc";
@@ -51,6 +51,5 @@ public class ApplicationConstants {
     public static final String ALLOWED_METHODS = "*";
     public static final String GLOBAL_ENDPOINTS_API = "/api/v1/**";
     public static final String ISO_8601_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ssX";
-    public static final List<String> DEFAULT_VC_TYPES_FOR_DOME_VERIFIER = List.of("LegalPersonCredential","LEARCredentialEmployee");
-    public static final List<String> DEFAULT_SCOPE_FOR_DOME_VERIFIER = List.of("didRead", "defaultScope");
+    public static final String LEAR_CREDENTIAL_EMPLOYEE_SCOPE = "dome.credentials.presentation.LEARCredentialEmployee";
 }
