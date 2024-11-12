@@ -5,11 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [v1.3.2]
-### Added
-- Some logs
-- New attribute 'validUntil' into VerifiableCredential model
+### Fixed
+- LEARCredentialEmployee adapted to W3C DATA MODEL v2.0
 ### Removed
-- Eliminated validation of the verifier identity on the OPENID4VP
+- Delete Relying Party validation on OID4VP flow.
 
 ## [v1.3.1]
 ### Fixed
