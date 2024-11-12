@@ -73,23 +73,63 @@ public class PresentationServiceImpl implements PresentationService {
     }
 
     private Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken,String nonce, String audience, List<CredentialsBasicInfo> selectedVcList, String format) {
-        return  getUserIdFromToken(authorizationToken)
-                        .flatMap(userId -> getVerifiableCredentials(processId,userId,selectedVcList, VC_JWT)
-                            .flatMap(verifiableCredentialsListJWT -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsListJWT)
-                                    .flatMap(did -> getVerifiableCredentials(processId,userId,selectedVcList, format)
-                                            .flatMap(verifiableCredentialsList -> // Create the unsigned verifiable presentation
-                                                    createUnsignedPresentationForSigning(verifiableCredentialsList, did,nonce,audience)
-                                                            .flatMap(document -> signerService.buildJWTSFromJsonNode(document,did,"vp"))
-                                                            .flatMap(this::encodePresentation))
-                                    )
-                            )
-                            // Log success
-                            .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
-                            // Handle errors
-                            .onErrorResume(e -> {
-                                log.error("Error in creating Verifiable Presentation: ", e);
-                                return Mono.error(e);
-                            })
+        log.info("Starting to create Signed Verifiable Presentation for processId: {}", processId);
+
+        // Step 1: Get User ID from the authorization token
+        return getUserIdFromToken(authorizationToken)
+                .doOnSubscribe(subscription -> log.debug("Getting user ID from the authorization token for processId: {}", processId))
+                .flatMap(userId -> {
+                            log.debug("User ID obtained successfully for processId: {}", processId);
+
+                            // Step 2: Get Verifiable Credentials in JWT format
+                            return getVerifiableCredentials(processId,userId,selectedVcList, VC_JWT)
+                                    .doOnSubscribe(sub -> log.debug("Fetching Verifiable Credentials in JWT format for processId: {}", processId))
+                                    .flatMap(verifiableCredentialsListJWT -> {
+                                                log.debug("Successfully fetched Verifiable Credentials in JWT format for processId: {}", processId);
+
+                                                // Step 3: Extract DID from the first Verifiable Credential
+                                                return getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsListJWT)
+                                                        .doOnSubscribe(sub -> log.debug("Extracting DID from the first Verifiable Credential for processId: {}", processId))
+                                                        .flatMap(did -> {
+                                                                    log.debug("Successfully extracted DID for processId: {}", processId);
+
+                                                                    // Step 4: Get Verifiable Credentials in the selected format
+                                                                    return getVerifiableCredentials(processId,userId,selectedVcList, format)
+                                                                            .doOnSubscribe(sub -> log.debug("Fetching Verifiable Credentials in {} format for processId: {}", format, processId))
+                                                                            .flatMap(verifiableCredentialsList -> // Create the unsigned verifiable presentation
+                                                                                    {
+                                                                                        log.debug("Successfully fetched Verifiable Credentials in {} format for processId: {}", format, processId);
+
+                                                                                        // Step 5: Create unsigned Verifiable Presentation for signing
+                                                                                        return createUnsignedPresentationForSigning(verifiableCredentialsList, did,nonce,audience)
+                                                                                                .doOnSubscribe(sub -> log.debug("Creating unsigned Verifiable Presentation for processId: {}", processId))
+                                                                                                .flatMap(document -> {
+                                                                                                    log.debug("Successfully created unsigned Verifiable Presentation for processId: {}", processId);
+
+                                                                                                    // Step 6: Build JWT for Verifiable Presentation
+                                                                                                    return signerService.buildJWTSFromJsonNode(document, did, "vp")
+                                                                                                            .doOnSubscribe(sub -> log.debug("Building JWT for Verifiable Presentation for processId: {}", processId))
+                                                                                                            .flatMap(jwt -> {
+                                                                                                                log.debug("Successfully built JWT for Verifiable Presentation for processId: {}", processId);
+
+                                                                                                                // Step 7: Encode the presentation
+                                                                                                                return encodePresentation(jwt)
+                                                                                                                        .doOnSubscribe(sub -> log.debug("Encoding Verifiable Presentation for processId: {}", processId))
+                                                                                                                        .doOnSuccess(encodedPresentation -> log.info("ProcessID: {} - Verifiable Presentation created successfully: {}", processId, encodedPresentation))
+                                                                                                                        .doOnError(error -> log.error("Error occurred while encoding Verifiable Presentation for processId: {}: {}", processId, error.getMessage()));
+                                                                                                            });
+                                                                                                });
+                                                                                    });
+                                                                }
+                                                                );
+                                            }
+                                            )
+                                            // Handle errors
+                                            .onErrorResume(e -> {
+                                                log.warn("Error in creating Verifiable Presentation: ", e);
+                                                return Mono.error(e);
+                                            });
+                        }
                         );
     }
 
@@ -103,7 +143,7 @@ public class PresentationServiceImpl implements PresentationService {
                         .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - DOME Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
                         // Handle errors
                         .onErrorResume(e -> {
-                            log.error("Error in creating Verifiable Presentation: ", e);
+                            log.warn("Error in creating Verifiable Presentation: ", e);
                             return Mono.error(e);
                         });
     }
