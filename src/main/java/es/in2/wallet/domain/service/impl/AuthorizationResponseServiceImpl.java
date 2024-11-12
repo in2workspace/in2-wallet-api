@@ -7,6 +7,7 @@ import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
+import es.in2.wallet.domain.exception.FailedSerializingException;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.AuthorizationResponseService;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
@@ -37,18 +38,25 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
     private final WebClientConfig webClient;
 
     @Override
-    public Mono<String> buildAndPostAuthorizationResponseWithVerifiablePresentation(String processId, VcSelectorResponse vcSelectorResponse, String verifiablePresentation, String authorizationToken) throws JsonProcessingException {
+    public Mono<String> buildAndPostAuthorizationResponseWithVerifiablePresentation(String processId, VcSelectorResponse vcSelectorResponse, String verifiablePresentation, String authorizationToken) {
+        log.info("Starting to build and post Authorization Response for processId: {}", processId);
         return generateDescriptorMapping(verifiablePresentation)
+                .doOnSuccess(descriptorMapping -> log.debug("Successfully generated descriptor mapping for processId: {}", processId))
                 .flatMap(descriptorMapping ->
                         getPresentationSubmissionAsString(processId, descriptorMapping))
+                .doOnSuccess(submissionString -> log.debug("Successfully obtained Presentation Submission string for processId: {}", processId))
                 .flatMap(presentationSubmissionString ->
                         postAuthorizationResponse(processId, vcSelectorResponse, verifiablePresentation,
-                                presentationSubmissionString, authorizationToken));
+                                presentationSubmissionString, authorizationToken))
+                .doOnSuccess(response -> log.info("Successfully posted Authorization Response for processId: {}", processId))
+                .doOnError(e -> log.warn("Error posting Authorization Response for processId: {}: {}", processId, e.getMessage()));
     }
 
-    private Mono<DescriptorMap> generateDescriptorMapping(String verifiablePresentationString) throws JsonProcessingException {
+    private Mono<DescriptorMap> generateDescriptorMapping(String verifiablePresentationString) {
+        log.info("Starting to generate descriptor mapping for Verifiable Presentation.");
         // Parse the Verifiable Presentation
         return parseVerifiablePresentationFromString(verifiablePresentationString)
+                .doOnSuccess(verifiablePresentation -> log.debug("Successfully parsed Verifiable Presentation: {}", verifiablePresentation))
                 .flatMap(verifiablePresentation ->
                         // Process each Verifiable Credential in the Verifiable Presentation
                         Flux.fromIterable(Objects.requireNonNull(verifiablePresentation.verifiableCredential()))
@@ -56,14 +64,10 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                                 .flatMap(indexed -> {
                                     String credential = indexed.getT2();
                                     Long index = indexed.getT1();
-                                    try {
-                                        return parseVerifiableCredentialFromString(credential)
-                                                .map(verifiableCredential ->
-                                                        new DescriptorMap(JWT_VC, "$.verifiableCredential[" + index + "]", verifiableCredential.id(), null)
-                                                );
-                                    } catch (JsonProcessingException e) {
-                                        return Mono.error(new FailedDeserializingException("Error while deserializing Verifiable Credential: " + e));
-                                    }
+                                    return parseVerifiableCredentialFromString(credential)
+                                            .map(verifiableCredential ->
+                                                    new DescriptorMap(JWT_VC, "$.verifiableCredential[" + index + "]", verifiableCredential.id(), null)
+                                            );
                                 })
                                 .collectList()  // Collect DescriptorMappings into a List
                                 .flatMap(list -> buildDescriptorMapping(list, verifiablePresentation.id())) // Build the final DescriptorMapping
@@ -71,7 +75,8 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
 
     }
 
-    private Mono<VerifiablePresentation> parseVerifiablePresentationFromString(String verifiablePresentationString) throws JsonProcessingException {
+    private Mono<VerifiablePresentation> parseVerifiablePresentationFromString(String verifiablePresentationString) {
+        log.debug("AuthorizationResponseServiceImpl -- parseVerifiablePresentationFromString -- Starting to parse Verifiable Presentation from string.");
         try {
             // Step 1: Decode the input string from Base64
             byte[] decodedBytes = Base64.getDecoder().decode(verifiablePresentationString);
@@ -85,16 +90,23 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
             JsonNode rootNode = objectMapper.valueToTree(claimsSet.getClaim("vp"));
             VerifiablePresentation verifiablePresentation = objectMapper.treeToValue(rootNode, VerifiablePresentation.class);
 
+            log.debug("AuthorizationResponseServiceImpl -- parseVerifiablePresentationFromString -- Successfully parsed Verifiable Presentation from string.");
             return Mono.just(verifiablePresentation);
         } catch (ParseException e) {
+            log.warn("ParseException -- parseVerifiablePresentationFromString -- Error while deserializing Verifiable Presentation: {}", e.getMessage());
             return Mono.error(new FailedDeserializingException("Error while deserializing Verifiable Presentation: " + e));
         } catch (IllegalArgumentException e) {
+            log.warn("IllegalArgumentException -- parseVerifiablePresentationFromString -- Error decoding Verifiable Presentation from Base64: {}", e.getMessage());
             return Mono.error(new FailedDeserializingException("Error decoding Verifiable Presentation from Base64: " + e));
+        } catch (JsonProcessingException e) {
+            log.warn("JsonProcessingException -- parseVerifiablePresentationFromString -- Error serializing Verifiable Presentation:  {}", e.getMessage());
+            return Mono.error(new FailedSerializingException("Error serializing Verifiable Presentation: " + e));
         }
     }
 
 
-    private Mono<VerifiableCredential> parseVerifiableCredentialFromString(String verifiableCredentialString) throws JsonProcessingException {
+    private Mono<VerifiableCredential> parseVerifiableCredentialFromString(String verifiableCredentialString) {
+        log.debug("AuthorizationResponseServiceImpl -- parseVerifiableCredentialFromString -- Starting to parse Verifiable Credential from string.");
         try {
             JWT jwt = JWTParser.parse(verifiableCredentialString);
             JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
@@ -102,13 +114,19 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
             VerifiableCredential verifiableCredential = objectMapper.treeToValue(rootNode, VerifiableCredential.class);
             return Mono.just(verifiableCredential);
         } catch (ParseException e) {
-            return Mono.error(new FailedDeserializingException("Error while deserializing Verifiable Credential: " + e));
+            log.warn("ParseException -- parseVerifiableCredentialFromString -- Error while deserializing Verifiable Credential: {}", e.getMessage());
+            return Mono.error(new FailedDeserializingException("Error deserializing Verifiable Credential"));
+        } catch (JsonProcessingException e) {
+            log.warn("JsonProcessingException -- parseVerifiableCredentialFromString -- Error while serializing Verifiable Credential: {}", e.getMessage());
+            return Mono.error(new FailedSerializingException("Error serializing Verifiable Credential"));
         }
     }
 
     private Mono<DescriptorMap> buildDescriptorMapping(List<DescriptorMap> descriptorMappingList, String verifiablePresentationId) {
+        log.debug("AuthorizationResponseServiceImpl -- buildDescriptorMapping -- Building Descriptor Mapping for Verifiable Presentation ID: {}", verifiablePresentationId);
         // Check if the list is empty
         if (descriptorMappingList == null || descriptorMappingList.isEmpty()) {
+            log.warn("No DescriptorMappings found for Verifiable Presentation ID: {}", verifiablePresentationId);
             return Mono.empty();
         }
         // If the list has only one element, just return it
@@ -119,10 +137,12 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
             result = result.flatMap(credentialDescriptorMap ->
                     addCredentialDescriptorMap(credentialDescriptorMap, tmpCredentialDescriptorMap));
         }
+        log.debug("AuthorizationResponseServiceImpl -- buildDescriptorMapping -- Successfully built Descriptor Mapping for Verifiable Presentation ID: {}", verifiablePresentationId);
         return result.map(finalMap -> new DescriptorMap(JWT_VP, "$", verifiablePresentationId, finalMap));
     }
 
     private Mono<String> getPresentationSubmissionAsString(String processId, DescriptorMap descriptorMapping) {
+        log.debug("AuthorizationResponseServiceImpl -- getPresentationSubmissionAsString -- Generating PresentationSubmission as String for processId: {}", processId);
         return Mono.fromCallable(() -> {
                     PresentationSubmission presentationSubmission = new PresentationSubmission(
                             CUSTOMER_PRESENTATION_SUBMISSION,
@@ -134,7 +154,7 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                 .doOnSuccess(presentationSubmissionString ->
                         log.info("ProcessID: {} - PresentationSubmission: {}", processId, presentationSubmissionString))
                 .onErrorResume(e -> {
-                    log.error("ProcessID: {} - Error parsing PresentationSubmission to String: {}", processId, e.getMessage());
+                    log.warn("ProcessID: {} - Error parsing PresentationSubmission to String: {}", processId, e.getMessage());
                     return Mono.error(new RuntimeException("Error parsing PresentationSubmission", e));
                 });
     }
@@ -167,6 +187,8 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
 
     private Mono<String> postAuthorizationResponse(String processId, VcSelectorResponse vcSelectorResponse,
                                                    String verifiablePresentation, String presentationSubmissionString, String authorizationToken) {
+        log.info("Posting Authorization Response for processId: {}", processId);
+
         // Build URL encoded form data request body
         Map<String, String> formDataMap = Map.of(
                 "state", vcSelectorResponse.state(),
@@ -185,8 +207,10 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                 .bodyValue(xWwwFormUrlencodedBody)
                 .exchangeToMono(response -> {
                     if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        log.warn("ProcessID: {} - Error during attestation exchange, status: {}: Error: {}", processId, response.statusCode(), response);
                         return Mono.error(new RuntimeException("There was an error during the attestation exchange, error" + response));
                     } else if (response.statusCode().is3xxRedirection()) {
+                        log.info("ProcessID: {} - Redirection to: {}", processId, response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION));
                         return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
                     } else {
                         log.info("ProcessID: {} - Authorization Response: {}", processId, response);

@@ -78,24 +78,29 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
 
     @Override
     public Mono<Void> buildVerifiablePresentationWithSelectedVCs(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse) {
+        log.info("Starting to build Verifiable Presentation for processId: {}", processId);
         // Get the Verifiable Credentials which will be used for the Presentation from the Wallet Data Service
         return
                 // Create the Verifiable Presentation
                generateAudience()
-                       .flatMap(audience -> presentationService.createSignedVerifiablePresentation(processId, authorizationToken, vcSelectorResponse, vcSelectorResponse.nonce(), audience)
-                       )
+                       .doOnSubscribe(subscription -> log.debug("Fetching audience for processId: {}", processId))
+                       .flatMap(audience -> {
+                           log.info("Audience generated for processId: {}", processId);
+                           return presentationService.createSignedVerifiablePresentation(processId, authorizationToken, vcSelectorResponse, vcSelectorResponse.nonce(), audience);
+                       })
+                       .doOnSuccess(verifiablePresentation -> log.debug("Successfully created Verifiable Presentation for processId: {}", processId))
+                       .doOnError(error -> log.warn("Error occurred while creating Verifiable Presentation for processId: {}: {}", processId, error.getMessage()))
+                       // Build the Authentication Response
+                       // Send the Authentication Response to the Verifier
+                       .flatMap(verifiablePresentation -> {
+                           log.info("Sending Authentication Response with Verifiable Presentation for processId: {}", processId);
+                           return authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation, authorizationToken);
+                       })
+                       .doOnSuccess(aVoid -> log.debug("Successfully sent Authorization Response for processId: {}", processId))
+                       .doOnError(error -> log.warn("Error occurred while sending Authorization Response for processId: {}: {}", processId, error.getMessage()))
+                       .then()
+                       .doOnTerminate(() -> log.info("Completed processing Verifiable Presentation for processId: {}", processId));
 
-                // Build the Authentication Response
-                // Send the Authentication Response to the Verifier
-                .flatMap(verifiablePresentation ->
-                {
-                    try {
-                        return authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation, authorizationToken);
-                    } catch (JsonProcessingException e) {
-                        return Mono.error(new FailedDeserializingException("Error while deserializing Credential: " + e));
-                    }
-                })
-                .then();
     }
 
 

@@ -1,6 +1,5 @@
 package es.in2.wallet.application.workflow.presentation.impl;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import es.in2.wallet.application.workflow.presentation.AttestationExchangeTurnstileWorkflow;
 import es.in2.wallet.domain.model.CredentialsBasicInfo;
 import es.in2.wallet.domain.service.CborGenerationService;
@@ -9,9 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
-import java.text.ParseException;
-
 
 
 @Slf4j
@@ -26,13 +22,7 @@ public class AttestationExchangeTurnstileWorkflowImpl implements AttestationExch
         return generateAudience()
                 .flatMap(audience -> presentationService.createSignedVerifiablePresentation(processId, authorizationToken, credentialsBasicInfo, credentialsBasicInfo.id(), audience)
                 )
-                .flatMap(vp -> {
-                    try {
-                        return cborGenerationService.generateCbor(processId, vp);
-                    } catch (ParseException e) {
-                        return Mono.error(new JsonParseException("Error parsing the Verifiable Presentation"));
-                    }
-                });
+                .flatMap(vp -> cborGenerationService.generateCbor(processId, vp));
     }
 
     private static Mono<String> generateAudience() {

@@ -6,7 +6,6 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.domain.exception.JwtInvalidFormatException;
 import es.in2.wallet.domain.exception.ParseErrorException;
 import es.in2.wallet.domain.model.UVarInt;
-import es.in2.wallet.domain.service.TrustedIssuerListService;
 import es.in2.wallet.domain.service.VerifierValidationService;
 import io.ipfs.multibase.Base58;
 import lombok.RequiredArgsConstructor;
@@ -22,16 +21,15 @@ import reactor.core.publisher.Mono;
 import java.security.interfaces.ECPublicKey;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.*;
+import static es.in2.wallet.domain.util.ApplicationConstants.DID_KEY_PREFIX;
+import static es.in2.wallet.domain.util.ApplicationConstants.JWT_ISS_CLAIM;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class VerifierValidationServiceImpl implements VerifierValidationService {
-    private final TrustedIssuerListService trustedIssuerListService;
+    
     @Override
     public Mono<String> verifyIssuerOfTheAuthorizationRequest(String processId, String jwtAuthorizationRequest) {
         // Parse the Authorization Request in JWT format
@@ -60,9 +58,7 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
     private Mono<SignedJWT> validateVerifierClaims(String processId, SignedJWT signedJWTAuthorizationRequest) {
         Map<String, Object> jsonPayload = signedJWTAuthorizationRequest.getPayload().toJSONObject();
         String iss = jsonPayload.get(JWT_ISS_CLAIM).toString();
-        String scope = (String) jsonPayload.get(SCOPE_CLAIM);
         String clientId = (String) jsonPayload.get("client_id");
-
         return Mono.fromCallable(() -> {
                     if (clientId == null || clientId.isEmpty()) {
                         throw new IllegalArgumentException("client_id not found in the auth_request");
@@ -74,13 +70,7 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
                     if (!id.equals(iss)) {
                         return Mono.error(new IllegalStateException("iss and sub MUST be the DID of the RP and must correspond to the client_id parameter in the Authorization Request"));
                     } else {
-                        // Validación adicional basada en el scope
-                        if (LEAR_CREDENTIAL_EMPLOYEE_SCOPE.equals(scope)) {
-                            log.info("ProcessID: {} - LEAR_CREDENTIAL_EMPLOYEE_SCOPE detected, validating identity", processId);
-                            return trustedIssuerListService.getTrustedIssuerListData(clientId)
-                                    .thenReturn(signedJWTAuthorizationRequest);
-                        }
-                        return Mono.just(signedJWTAuthorizationRequest); // Continuar si no se necesita validación adicional
+                        return Mono.just(signedJWTAuthorizationRequest);
                     }
                 })
                 .doOnSuccess(id -> log.info("ProcessID: {} - client_id and scope validated successfully: {}", processId, id))
@@ -100,21 +90,15 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
         if (!didKey.startsWith(DID_KEY_PREFIX)) {
             throw new IllegalArgumentException("Invalid DID Key format");
         }
-
         String encodedMultiBase58 = didKey.substring(DID_KEY_PREFIX.length());
-
         int multiCodecKeyCodeForSecp256r1 = 0x1200;
-
         byte[] publicKey = decodeRawPublicKeyBytesFromMultibase58String(encodedMultiBase58, multiCodecKeyCodeForSecp256r1);
-
         return decodeKey(publicKey);
     }
 
     private byte[] decodeRawPublicKeyBytesFromMultibase58String(String encodedMultiBase58, int code) {
         UVarInt codeVarInt = new UVarInt(code);
-
         byte[] multiCodeAndRawKey = Base58.decode(encodedMultiBase58);
-
         return Arrays.copyOfRange(multiCodeAndRawKey, codeVarInt.getLength(), multiCodeAndRawKey.length);
     }
 
@@ -141,4 +125,5 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
             return Mono.error(new ParseErrorException("Error verifying Jwt with Public EcKey" + e));
         }
     }
+    
 }
