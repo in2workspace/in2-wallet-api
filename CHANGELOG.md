@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Some logs
 - New attribute 'validUntil' into VerifiableCredential model
+### Removed
+- Eliminated validation of the verifier identity on the OPENID4VP
 
 ## [v1.3.1]
 ### Fixed
