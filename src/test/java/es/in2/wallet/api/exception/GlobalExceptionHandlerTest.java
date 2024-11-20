@@ -60,9 +60,9 @@ class GlobalExceptionHandlerTest {
                 "InvalidPin",
                 "CredentialNotAvailable",
                 "IssuerNotAuthorizedException",
-                "AttestationUnauthorizedException",
-                "AttestationClientErrorException",
-                "AttestationServerErrorException"
+                "Attestation Unauthorized Response",
+                "Attestation Client Error",
+                "Attestation Server Error"
         ));
 
         List<BiFunction<Exception, ServerHttpRequest, Mono<GlobalErrorMessage>>> methods = new ArrayList<>(Arrays.asList(
@@ -95,9 +95,9 @@ class GlobalExceptionHandlerTest {
         exceptionMethodNames.put(InvalidPinException.class, "InvalidPinException");
         exceptionMethodNames.put(CredentialNotAvailableException.class, "CredentialNotAvailableException");
         exceptionMethodNames.put(IssuerNotAuthorizedException.class, "IssuerNotAuthorizedException");
-        exceptionMethodNames.put(AttestationUnauthorizedException.class, "AttestationUnauthorizedException");
-        exceptionMethodNames.put(AttestationClientErrorException.class, "AttestationClientErrorException");
-        exceptionMethodNames.put(AttestationServerErrorException.class, "AttestationServerErrorException");
+        exceptionMethodNames.put(AttestationUnauthorizedException.class, "Attestation Unauthorized Response");
+        exceptionMethodNames.put(AttestationClientErrorException.class, "Attestation Client Error");
+        exceptionMethodNames.put(AttestationServerErrorException.class, "Attestation Server Error");
 
         return IntStream.range(0, classes.size())
                 .mapToObj(i -> Arguments.of(classes.get(i), messages.get(i), methods.get(i % methods.size()), exceptionMethodNames));

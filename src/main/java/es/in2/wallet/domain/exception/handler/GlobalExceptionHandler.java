@@ -151,7 +151,7 @@ public class GlobalExceptionHandler {
     public Mono<GlobalErrorMessage> attestationUnauthorizedException(AttestationUnauthorizedException attestationUnauthorizedException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
-                .title("AttestationUnauthorizedException")
+                .title("Attestation Unauthorized Response")
                 .message(attestationUnauthorizedException.getMessage())
                 .path(path)
                 .build());
@@ -163,7 +163,7 @@ public class GlobalExceptionHandler {
     public Mono<GlobalErrorMessage> attestationClientErrorException(AttestationClientErrorException attestationClientErrorException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
-                .title("AttestationClientErrorException")
+                .title("Attestation Client Error")
                 .message(attestationClientErrorException.getMessage())
                 .path(path)
                 .build());
@@ -175,7 +175,7 @@ public class GlobalExceptionHandler {
     public Mono<GlobalErrorMessage> attestationServerErrorException(AttestationServerErrorException attestationServerErrorException, ServerHttpRequest request) {
         String path = String.valueOf(request.getPath());
         return Mono.just(GlobalErrorMessage.builder()
-                .title("AttestationServerErrorException")
+                .title("Attestation Server Error")
                 .message(attestationServerErrorException.getMessage())
                 .path(path)
                 .build());

@@ -208,14 +208,14 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                     if (response.statusCode().is4xxClientError()) {
                         if (response.statusCode().value() == 401) {
                             log.warn("ProcessID: {} - Unauthorized, status: 401: Error: {}", processId, response);
-                            return Mono.error(new AttestationUnauthorizedException("Unauthorized access error: " + response.statusCode()));
+                            return Mono.error(new AttestationUnauthorizedException("Attestation process returned an Unauthorized access error: " + response.statusCode()));
                         } else {
                             log.warn("ProcessID: {} - Client error, status: {}: Error: {}", processId, response.statusCode(), response);
-                            return Mono.error(new AttestationClientErrorException("Client error occurred: " + response.statusCode()));
+                            return Mono.error(new AttestationClientErrorException("Attestation process returned a Client error: " + response.statusCode()));
                         }
                     } else if (response.statusCode().is5xxServerError()) {
                         log.error("ProcessID: {} - Server error, status: {}: Error: {}", processId, response.statusCode(), response);
-                        return Mono.error(new AttestationServerErrorException("Server error occurred: " + response.statusCode()));
+                        return Mono.error(new AttestationServerErrorException("Attestation process returned a Server error: " + response.statusCode()));
                     } else if (response.statusCode().is3xxRedirection()) {
                         log.info("ProcessID: {} - Redirection to: {}", processId, response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION));
                         return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
