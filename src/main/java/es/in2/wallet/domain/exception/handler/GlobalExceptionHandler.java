@@ -144,4 +144,40 @@ public class GlobalExceptionHandler {
                 .path(path)
                 .build());
     }
+
+    @ExceptionHandler(AttestationUnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    public Mono<GlobalErrorMessage> attestationUnauthorizedException(AttestationUnauthorizedException attestationUnauthorizedException, ServerHttpRequest request) {
+        String path = String.valueOf(request.getPath());
+        return Mono.just(GlobalErrorMessage.builder()
+                .title("AttestationUnauthorizedException")
+                .message(attestationUnauthorizedException.getMessage())
+                .path(path)
+                .build());
+    }
+
+    @ExceptionHandler(AttestationClientErrorException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public Mono<GlobalErrorMessage> attestationClientErrorException(AttestationClientErrorException attestationClientErrorException, ServerHttpRequest request) {
+        String path = String.valueOf(request.getPath());
+        return Mono.just(GlobalErrorMessage.builder()
+                .title("AttestationClientErrorException")
+                .message(attestationClientErrorException.getMessage())
+                .path(path)
+                .build());
+    }
+
+    @ExceptionHandler(AttestationServerErrorException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
+    public Mono<GlobalErrorMessage> attestationServerErrorException(AttestationServerErrorException attestationServerErrorException, ServerHttpRequest request) {
+        String path = String.valueOf(request.getPath());
+        return Mono.just(GlobalErrorMessage.builder()
+                .title("AttestationServerErrorException")
+                .message(attestationServerErrorException.getMessage())
+                .path(path)
+                .build());
+    }
 }

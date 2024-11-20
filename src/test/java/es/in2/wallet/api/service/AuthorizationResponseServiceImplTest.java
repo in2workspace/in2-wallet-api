@@ -3,6 +3,8 @@ package es.in2.wallet.api.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import es.in2.wallet.domain.exception.AttestationClientErrorException;
+import es.in2.wallet.domain.exception.AttestationServerErrorException;
 import es.in2.wallet.domain.exception.FailedDeserializingException;
 import es.in2.wallet.domain.model.VcSelectorResponse;
 import es.in2.wallet.domain.model.VerifiableCredential;
@@ -166,7 +168,7 @@ class AuthorizationResponseServiceImplTest {
             when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
             StepVerifier.create(authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation, authorizationToken))
-                    .expectError(RuntimeException.class)
+                    .expectError(AttestationClientErrorException.class)
                     .verify();
         }
 
@@ -206,7 +208,7 @@ class AuthorizationResponseServiceImplTest {
             when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
             StepVerifier.create(authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation, authorizationToken))
-                    .expectError(RuntimeException.class)
+                    .expectError(AttestationServerErrorException.class)
                     .verify();
         }
 
@@ -284,7 +286,7 @@ class AuthorizationResponseServiceImplTest {
 
             when(objectMapper.writeValueAsString(any())).thenReturn(expectedPresentationSubmission);
             StepVerifier.create(authorizationResponseService.buildAndPostAuthorizationResponseWithVerifiablePresentation(processId, vcSelectorResponse, verifiablePresentation, authorizationToken))
-                    .expectError(RuntimeException.class)
+                    .expectError(AttestationClientErrorException.class)
                     .verify();
 
 

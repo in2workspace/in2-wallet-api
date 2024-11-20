@@ -6,8 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
-import es.in2.wallet.domain.exception.FailedDeserializingException;
-import es.in2.wallet.domain.exception.FailedSerializingException;
+import es.in2.wallet.domain.exception.*;
 import es.in2.wallet.domain.model.*;
 import es.in2.wallet.domain.service.AuthorizationResponseService;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
@@ -206,9 +205,17 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                 .header(HttpHeaders.AUTHORIZATION, BEARER + authorizationToken)
                 .bodyValue(xWwwFormUrlencodedBody)
                 .exchangeToMono(response -> {
-                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
-                        log.warn("ProcessID: {} - Error during attestation exchange, status: {}: Error: {}", processId, response.statusCode(), response);
-                        return Mono.error(new RuntimeException("There was an error during the attestation exchange, error" + response));
+                    if (response.statusCode().is4xxClientError()) {
+                        if (response.statusCode().value() == 401) {
+                            log.warn("ProcessID: {} - Unauthorized, status: 401: Error: {}", processId, response);
+                            return Mono.error(new AttestationUnauthorizedException("Unauthorized access error: " + response.statusCode()));
+                        } else {
+                            log.warn("ProcessID: {} - Client error, status: {}: Error: {}", processId, response.statusCode(), response);
+                            return Mono.error(new AttestationClientErrorException("Client error occurred: " + response.statusCode()));
+                        }
+                    } else if (response.statusCode().is5xxServerError()) {
+                        log.error("ProcessID: {} - Server error, status: {}: Error: {}", processId, response.statusCode(), response);
+                        return Mono.error(new AttestationServerErrorException("Server error occurred: " + response.statusCode()));
                     } else if (response.statusCode().is3xxRedirection()) {
                         log.info("ProcessID: {} - Redirection to: {}", processId, response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION));
                         return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));

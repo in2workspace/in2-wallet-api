@@ -41,7 +41,10 @@ class GlobalExceptionHandlerTest {
                 NoSuchTransactionException.class,
                 InvalidPinException.class,
                 CredentialNotAvailableException.class,
-                IssuerNotAuthorizedException.class
+                IssuerNotAuthorizedException.class,
+                AttestationUnauthorizedException.class,
+                AttestationClientErrorException.class,
+                AttestationServerErrorException.class
 
         ));
 
@@ -56,7 +59,10 @@ class GlobalExceptionHandlerTest {
                 "NoSuchTransaction",
                 "InvalidPin",
                 "CredentialNotAvailable",
-                "IssuerNotAuthorizedException"
+                "IssuerNotAuthorizedException",
+                "AttestationUnauthorizedException",
+                "AttestationClientErrorException",
+                "AttestationServerErrorException"
         ));
 
         List<BiFunction<Exception, ServerHttpRequest, Mono<GlobalErrorMessage>>> methods = new ArrayList<>(Arrays.asList(
@@ -70,7 +76,10 @@ class GlobalExceptionHandlerTest {
                 (ex, req) -> globalExceptionHandler.noSuchTransactionException((NoSuchTransactionException) ex, req),
                 (ex, req) -> globalExceptionHandler.invalidPinException((InvalidPinException) ex, req),
                 (ex, req) -> globalExceptionHandler.credentialNotAvailableException((CredentialNotAvailableException) ex, req),
-                (ex, req) -> globalExceptionHandler.issuerNotAuthorizedException((IssuerNotAuthorizedException) ex, req)
+                (ex, req) -> globalExceptionHandler.issuerNotAuthorizedException((IssuerNotAuthorizedException) ex, req),
+                (ex, req) -> globalExceptionHandler.attestationUnauthorizedException((AttestationUnauthorizedException) ex, req),
+                (ex, req) -> globalExceptionHandler.attestationClientErrorException((AttestationClientErrorException) ex, req),
+                (ex, req) -> globalExceptionHandler.attestationServerErrorException((AttestationServerErrorException) ex, req)
 
         ));
 
@@ -86,6 +95,9 @@ class GlobalExceptionHandlerTest {
         exceptionMethodNames.put(InvalidPinException.class, "InvalidPinException");
         exceptionMethodNames.put(CredentialNotAvailableException.class, "CredentialNotAvailableException");
         exceptionMethodNames.put(IssuerNotAuthorizedException.class, "IssuerNotAuthorizedException");
+        exceptionMethodNames.put(AttestationUnauthorizedException.class, "AttestationUnauthorizedException");
+        exceptionMethodNames.put(AttestationClientErrorException.class, "AttestationClientErrorException");
+        exceptionMethodNames.put(AttestationServerErrorException.class, "AttestationServerErrorException");
 
         return IntStream.range(0, classes.size())
                 .mapToObj(i -> Arguments.of(classes.get(i), messages.get(i), methods.get(i % methods.size()), exceptionMethodNames));
