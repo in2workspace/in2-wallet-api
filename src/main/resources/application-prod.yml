@@ -53,10 +53,9 @@ verifiable-presentation:
 
 wallet-wda:
   urls:
-    - scheme: https
-      domain: "your-wda-domain"
-      port: 443
-    - scheme: http
-      domain: localhost
-      port: 4200
-
+    - scheme: "https"
+      domain: "wallet.dome-marketplace-prd.org"
+    - scheme: "https"
+      domain: "wallet.dome-marketplace.org"
+    - scheme: "https"
+      domain: "wallet.dome-marketplace.eu"
