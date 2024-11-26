@@ -4,7 +4,8 @@ import java.util.List;
 
 public interface AppConfig {
 
-    List<String> getWalletDrivingUrls();
+    List<String> getCorsAllowedOrigins();
+
     String getJwtDecoder();
 
     String getAuthServerInternalUrl();

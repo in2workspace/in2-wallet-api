@@ -9,14 +9,13 @@ import java.util.Optional;
 /**
  * WalletDataProperties
  *
- * @param urls - list of wallet driving application url
+ * @param allowedOrigins - list of wallet driving application url
  */
-@ConfigurationProperties(prefix = "wallet-wda")
-public record WalletDrivingApplicationProperties(List<UrlProperties> urls) {
+@ConfigurationProperties(prefix = "cors")
+public record CorsProperties(List<String> allowedOrigins) {
 
     @ConstructorBinding
-    public WalletDrivingApplicationProperties(List<UrlProperties> urls) {
-        this.urls = Optional.ofNullable(urls).orElse(List.of());
+    public CorsProperties(List<String> allowedOrigins) {
+        this.allowedOrigins = Optional.ofNullable(allowedOrigins).orElse(List.of());
     }
-
 }
