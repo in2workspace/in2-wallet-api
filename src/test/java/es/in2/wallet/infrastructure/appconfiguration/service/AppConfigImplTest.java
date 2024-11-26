@@ -4,7 +4,7 @@ import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import es.in2.wallet.infrastructure.core.config.properties.AuthServerProperties;
 import es.in2.wallet.infrastructure.core.config.properties.UrlProperties;
 import es.in2.wallet.infrastructure.core.config.properties.VerifiablePresentationProperties;
-import es.in2.wallet.infrastructure.core.config.properties.WalletDrivingApplicationProperties;
+import es.in2.wallet.infrastructure.core.config.properties.CorsProperties;
 import es.in2.wallet.infrastructure.ebsi.config.properties.EbsiProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,9 +14,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -29,7 +32,7 @@ class AppConfigImplTest {
     @Mock
     private AuthServerProperties authServerProperties;
     @Mock
-    private WalletDrivingApplicationProperties walletDrivingApplicationProperties;
+    private CorsProperties corsProperties;
     @Mock
     private EbsiProperties ebsiProperties;
     @Mock
@@ -52,19 +55,55 @@ class AppConfigImplTest {
 
 
         // Initialize AppConfigImpl
-        appConfig = new AppConfigImpl(configAdapterFactory, authServerProperties, walletDrivingApplicationProperties, ebsiProperties, verifiablePresentationProperties);
+        appConfig = new AppConfigImpl(configAdapterFactory, authServerProperties, corsProperties, ebsiProperties, verifiablePresentationProperties);
         appConfig.init();
     }
 
     @Test
-    void testGetWalletDrivingUrls() {
-        when(walletDrivingApplicationProperties.urls()).thenReturn(List.of(
-                new UrlProperties("https", "localhost", 443, "/external"),
-                new UrlProperties("http", "localhost", 8080, "/external")
-        ));
+    void testGetCorsAllowedOrigins() {
+        when(corsProperties.allowedOrigins()).thenReturn(List.of(
+                "https://localhost:443/external",
+                "http://localhost:8080/external"));
+
         List<String> expectedUrls = Arrays.asList("https://localhost", "http://localhost:8080");
-        assertEquals(expectedUrls, appConfig.getWalletDrivingUrls());
+        assertThat(appConfig.getCorsAllowedOrigins()).isEqualTo(expectedUrls);
     }
+
+    @Test
+    void testGetCorsAllowedOriginsWithDefaultPort() {
+        when(corsProperties.allowedOrigins()).thenReturn(List.of("http://localhost/external"));
+
+        List<String> expectedUrls = List.of("http://localhost");
+        assertThat(appConfig.getCorsAllowedOrigins()).isEqualTo(expectedUrls);
+    }
+
+    @Test
+    void testGetCorsAllowedOriginsWithResolvedDomain() {
+        when(corsProperties.allowedOrigins()).thenReturn(List.of("https://example.com:8443/external"));
+        when(genericConfigAdapter.getConfiguration("example.com")).thenReturn("resolved-example.com");
+
+        List<String> expectedUrls = List.of("https://resolved-example.com:8443");
+        assertThat(appConfig.getCorsAllowedOrigins()).isEqualTo(expectedUrls);
+    }
+
+    @Test
+    void testGetCorsAllowedOriginsWithEmptyList() {
+        when(corsProperties.allowedOrigins()).thenReturn(List.of());
+
+        List<String> expectedUrls = List.of();
+        assertThat(appConfig.getCorsAllowedOrigins()).isEqualTo(expectedUrls);
+    }
+
+    @Test
+    void testGetCorsAllowedOriginsWithMalformedUrl() {
+        when(corsProperties.allowedOrigins()).thenReturn(List.of("ht!tp://invalid-url"));
+
+        assertThatThrownBy(() -> appConfig.getCorsAllowedOrigins())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid CORS URL")
+                .hasCauseInstanceOf(URISyntaxException.class);
+    }
+
 
     @Test
     void testGetAuthServerInternalUrl() {

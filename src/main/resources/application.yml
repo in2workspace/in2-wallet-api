@@ -119,8 +119,5 @@ ebsi:
     username: admin
     password: adminPass
 
-wallet-wda:
-  urls:
-    - scheme: http
-      domain: localhost
-      port: 4202
+cors:
+  allowedOrigins: "https://localhost:8081, https://localhost:8082"

@@ -5,12 +5,14 @@ import es.in2.wallet.application.port.AppConfig;
 import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import es.in2.wallet.infrastructure.core.config.properties.AuthServerProperties;
 import es.in2.wallet.infrastructure.core.config.properties.VerifiablePresentationProperties;
-import es.in2.wallet.infrastructure.core.config.properties.WalletDrivingApplicationProperties;
+import es.in2.wallet.infrastructure.core.config.properties.CorsProperties;
 import es.in2.wallet.infrastructure.ebsi.config.properties.EbsiProperties;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import static es.in2.wallet.domain.util.ApplicationUtils.formatUrl;
@@ -21,7 +23,7 @@ public class AppConfigImpl implements AppConfig {
 
     private final GenericConfigAdapter genericConfigAdapter;
     private final AuthServerProperties authServerProperties;
-    private final WalletDrivingApplicationProperties walletDrivingApplicationProperties;
+    private final CorsProperties corsProperties;
     private final EbsiProperties ebsiProperties;
 
     private final VerifiablePresentationProperties verifiablePresentationProperties;
@@ -41,12 +43,12 @@ public class AppConfigImpl implements AppConfig {
 
     public AppConfigImpl(ConfigAdapterFactory configAdapterFactory,
                          AuthServerProperties authServerProperties,
-                         WalletDrivingApplicationProperties walletDrivingApplicationProperties,
+                         CorsProperties corsProperties,
                          EbsiProperties ebsiProperties,
                          VerifiablePresentationProperties verifiablePresentationProperties) {
         this.genericConfigAdapter = configAdapterFactory.getAdapter();
         this.authServerProperties = authServerProperties;
-        this.walletDrivingApplicationProperties = walletDrivingApplicationProperties;
+        this.corsProperties = corsProperties;
         this.ebsiProperties = ebsiProperties;
         log.debug(ebsiProperties.url());
         this.verifiablePresentationProperties = verifiablePresentationProperties;
@@ -54,14 +56,20 @@ public class AppConfigImpl implements AppConfig {
 
 
     @Override
-    public List<String> getWalletDrivingUrls() {
-        log.debug(String.valueOf(walletDrivingApplicationProperties.urls().get(0).port()));
-        return walletDrivingApplicationProperties.urls().stream()
-                .map(urlProperties -> {
-                    String domain = "localhost".equalsIgnoreCase(urlProperties.domain()) ?
-                            urlProperties.domain() :
-                            genericConfigAdapter.getConfiguration(urlProperties.domain());
-                    return formatUrl(urlProperties.scheme(), domain, urlProperties.port(), null);
+    public List<String> getCorsAllowedOrigins() {
+        return corsProperties.allowedOrigins().stream()
+                .map(url -> {
+                    try {
+                        log.debug("CORS URL: {}", url);
+                        URI uri = new URI(url);
+                        String domain = "localhost".equalsIgnoreCase(uri.getHost()) ?
+                                uri.getHost() :
+                                genericConfigAdapter.getConfiguration(uri.getHost());
+                        return formatUrl(uri.getScheme(), domain, uri.getPort(), null);
+                    } catch (URISyntaxException e) {
+                        log.error("Error processing CORS URL: {}", url, e);
+                        throw new IllegalArgumentException("Invalid CORS URL: " + url, e);
+                    }
                 })
                 .toList();
     }
