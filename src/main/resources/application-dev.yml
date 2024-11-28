@@ -120,4 +120,4 @@ ebsi:
     password: adminPass
 
 cors:
-  allowedOrigins: "https://localhost:8081, https://localhost:8082"
+  allowedOrigins: "https://wallet.dome-marketplace-dev.org, https://wallet.dome-marketplace-dev2.org"
