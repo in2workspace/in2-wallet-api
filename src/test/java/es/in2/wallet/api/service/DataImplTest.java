@@ -484,7 +484,7 @@ class DataImplTest {
                             "issuanceDate": "2023-10-24T08:07:35Z",
                             "issued": "2023-10-24T08:07:35Z",
                             "validFrom": "2023-10-24T08:07:35Z",
-                            "expirationDate": "2023-11-23T08:07:35Z",
+                            "validUntil": "2023-11-23T08:07:35Z",
                             "credentialSubject": {
                                 "id": "did:example:123"
                             },
@@ -528,7 +528,7 @@ class DataImplTest {
                     assertEquals(List.of(VC_JSON,JWT_VC), credentialsInfo.availableFormats());
                     assertEquals(CredentialStatus.VALID, credentialsInfo.credentialStatus());
                     assertEquals("did:example:123", credentialsInfo.credentialSubject().get("id").asText());
-                    assertEquals(ZonedDateTime.parse("2023-11-23T08:07:35Z"), credentialsInfo.expirationDate());
+                    assertEquals(ZonedDateTime.parse("2023-11-23T08:07:35Z"), credentialsInfo.validUntil());
                     assertEquals(userEntityId, credentialEntity.relationshipAttribute().object());
                 })
                 .verifyComplete();

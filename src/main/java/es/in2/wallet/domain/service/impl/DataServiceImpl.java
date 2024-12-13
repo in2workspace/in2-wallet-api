@@ -370,10 +370,10 @@ public class DataServiceImpl implements DataService {
 
                 JsonNode jsonCredential = objectMapper.convertValue(credential.jsonCredentialAttribute().value(), JsonNode.class);
                 JsonNode credentialSubject = jsonCredential.get(CREDENTIAL_SUBJECT);
-                ZonedDateTime expirationDate = null;
+                ZonedDateTime validUntil = null;
 
-                if (jsonCredential.has(EXPIRATION_DATE) && !jsonCredential.get(EXPIRATION_DATE).isNull()) {
-                    expirationDate = parseZonedDateTime(jsonCredential.get(EXPIRATION_DATE).asText());
+                if (jsonCredential.has(VALID_UNTIL) && !jsonCredential.get(VALID_UNTIL).isNull()) {
+                    validUntil = parseZonedDateTime(jsonCredential.get(VALID_UNTIL).asText());
                 }
 
                 CredentialsBasicInfo info = CredentialsBasicInfo.builder()
@@ -382,7 +382,7 @@ public class DataServiceImpl implements DataService {
                         .credentialStatus(credential.credentialStatusAttribute().credentialStatus())
                         .availableFormats(availableFormats)
                         .credentialSubject(credentialSubject)
-                        .expirationDate(expirationDate)
+                        .validUntil(validUntil)
                         .build();
 
                 credentialsInfo.add(info);
