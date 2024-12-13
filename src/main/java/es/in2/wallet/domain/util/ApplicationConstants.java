@@ -1,7 +1,5 @@
 package es.in2.wallet.domain.util;
 
-import java.util.List;
-
 public class ApplicationConstants {
     private ApplicationConstants() {
         throw new IllegalStateException("Utility class");
@@ -38,7 +36,7 @@ public class ApplicationConstants {
     public static final String VC_JSON = "json_vc";
     public static final String VC_CWT = "cwt_vc";
     public static final String CREDENTIAL_SUBJECT = "credentialSubject";
-    public static final String EXPIRATION_DATE = "expirationDate";
+    public static final String VALID_UNTIL = "validUntil";
     public static final String GLOBAL_STATE = "MTo3NzcwMjoyNDU1NTkwMjMzOjE3MDU5MTE3NDA=";
     public static final String AUTH_CODE_GRANT_TYPE = "authorization_code";
     public static final String CODE_VERIFIER_ALLOWED_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";

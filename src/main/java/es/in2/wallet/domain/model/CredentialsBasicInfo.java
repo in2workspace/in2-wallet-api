@@ -20,8 +20,8 @@ public record CredentialsBasicInfo(
         @JsonProperty("status") CredentialStatus credentialStatus,
         @JsonProperty(AVAILABLE_FORMATS) List<String> availableFormats,
         @JsonProperty(CREDENTIAL_SUBJECT) JsonNode credentialSubject,
-        @JsonProperty(EXPIRATION_DATE)
+        @JsonProperty(VALID_UNTIL)
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ISO_8601_DATE_PATTERN)
-        ZonedDateTime expirationDate
+        ZonedDateTime validUntil
 ) {
 }
