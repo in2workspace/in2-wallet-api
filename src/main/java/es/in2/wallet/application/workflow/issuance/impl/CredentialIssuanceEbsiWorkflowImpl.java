@@ -65,6 +65,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
      * This method is chosen when the credential offer includes a pre-authorized code grant.
      */
     private Mono<Void> getCredentialWithPreAuthorizedCodeEbsi(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
+        log.info("CredentialIssuanceEbsiWorkflowImpl --> getCredentialWithPreAuthorizedCodeEbsi() --> INIT");
         return ebsiConfig.getDid()
                 .flatMap(did -> preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
                         .flatMap(tokenResponse -> getCredential(

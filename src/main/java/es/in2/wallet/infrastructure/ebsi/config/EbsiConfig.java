@@ -173,6 +173,7 @@ public class EbsiConfig {
     }
 
     public Mono<String> getDid() {
+        log.info("EbsiConfig --> getDid() --> Value: {}", this.didForEbsi);
         return Mono.just(this.didForEbsi);
     }
 }
