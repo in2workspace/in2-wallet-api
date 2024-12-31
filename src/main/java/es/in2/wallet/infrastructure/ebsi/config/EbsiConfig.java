@@ -56,17 +56,19 @@ public class EbsiConfig {
     }
 
     private Mono<String> generateEbsiDid() {
+        log.info("EbsiConfig --> Generating Ebsi DID");
         String processId = UUID.randomUUID().toString();
         String credentialId = "urn:entities:credential:exampleCredential";
         String vcType = "ExampleCredential";
 
         String clientSecret = appConfig.getIdentityProviderClientSecret().trim();
         String decodedSecret;
+        log.info("EbsiConfig --> Client Secret --> {}", clientSecret);
+
 
         try {
             byte[] decodedBytes = Base64.getDecoder().decode(clientSecret);
             decodedSecret = new String(decodedBytes, StandardCharsets.UTF_8);
-
             String reEncodedSecret = Base64.getEncoder().encodeToString(decodedSecret.getBytes(StandardCharsets.UTF_8)).trim();
             if (!clientSecret.equals(reEncodedSecret)) {
                 decodedSecret = clientSecret;
@@ -80,6 +82,8 @@ public class EbsiConfig {
                 "&password=" + URLEncoder.encode(appConfig.getIdentityProviderPassword(), StandardCharsets.UTF_8) +
                 "&client_id=" + URLEncoder.encode(appConfig.getIdentityProviderClientId(), StandardCharsets.UTF_8) +
                 "&client_secret=" + URLEncoder.encode(decodedSecret, StandardCharsets.UTF_8);
+
+        log.info("EbsiConfig --> Pre WebClient Call");
 
         return Mono.delay(Duration.ofSeconds(15))
                 .then(webClient.centralizedWebClient()
@@ -96,6 +100,7 @@ public class EbsiConfig {
                             }
                         }))
                 .flatMap(response -> {
+                    log.info("EbsiConfig --> WebClient Response: {}", response);
                     log.debug(response);
                     Map<String, Object> jsonObject;
                     try {
@@ -104,6 +109,7 @@ public class EbsiConfig {
                         return Mono.error(new RuntimeException(e));
                     }
                     String token = jsonObject.get("access_token").toString();
+                    log.info("EbsiConfig --> WebClient Response Token: {}", token);
                     return Mono.just(token);
                 })
                 .flatMap(ApplicationUtils::getUserIdFromToken)
