@@ -31,7 +31,8 @@ class OpenidCredentialOfferControllerTest {
     void testRequestOpenidCredentialOfferWithEbsiUri() {
         // Arrange
         String authorizationHeader = "Bearer test-token";
-        CredentialOfferRequest credentialOfferRequest = new CredentialOfferRequest("https://example.com/ebsi-offer");
+        String credentialOfferUri = "https://example.com/ebsi-offer";
+
         when(ebsiCredentialIssuanceServiceFacade.identifyAuthMethod(anyString(), eq("test-token"), eq("https://example.com/ebsi-offer")))
                 .thenReturn(Mono.empty());
 
@@ -39,12 +40,14 @@ class OpenidCredentialOfferControllerTest {
         WebTestClient
                 .bindToController(openidCredentialOfferController)
                 .build()
-                .post()
-                .uri("/api/v1/request-credential")
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/v1/openid-credential-offer")
+                        .queryParam("credentialOfferUri", credentialOfferUri)
+                        .build())
                 .header(HttpHeaders.AUTHORIZATION, authorizationHeader)
-                .bodyValue(credentialOfferRequest)
                 .exchange()
-                .expectStatus().isCreated();
+                .expectStatus().isOk();
 
         verify(ebsiCredentialIssuanceServiceFacade, times(1)).identifyAuthMethod(anyString(), eq("test-token"), eq("https://example.com/ebsi-offer"));
         verifyNoInteractions(commonCredentialIssuanceServiceFacade);
@@ -54,7 +57,7 @@ class OpenidCredentialOfferControllerTest {
     void testRequestOpenidCredentialOfferWithCommonUri() {
         // Arrange
         String authorizationHeader = "Bearer test-token";
-        CredentialOfferRequest credentialOfferRequest = new CredentialOfferRequest("https://example.com/common-offer");
+        String credentialOfferUri = "https://example.com/common-offer";
         when(commonCredentialIssuanceServiceFacade.identifyAuthMethod(anyString(), eq("test-token"), eq("https://example.com/common-offer")))
                 .thenReturn(Mono.empty());
 
@@ -62,12 +65,14 @@ class OpenidCredentialOfferControllerTest {
         WebTestClient
                 .bindToController(openidCredentialOfferController)
                 .build()
-                .post()
-                .uri("/api/v1/request-credential")
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/v1/openid-credential-offer")
+                        .queryParam("credentialOfferUri", credentialOfferUri)
+                        .build())
                 .header(HttpHeaders.AUTHORIZATION, authorizationHeader)
-                .bodyValue(credentialOfferRequest)
                 .exchange()
-                .expectStatus().isCreated();
+                .expectStatus().isOk();
 
         verify(commonCredentialIssuanceServiceFacade, times(1)).identifyAuthMethod(anyString(), eq("test-token"), eq("https://example.com/common-offer"));
         verifyNoInteractions(ebsiCredentialIssuanceServiceFacade);
