@@ -1,8 +1,9 @@
 package es.in2.wallet.infrastructure.ebsi.controller;
 
+import es.in2.wallet.application.workflow.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceEbsiWorkflow;
-import es.in2.wallet.domain.model.EbsiCredentialOfferContent;
+import es.in2.wallet.domain.model.CredentialOfferRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,8 @@ import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerToken;
 public class CredentialIssuanceController {
 
     private final CredentialIssuanceEbsiWorkflow ebsiCredentialIssuanceServiceFacade;
+    private final CredentialIssuanceCommonWorkflow commonCredentialIssuanceServiceFacade;
+
 
     /**
      * Processes a request for a verifiable credential when the credential offer is received via a redirect.
@@ -36,11 +39,21 @@ public class CredentialIssuanceController {
             tags = (SwaggerConfig.TAG_PUBLIC)
     )
     public Mono<Void> requestVerifiableCredential(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
-                                                                @RequestBody EbsiCredentialOfferContent ebsiCredentialOfferContent) {
+                                                                @RequestBody CredentialOfferRequest credentialOfferRequest) {
         String processId = UUID.randomUUID().toString();
         MDC.put("processId", processId);
         return getCleanBearerToken(authorizationHeader)
-                .flatMap(authorizationToken -> ebsiCredentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, ebsiCredentialOfferContent.credentialOfferUri()));
+                .flatMap(authorizationToken -> {
+                    if (credentialOfferRequest.credentialOfferUri().contains("ebsi")) {
+                        log.info("CredentialIssuanceController --> requestVerifiableCredential() --> Ebsi workflow");
+                        return ebsiCredentialIssuanceServiceFacade.identifyAuthMethod(
+                                processId, authorizationToken, credentialOfferRequest.credentialOfferUri());
+                    } else {
+                        log.info("CredentialIssuanceController --> requestVerifiableCredential() --> Common workflow");
+                        return commonCredentialIssuanceServiceFacade.identifyAuthMethod(
+                                processId, authorizationToken, credentialOfferRequest.credentialOfferUri());
+                    }
+                });
     }
 
 }
