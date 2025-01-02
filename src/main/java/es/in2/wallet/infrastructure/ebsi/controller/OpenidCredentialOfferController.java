@@ -3,7 +3,6 @@ package es.in2.wallet.infrastructure.ebsi.controller;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceEbsiWorkflow;
-import es.in2.wallet.domain.model.CredentialOfferRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,9 +19,9 @@ import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerToken;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/request-credential")
+@RequestMapping("/api/v1/openid-credential-offer")
 @RequiredArgsConstructor
-public class CredentialIssuanceController {
+public class OpenidCredentialOfferController {
 
     private final CredentialIssuanceEbsiWorkflow ebsiCredentialIssuanceServiceFacade;
     private final CredentialIssuanceCommonWorkflow commonCredentialIssuanceServiceFacade;
@@ -33,25 +32,23 @@ public class CredentialIssuanceController {
      * This endpoint is designed to handle the scenario where a user is redirected to this service with a credential
      * offer URI, as opposed to receiving the offer directly from scanning a QR code.
      */
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     @Operation(
             tags = (SwaggerConfig.TAG_PUBLIC)
     )
-    public Mono<Void> requestVerifiableCredential(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
-                                                                @RequestBody CredentialOfferRequest credentialOfferRequest) {
+    public Mono<Void> requestOpenidCredentialOffer(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+                                                   @RequestParam String credentialOfferUri) {
         String processId = UUID.randomUUID().toString();
         MDC.put("processId", processId);
         return getCleanBearerToken(authorizationHeader)
                 .flatMap(authorizationToken -> {
-                    if (credentialOfferRequest.credentialOfferUri().contains("ebsi")) {
-                        log.info("CredentialIssuanceController --> requestVerifiableCredential() --> Ebsi workflow");
+                    if (credentialOfferUri.contains("ebsi")) {
                         return ebsiCredentialIssuanceServiceFacade.identifyAuthMethod(
-                                processId, authorizationToken, credentialOfferRequest.credentialOfferUri());
+                                processId, authorizationToken, credentialOfferUri);
                     } else {
-                        log.info("CredentialIssuanceController --> requestVerifiableCredential() --> Common workflow");
                         return commonCredentialIssuanceServiceFacade.identifyAuthMethod(
-                                processId, authorizationToken, credentialOfferRequest.credentialOfferUri());
+                                processId, authorizationToken, credentialOfferUri);
                     }
                 });
     }

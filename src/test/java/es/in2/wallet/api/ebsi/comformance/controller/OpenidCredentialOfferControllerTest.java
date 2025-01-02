@@ -3,7 +3,7 @@ package es.in2.wallet.api.ebsi.comformance.controller;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.application.workflow.issuance.CredentialIssuanceEbsiWorkflow;
 import es.in2.wallet.domain.model.CredentialOfferRequest;
-import es.in2.wallet.infrastructure.ebsi.controller.CredentialIssuanceController;
+import es.in2.wallet.infrastructure.ebsi.controller.OpenidCredentialOfferController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class CredentialIssuanceControllerTest {
+class OpenidCredentialOfferControllerTest {
 
     @Mock
     private CredentialIssuanceEbsiWorkflow ebsiCredentialIssuanceServiceFacade;
@@ -25,10 +25,10 @@ class CredentialIssuanceControllerTest {
     private CredentialIssuanceCommonWorkflow commonCredentialIssuanceServiceFacade;
 
     @InjectMocks
-    private CredentialIssuanceController credentialIssuanceController;
+    private OpenidCredentialOfferController openidCredentialOfferController;
 
     @Test
-    void testRequestVerifiableCredentialWithEbsiUri() {
+    void testRequestOpenidCredentialOfferWithEbsiUri() {
         // Arrange
         String authorizationHeader = "Bearer test-token";
         CredentialOfferRequest credentialOfferRequest = new CredentialOfferRequest("https://example.com/ebsi-offer");
@@ -37,7 +37,7 @@ class CredentialIssuanceControllerTest {
 
         // Act & Assert
         WebTestClient
-                .bindToController(credentialIssuanceController)
+                .bindToController(openidCredentialOfferController)
                 .build()
                 .post()
                 .uri("/api/v1/request-credential")
@@ -51,7 +51,7 @@ class CredentialIssuanceControllerTest {
     }
 
     @Test
-    void testRequestVerifiableCredentialWithCommonUri() {
+    void testRequestOpenidCredentialOfferWithCommonUri() {
         // Arrange
         String authorizationHeader = "Bearer test-token";
         CredentialOfferRequest credentialOfferRequest = new CredentialOfferRequest("https://example.com/common-offer");
@@ -60,7 +60,7 @@ class CredentialIssuanceControllerTest {
 
         // Act & Assert
         WebTestClient
-                .bindToController(credentialIssuanceController)
+                .bindToController(openidCredentialOfferController)
                 .build()
                 .post()
                 .uri("/api/v1/request-credential")
