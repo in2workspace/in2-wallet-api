@@ -92,7 +92,7 @@ class PinRequestWebSocketHandlerTest {
 
     @Test
     void testSendPinRequest() throws JsonProcessingException {
-        WebSocketServerMessage serverMessage = new WebSocketServerMessage(null,true);
+        WebSocketServerMessage serverMessage = new WebSocketServerMessage(null,true, 0);
         WebSocketMessage webSocketMessage = mock(WebSocketMessage.class);
 
         String jsonMessage = "{\"pin\":\"true\"}";
@@ -108,7 +108,7 @@ class PinRequestWebSocketHandlerTest {
 
     @Test
     void testSendPinRequestSerializationError() throws JsonProcessingException {
-        WebSocketServerMessage serverMessage = new WebSocketServerMessage(null,true);
+        WebSocketServerMessage serverMessage = new WebSocketServerMessage(null,true, 0);
 
         when(objectMapper.writeValueAsString(serverMessage)).thenThrow(JsonProcessingException.class);
 

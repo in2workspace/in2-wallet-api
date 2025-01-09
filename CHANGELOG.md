@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Changed request-credential endpoint to route requests dynamically between EBSI and common workflows based on the credential offer URI.
 - Rename request object to "CredentialOfferRequest".
+- Add a timeout property for pin code
 
 ## [v1.3.9](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.3.9)
 ### Fixed
