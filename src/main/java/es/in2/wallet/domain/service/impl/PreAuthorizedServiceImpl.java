@@ -53,8 +53,8 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
                                                      String authorizationToken) {
         String tokenURL = authorisationServerMetadata.tokenEndpoint();
         // TODO Use a configurable timeout duration instead of hardcoding it.
-        // We will use a timeout of 60 seconds because is the default time used for most of the getaways for connection timeout.
-        long timeoutDuration = 50;
+        // We will use a timeout of 55 seconds because the default time used for most of the getaways for connection timeout is 60, to prevent a gateway timeout we will use 55 seconds.
+        long timeoutDuration = 55;
 
         if (credentialOffer.grant().preAuthorizedCodeGrant().userPinRequired()) {
             // If a user PIN is required, extract the user ID from the token,
