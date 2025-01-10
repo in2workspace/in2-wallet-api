@@ -110,7 +110,7 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
         return pinRequestWebSocketHandler.getPinResponses(userId)
                 .next()
                 .timeout(Duration.ofSeconds(timeoutDuration))
-                .onErrorResume(TimeoutException.class, e -> Mono.error(new RuntimeException("Timeout waiting for PIN")));
+                .onErrorResume(TimeoutException.class, e -> Mono.error(new TimeoutException("Timeout while waiting for PIN")));
     }
 
     private Mono<String> getAccessToken(String tokenURL, CredentialOffer credentialOffer, String pin) {
