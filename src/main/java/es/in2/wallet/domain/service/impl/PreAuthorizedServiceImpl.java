@@ -52,19 +52,34 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
                                                      AuthorisationServerMetadata authorisationServerMetadata,
                                                      String authorizationToken) {
         String tokenURL = authorisationServerMetadata.tokenEndpoint();
+        // TODO Use a configurable timeout duration instead of hardcoding it.
+        // We will use a timeout of 55 seconds because the default time used for most of the getaways for connection timeout is 60, to prevent a gateway timeout we will use 55 seconds.
+        long timeoutDuration = 55;
 
         if (credentialOffer.grant().preAuthorizedCodeGrant().userPinRequired()) {
             // If a user PIN is required, extract the user ID from the token,
             // send a PIN request, wait for the PIN response, and then proceed to get access token.
             return sendPinRequestAndRetrieveResponse
-                    (authorizationToken,tokenURL,credentialOffer,WebSocketServerMessage.builder().pin(true).build());
+                    (authorizationToken,tokenURL,credentialOffer,
+                            WebSocketServerMessage.builder()
+                                    .pin(true)
+                                    .timeout(timeoutDuration)
+                                    .build(),
+                            timeoutDuration);
         }
         else if (credentialOffer.grant().preAuthorizedCodeGrant().txCode() != null){
             // If a tx_code is required, extract the user ID from the token,
             // send a PIN request, wait for the PIN response, and then proceed to get access token.
             return sendPinRequestAndRetrieveResponse
                     (authorizationToken,tokenURL,credentialOffer,
-                            WebSocketServerMessage.builder().txCode(credentialOffer.grant().preAuthorizedCodeGrant().txCode()).build());
+                            WebSocketServerMessage.builder()
+                                    .txCode(credentialOffer
+                                            .grant()
+                                            .preAuthorizedCodeGrant()
+                                            .txCode())
+                                            .timeout(timeoutDuration)
+                                    .build(),
+                            timeoutDuration);
         }
         else {
             // If no PIN is required, directly proceed to get the access token.
@@ -72,12 +87,12 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
                     .flatMap(this::parseTokenResponse);
         }
     }
-    private Mono<TokenResponse> sendPinRequestAndRetrieveResponse(String authorizationToken,String tokenURL, CredentialOffer credentialOffer,WebSocketServerMessage webSocketServerMessage){
+    private Mono<TokenResponse> sendPinRequestAndRetrieveResponse(String authorizationToken,String tokenURL, CredentialOffer credentialOffer,WebSocketServerMessage webSocketServerMessage, long timeoutDuration) {
         return getUserIdFromToken(authorizationToken)
                 .flatMap(id  -> sessionManager.getSession(id)
                         .flatMap(session -> {
                             pinRequestWebSocketHandler.sendPinRequest(session, webSocketServerMessage);
-                            return waitForPinResponse(id);
+                            return waitForPinResponse(id, timeoutDuration);
                         }
                         ))
                 .switchIfEmpty(Mono.error(new RuntimeException("WebSocket session not found")))
@@ -90,13 +105,12 @@ public class PreAuthorizedServiceImpl implements PreAuthorizedService {
      * @param userId The user ID for which to wait for the PIN response.
      * @return A Mono<String> representing the user's PIN.
      */
-    private Mono<String> waitForPinResponse(String userId) {
-        long timeoutDuration = 120; // Timeout duration in seconds
+    private Mono<String> waitForPinResponse(String userId, long timeoutDuration) {
         // Waits for the next emitted PIN response and applies a timeout.
         return pinRequestWebSocketHandler.getPinResponses(userId)
                 .next()
                 .timeout(Duration.ofSeconds(timeoutDuration))
-                .onErrorResume(TimeoutException.class, e -> Mono.error(new RuntimeException("Timeout waiting for PIN")));
+                .onErrorResume(TimeoutException.class, e -> Mono.error(new TimeoutException("Timeout while waiting for PIN")));
     }
 
     private Mono<String> getAccessToken(String tokenURL, CredentialOffer credentialOffer, String pin) {

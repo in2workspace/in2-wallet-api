@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import reactor.core.publisher.Mono;
 
+import java.util.concurrent.TimeoutException;
+
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
@@ -177,6 +179,18 @@ public class GlobalExceptionHandler {
         return Mono.just(GlobalErrorMessage.builder()
                 .title("Attestation Server Error")
                 .message(attestationServerErrorException.getMessage())
+                .path(path)
+                .build());
+    }
+
+    @ExceptionHandler(TimeoutException.class)
+    @ResponseStatus(HttpStatus.REQUEST_TIMEOUT)
+    @ResponseBody
+    public Mono<GlobalErrorMessage> timeoutErrorException(TimeoutException timeoutException, ServerHttpRequest request) {
+        String path = String.valueOf(request.getPath());
+        return Mono.just(GlobalErrorMessage.builder()
+                .title("Timeout Error")
+                .message(timeoutException.getMessage())
                 .path(path)
                 .build());
     }

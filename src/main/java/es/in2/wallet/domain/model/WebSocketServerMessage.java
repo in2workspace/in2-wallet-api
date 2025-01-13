@@ -6,6 +6,7 @@ import lombok.Builder;
 @Builder
 public record WebSocketServerMessage(
         @JsonProperty("tx_code") CredentialOffer.Grant.PreAuthorizedCodeGrant.TxCode txCode,
-        @JsonProperty("pin") Boolean pin
+        @JsonProperty("pin") Boolean pin,
+        @JsonProperty("timeout") long timeout
 ) {
 }

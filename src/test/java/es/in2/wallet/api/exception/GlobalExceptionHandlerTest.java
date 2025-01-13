@@ -16,6 +16,7 @@ import reactor.test.StepVerifier;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -44,7 +45,8 @@ class GlobalExceptionHandlerTest {
                 IssuerNotAuthorizedException.class,
                 AttestationUnauthorizedException.class,
                 AttestationClientErrorException.class,
-                AttestationServerErrorException.class
+                AttestationServerErrorException.class,
+                TimeoutException.class
 
         ));
 
@@ -62,7 +64,8 @@ class GlobalExceptionHandlerTest {
                 "IssuerNotAuthorizedException",
                 "Attestation Unauthorized Response",
                 "Attestation Client Error",
-                "Attestation Server Error"
+                "Attestation Server Error",
+                "Timeout Error"
         ));
 
         List<BiFunction<Exception, ServerHttpRequest, Mono<GlobalErrorMessage>>> methods = new ArrayList<>(Arrays.asList(
@@ -79,7 +82,8 @@ class GlobalExceptionHandlerTest {
                 (ex, req) -> globalExceptionHandler.issuerNotAuthorizedException((IssuerNotAuthorizedException) ex, req),
                 (ex, req) -> globalExceptionHandler.attestationUnauthorizedException((AttestationUnauthorizedException) ex, req),
                 (ex, req) -> globalExceptionHandler.attestationClientErrorException((AttestationClientErrorException) ex, req),
-                (ex, req) -> globalExceptionHandler.attestationServerErrorException((AttestationServerErrorException) ex, req)
+                (ex, req) -> globalExceptionHandler.attestationServerErrorException((AttestationServerErrorException) ex, req),
+                (ex, req) -> globalExceptionHandler.timeoutErrorException((TimeoutException) ex, req)
 
         ));
 
@@ -98,6 +102,7 @@ class GlobalExceptionHandlerTest {
         exceptionMethodNames.put(AttestationUnauthorizedException.class, "Attestation Unauthorized Response");
         exceptionMethodNames.put(AttestationClientErrorException.class, "Attestation Client Error");
         exceptionMethodNames.put(AttestationServerErrorException.class, "Attestation Server Error");
+        exceptionMethodNames.put(TimeoutException.class, "Timeout Error");
 
         return IntStream.range(0, classes.size())
                 .mapToObj(i -> Arguments.of(classes.get(i), messages.get(i), methods.get(i % methods.size()), exceptionMethodNames));
