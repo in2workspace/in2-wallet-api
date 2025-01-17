@@ -2,11 +2,11 @@ package es.in2.wallet.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.application.port.AppConfig;
-import es.in2.wallet.domain.model.AuthorisationServerMetadata;
-import es.in2.wallet.domain.model.CredentialIssuerMetadata;
-import es.in2.wallet.domain.service.impl.AuthorisationServerMetadataServiceImpl;
-import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.application.ports.AppConfig;
+import es.in2.wallet.application.dto.AuthorisationServerMetadata;
+import es.in2.wallet.application.dto.CredentialIssuerMetadata;
+import es.in2.wallet.domain.services.impl.AuthorisationServerMetadataServiceImpl;
+import es.in2.wallet.domain.utils.ApplicationUtils;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,8 +22,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE;
-import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE_APPLICATION_JSON;
+import static es.in2.wallet.domain.utils.ApplicationConstants.CONTENT_TYPE;
+import static es.in2.wallet.domain.utils.ApplicationConstants.CONTENT_TYPE_APPLICATION_JSON;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

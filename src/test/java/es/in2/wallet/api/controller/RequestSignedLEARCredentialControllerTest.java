@@ -1,6 +1,6 @@
 package es.in2.wallet.api.controller;
 
-import es.in2.wallet.application.workflow.issuance.DeferredCredentialDomeProfileWorkflow;
+import es.in2.wallet.application.workflows.issuance.DeferredCredentialDomeProfileWorkflow;
 import es.in2.wallet.infrastructure.core.controller.RequestSignedLEARCredentialController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

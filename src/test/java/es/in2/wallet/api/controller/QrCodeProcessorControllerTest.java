@@ -1,7 +1,7 @@
 package es.in2.wallet.api.controller;
 
-import es.in2.wallet.domain.model.QrContent;
-import es.in2.wallet.domain.service.QrCodeProcessorService;
+import es.in2.wallet.application.dto.QrContent;
+import es.in2.wallet.application.workflows.processor.QrCodeProcessorWorkflow;
 import es.in2.wallet.infrastructure.core.controller.QrCodeProcessorController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 class QrCodeProcessorControllerTest {
 
     @Mock
-    private QrCodeProcessorService qrCodeProcessorService;
+    private QrCodeProcessorWorkflow qrCodeProcessorWorkflow;
 
     @InjectMocks
     private QrCodeProcessorController qrCodeProcessorController;
@@ -30,7 +30,7 @@ class QrCodeProcessorControllerTest {
         String authorizationHeader = "Bearer authToken";
         QrContent qrContent = QrContent.builder().content("qrCodeContent").build();
 
-        when(qrCodeProcessorService.processQrContent(anyString(), anyString(), anyString())).thenReturn(Mono.empty());
+        when(qrCodeProcessorWorkflow.processQrContent(anyString(), anyString(), anyString())).thenReturn(Mono.empty());
 
         WebTestClient
                 .bindToController(qrCodeProcessorController)
@@ -49,7 +49,7 @@ class QrCodeProcessorControllerTest {
         String authorizationHeader = "Bearer authToken";
         QrContent qrContent = QrContent.builder().content("qrCodeContent").build();
 
-        when(qrCodeProcessorService.processQrContent(anyString(), anyString(), anyString())).thenReturn(Mono.error(new RuntimeException("Error processing QR content")));
+        when(qrCodeProcessorWorkflow.processQrContent(anyString(), anyString(), anyString())).thenReturn(Mono.error(new RuntimeException("Error processing QR content")));
 
         WebTestClient
                 .bindToController(qrCodeProcessorController)

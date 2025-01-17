@@ -3,12 +3,12 @@ package es.in2.wallet.infrastructure.ebsi.config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.application.port.AppConfig;
-import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.domain.model.CredentialEntity;
-import es.in2.wallet.domain.service.DataService;
-import es.in2.wallet.domain.service.DidKeyGeneratorService;
-import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.application.ports.AppConfig;
+import es.in2.wallet.application.ports.BrokerService;
+import es.in2.wallet.application.dto.CredentialEntity;
+import es.in2.wallet.domain.services.DataService;
+import es.in2.wallet.domain.services.DidKeyGeneratorService;
+import es.in2.wallet.domain.utils.ApplicationUtils;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.*;
+import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 
 @Component
 @RequiredArgsConstructor

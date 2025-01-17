@@ -2,7 +2,7 @@ package es.in2.wallet.api.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.domain.model.AuthorisationServerMetadata;
+import es.in2.wallet.application.dto.AuthorisationServerMetadata;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;

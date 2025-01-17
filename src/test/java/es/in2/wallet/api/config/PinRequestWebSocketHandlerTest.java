@@ -2,9 +2,9 @@ package es.in2.wallet.api.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.domain.exception.ParseErrorException;
-import es.in2.wallet.domain.model.WebSocketClientMessage;
-import es.in2.wallet.domain.model.WebSocketServerMessage;
+import es.in2.wallet.domain.exceptions.ParseErrorException;
+import es.in2.wallet.application.dto.WebSocketClientMessage;
+import es.in2.wallet.application.dto.WebSocketServerMessage;
 import es.in2.wallet.infrastructure.core.config.PinRequestWebSocketHandler;
 import es.in2.wallet.infrastructure.core.config.WebSocketSessionManager;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,9 +1,9 @@
 package es.in2.wallet.api.controller;
 
-import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
-import es.in2.wallet.application.workflow.presentation.AttestationExchangeTurnstileWorkflow;
-import es.in2.wallet.domain.model.CredentialsBasicInfo;
-import es.in2.wallet.domain.model.VcSelectorResponse;
+import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
+import es.in2.wallet.application.workflows.presentation.AttestationExchangeTurnstileWorkflow;
+import es.in2.wallet.application.dto.CredentialsBasicInfo;
+import es.in2.wallet.application.dto.VcSelectorResponse;
 import es.in2.wallet.infrastructure.core.controller.VerifiablePresentationController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

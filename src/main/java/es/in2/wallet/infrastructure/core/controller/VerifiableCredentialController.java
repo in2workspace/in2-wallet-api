@@ -2,8 +2,8 @@ package es.in2.wallet.infrastructure.core.controller;
 
 
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
-import es.in2.wallet.application.workflow.data.DataWorkflow;
-import es.in2.wallet.domain.model.CredentialsBasicInfo;
+import es.in2.wallet.application.workflows.data.DataWorkflow;
+import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.UUID;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerAndUserIdFromToken;
+import static es.in2.wallet.domain.utils.ApplicationUtils.getCleanBearerAndUserIdFromToken;
 
 @RestController
 @RequestMapping("/api/v1/credentials")

@@ -3,11 +3,11 @@ package es.in2.wallet.api.ebsi.comformance.facade;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.workflow.issuance.impl.CredentialIssuanceEbsiWorkflowImpl;
-import es.in2.wallet.domain.model.*;
-import es.in2.wallet.domain.service.*;
-import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.application.dto.*;
+import es.in2.wallet.application.ports.BrokerService;
+import es.in2.wallet.application.workflows.issuance.impl.CredentialIssuanceEbsiWorkflowImpl;
+import es.in2.wallet.domain.services.*;
+import es.in2.wallet.domain.utils.ApplicationUtils;
 import es.in2.wallet.infrastructure.ebsi.config.EbsiConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,9 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.USER_ENTITY_PREFIX;
-import static es.in2.wallet.domain.util.ApplicationUtils.extractResponseType;
-import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.domain.utils.ApplicationConstants.USER_ENTITY_PREFIX;
+import static es.in2.wallet.domain.utils.ApplicationUtils.extractResponseType;
+import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)

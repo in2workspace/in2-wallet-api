@@ -1,7 +1,7 @@
 package es.in2.wallet.api.ebsi.comformance.controller;
 
-import es.in2.wallet.application.workflow.issuance.CredentialIssuanceCommonWorkflow;
-import es.in2.wallet.application.workflow.issuance.CredentialIssuanceEbsiWorkflow;
+import es.in2.wallet.application.workflows.issuance.CredentialIssuanceCommonWorkflow;
+import es.in2.wallet.application.workflows.issuance.CredentialIssuanceEbsiWorkflow;
 import es.in2.wallet.infrastructure.ebsi.controller.OpenidCredentialOfferController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

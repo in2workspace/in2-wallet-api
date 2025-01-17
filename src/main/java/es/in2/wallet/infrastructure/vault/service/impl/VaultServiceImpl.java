@@ -1,6 +1,6 @@
 package es.in2.wallet.infrastructure.vault.service.impl;
 
-import es.in2.wallet.application.port.VaultService;
+import es.in2.wallet.application.ports.VaultService;
 import es.in2.wallet.infrastructure.vault.model.KeyVaultSecret;
 import es.in2.wallet.infrastructure.vault.service.GenericVaultService;
 import es.in2.wallet.infrastructure.vault.util.VaultFactory;

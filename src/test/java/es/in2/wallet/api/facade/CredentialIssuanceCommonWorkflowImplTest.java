@@ -3,11 +3,11 @@ package es.in2.wallet.api.facade;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.workflow.issuance.impl.CredentialIssuanceCommonWorkflowImpl;
-import es.in2.wallet.domain.model.*;
-import es.in2.wallet.domain.service.*;
-import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.application.dto.*;
+import es.in2.wallet.application.ports.BrokerService;
+import es.in2.wallet.application.workflows.issuance.impl.CredentialIssuanceCommonWorkflowImpl;
+import es.in2.wallet.domain.services.*;
+import es.in2.wallet.domain.utils.ApplicationUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,12 +15,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.web.reactive.function.client.ClientResponse;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.util.function.Tuples;
@@ -30,9 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.*;
-import static es.in2.wallet.domain.util.ApplicationUtils.extractResponseType;
-import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.domain.utils.ApplicationConstants.*;
+import static es.in2.wallet.domain.utils.ApplicationUtils.extractResponseType;
+import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -254,7 +249,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
                     .build();
 
             TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
-            CredentialResponse credentialResponse = CredentialResponse.builder().credential("unsigned_credential").format(VC_JSON).transactionId("123").build();
+            CredentialResponse credentialResponse = CredentialResponse.builder().credential("unsigned_credential").format(JSON_VC).transactionId("123").build();
             String did = "did:ebsi:123";
             String userEntity = "existingUserEntity";
             String credentialEntity = "credentialEntity";
@@ -357,7 +352,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
                     .build();
 
             TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
-            CredentialResponse credentialResponse = CredentialResponse.builder().credential("unsigned_credential").format(VC_JSON).transactionId("123").build();
+            CredentialResponse credentialResponse = CredentialResponse.builder().credential("unsigned_credential").format(JSON_VC).transactionId("123").build();
             String did = "did:ebsi:123";
             String userEntity = "existingUserEntity";
             String credentialEntity = "credentialEntity";

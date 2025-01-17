@@ -1,8 +1,8 @@
 package es.in2.wallet.api.exception;
 
-import es.in2.wallet.domain.exception.*;
-import es.in2.wallet.domain.exception.handler.GlobalExceptionHandler;
-import es.in2.wallet.domain.model.GlobalErrorMessage;
+import es.in2.wallet.domain.exceptions.*;
+import es.in2.wallet.domain.exceptions.handler.GlobalExceptionHandler;
+import es.in2.wallet.application.dto.GlobalErrorMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -39,7 +39,7 @@ class GlobalExceptionHandlerTest {
                 NoSuchQrContentException.class,
                 ParseErrorException.class,
                 NoSuchVerifiableCredentialException.class,
-                NoSuchTransactionException.class,
+                NoSuchDeferredCredentialMetadataException.class,
                 InvalidPinException.class,
                 CredentialNotAvailableException.class,
                 IssuerNotAuthorizedException.class,
@@ -76,7 +76,7 @@ class GlobalExceptionHandlerTest {
                 (ex, req) -> globalExceptionHandler.noSuchQrContentException((NoSuchQrContentException) ex, req),
                 (ex, req) -> globalExceptionHandler.parseErrorException((ParseErrorException) ex, req),
                 (ex, req) -> globalExceptionHandler.noSuchVerifiableCredentialException((NoSuchVerifiableCredentialException) ex, req),
-                (ex, req) -> globalExceptionHandler.noSuchTransactionException((NoSuchTransactionException) ex, req),
+                (ex, req) -> globalExceptionHandler.noSuchTransactionException((NoSuchDeferredCredentialMetadataException) ex, req),
                 (ex, req) -> globalExceptionHandler.invalidPinException((InvalidPinException) ex, req),
                 (ex, req) -> globalExceptionHandler.credentialNotAvailableException((CredentialNotAvailableException) ex, req),
                 (ex, req) -> globalExceptionHandler.issuerNotAuthorizedException((IssuerNotAuthorizedException) ex, req),
@@ -95,7 +95,7 @@ class GlobalExceptionHandlerTest {
         exceptionMethodNames.put(NoSuchQrContentException.class, "NoSuchQrContentException");
         exceptionMethodNames.put(ParseErrorException.class, "ParseErrorException");
         exceptionMethodNames.put(NoSuchVerifiableCredentialException.class, "NoSuchVerifiableCredentialException");
-        exceptionMethodNames.put(NoSuchTransactionException.class, "NoSuchTransactionException");
+        exceptionMethodNames.put(NoSuchDeferredCredentialMetadataException.class, "NoSuchTransactionException");
         exceptionMethodNames.put(InvalidPinException.class, "InvalidPinException");
         exceptionMethodNames.put(CredentialNotAvailableException.class, "CredentialNotAvailableException");
         exceptionMethodNames.put(IssuerNotAuthorizedException.class, "IssuerNotAuthorizedException");

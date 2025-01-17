@@ -5,10 +5,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.domain.exception.ParseErrorException;
-import es.in2.wallet.domain.model.*;
-import es.in2.wallet.domain.service.impl.DataServiceImpl;
+import es.in2.wallet.application.dto.*;
+import es.in2.wallet.application.ports.BrokerService;
+import es.in2.wallet.domain.enums.CredentialStatus;
+import es.in2.wallet.domain.exceptions.ParseErrorException;
+import es.in2.wallet.domain.services.impl.DataServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -23,7 +24,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.*;
+import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -320,7 +321,7 @@ class DataImplTest {
                 .cwtCredentialAttribute(new CredentialAttribute(PROPERTY_TYPE,vcCbor))
                 .credentialTypeAttribute(new CredentialTypeAttribute(PROPERTY_TYPE,List.of("VerifiableCredential",
                         "LEARCredential")))
-                .credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE,CredentialStatus.VALID))
+                .credentialStatusAttribute(new CredentialStatusAttribute(PROPERTY_TYPE, CredentialStatus.VALID))
                 .relationshipAttribute(new RelationshipAttribute(RELATIONSHIP_TYPE,"walletUser:1234"))
                 .build();
         when(objectMapper.readValue("credential entity", CredentialEntity.class)).thenReturn(existentCredentialEntity);
@@ -525,7 +526,7 @@ class DataImplTest {
                     CredentialsBasicInfo credentialsInfo = credentialsBasicInfoWithExpiredDate.get(0);
                     assertEquals("vc1", credentialsInfo.id());
                     assertEquals(List.of("VerifiableCredential", "LEARCredentialEmployee"), credentialsInfo.vcType());
-                    assertEquals(List.of(VC_JSON,JWT_VC), credentialsInfo.availableFormats());
+                    assertEquals(List.of(JSON_VC,JWT_VC), credentialsInfo.availableFormats());
                     assertEquals(CredentialStatus.VALID, credentialsInfo.credentialStatus());
                     assertEquals("did:example:123", credentialsInfo.credentialSubject().get("id").asText());
                     assertEquals(ZonedDateTime.parse("2023-11-23T08:07:35Z"), credentialsInfo.validUntil());
@@ -593,11 +594,11 @@ class DataImplTest {
                 .expectNext(jwtCredential)
                 .verifyComplete();
 
-        StepVerifier.create(userDataServiceImpl.getVerifiableCredentialOnRequestedFormat(credentialJson, VC_CWT))
+        StepVerifier.create(userDataServiceImpl.getVerifiableCredentialOnRequestedFormat(credentialJson, CWT_VC))
                 .expectNext(cwtCredential)
                 .verifyComplete();
 
-        StepVerifier.create(userDataServiceImpl.getVerifiableCredentialOnRequestedFormat(credentialJson, VC_JSON))
+        StepVerifier.create(userDataServiceImpl.getVerifiableCredentialOnRequestedFormat(credentialJson, JSON_VC))
                 .expectNext(jsonCredential)
                 .verifyComplete();
     }
@@ -630,7 +631,7 @@ class DataImplTest {
 
         when(objectMapper.readValue(credentialJson, CredentialEntity.class)).thenReturn(credentialEntity);
 
-        StepVerifier.create(userDataServiceImpl.getVerifiableCredentialOnRequestedFormat(credentialJson, VC_JSON))
+        StepVerifier.create(userDataServiceImpl.getVerifiableCredentialOnRequestedFormat(credentialJson, JSON_VC))
                 .expectErrorMatches(throwable -> throwable instanceof NoSuchElementException &&
                         throwable.getMessage().contains("Credential format not found or is null: json"))
                 .verify();
@@ -643,7 +644,7 @@ class DataImplTest {
         when(objectMapper.readValue(credentialJson, CredentialEntity.class))
                 .thenThrow(new JsonProcessingException("Parsing error") {});
 
-        StepVerifier.create(userDataServiceImpl.getVerifiableCredentialOnRequestedFormat(credentialJson, VC_JSON))
+        StepVerifier.create(userDataServiceImpl.getVerifiableCredentialOnRequestedFormat(credentialJson, JSON_VC))
                 .expectErrorMatches(throwable -> throwable instanceof RuntimeException &&
                         throwable.getMessage().contains("Error deserializing CredentialEntity from JSON"))
                 .verify();
@@ -702,7 +703,7 @@ class DataImplTest {
     void testUpdateVCEntityWithSignedCWTFormat() throws JsonProcessingException {
         String credentialEntityJson = "{\"id\":\"cred123\", \"type\":\"Credential\"}";
         String signedCwt = "signedCwtExample";
-        CredentialResponse signedCredential = CredentialResponse.builder().credential(signedCwt).format(VC_CWT).build();
+        CredentialResponse signedCredential = CredentialResponse.builder().credential(signedCwt).format(CWT_VC).build();
 
         CredentialEntity credentialEntity = CredentialEntity.builder()
                 .id("cred123")

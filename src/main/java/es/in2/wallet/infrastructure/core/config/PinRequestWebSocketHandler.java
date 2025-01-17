@@ -2,9 +2,9 @@ package es.in2.wallet.infrastructure.core.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.domain.exception.ParseErrorException;
-import es.in2.wallet.domain.model.WebSocketClientMessage;
-import es.in2.wallet.domain.model.WebSocketServerMessage;
+import es.in2.wallet.domain.exceptions.ParseErrorException;
+import es.in2.wallet.application.dto.WebSocketClientMessage;
+import es.in2.wallet.application.dto.WebSocketServerMessage;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import reactor.core.publisher.Sinks;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 
 @Slf4j
 @Getter

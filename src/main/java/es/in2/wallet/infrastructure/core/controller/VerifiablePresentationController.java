@@ -1,9 +1,9 @@
 package es.in2.wallet.infrastructure.core.controller;
 
-import es.in2.wallet.application.workflow.presentation.AttestationExchangeCommonWorkflow;
-import es.in2.wallet.application.workflow.presentation.AttestationExchangeTurnstileWorkflow;
-import es.in2.wallet.domain.model.CredentialsBasicInfo;
-import es.in2.wallet.domain.model.VcSelectorResponse;
+import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
+import es.in2.wallet.application.workflows.presentation.AttestationExchangeTurnstileWorkflow;
+import es.in2.wallet.application.dto.CredentialsBasicInfo;
+import es.in2.wallet.application.dto.VcSelectorResponse;
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerToken;
+import static es.in2.wallet.domain.utils.ApplicationUtils.getCleanBearerToken;
 
 @RestController
 @RequestMapping("/api/v1/vp")

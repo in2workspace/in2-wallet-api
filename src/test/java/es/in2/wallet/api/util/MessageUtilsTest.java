@@ -1,6 +1,6 @@
 package es.in2.wallet.api.util;
 
-import es.in2.wallet.domain.util.MessageUtils;
+import es.in2.wallet.domain.utils.MessageUtils;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;

@@ -3,15 +3,15 @@ package es.in2.wallet.api.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import es.in2.wallet.application.port.AppConfig;
-import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.domain.model.CredentialStatus;
-import es.in2.wallet.domain.model.CredentialsBasicInfo;
-import es.in2.wallet.domain.model.VcSelectorResponse;
-import es.in2.wallet.domain.service.DataService;
-import es.in2.wallet.domain.service.SignerService;
-import es.in2.wallet.domain.service.impl.PresentationServiceImpl;
-import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.application.ports.AppConfig;
+import es.in2.wallet.application.ports.BrokerService;
+import es.in2.wallet.domain.enums.CredentialStatus;
+import es.in2.wallet.application.dto.CredentialsBasicInfo;
+import es.in2.wallet.application.dto.VcSelectorResponse;
+import es.in2.wallet.domain.services.DataService;
+import es.in2.wallet.domain.services.SignerService;
+import es.in2.wallet.domain.services.impl.PresentationServiceImpl;
+import es.in2.wallet.domain.utils.ApplicationUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,9 +25,9 @@ import reactor.test.StepVerifier;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.JWT_VC;
-import static es.in2.wallet.domain.util.ApplicationConstants.VC_JSON;
-import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_VC;
+import static es.in2.wallet.domain.utils.ApplicationConstants.JSON_VC;
+import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -110,7 +110,7 @@ class PresentationServiceImplTest {
             String processId = "processId";
             String authorizationToken = "authToken";
             List<CredentialsBasicInfo> selectedVcList = List.of(
-                    new CredentialsBasicInfo("vcId1", List.of("vcType1"), CredentialStatus.ISSUED,List.of(VC_JSON), JsonNodeFactory.instance.objectNode().put("exampleData", "exampleValue"), ZonedDateTime.now().plusDays(30))
+                    new CredentialsBasicInfo("vcId1", List.of("vcType1"), CredentialStatus.ISSUED,List.of(JSON_VC), JsonNodeFactory.instance.objectNode().put("exampleData", "exampleValue"), ZonedDateTime.now().plusDays(30))
             );
             VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().selectedVcList(selectedVcList).build();
 
@@ -123,7 +123,7 @@ class PresentationServiceImplTest {
             when(brokerService.getCredentialByIdAndUserId(processId, selectedVcList.get(0).id(),userId)).thenReturn(Mono.just((credentialEntity)));
 
             // Mock getVerifiableCredentials to return a list of credentials
-            when(dataService.getVerifiableCredentialOnRequestedFormat(credentialEntity, VC_JSON))
+            when(dataService.getVerifiableCredentialOnRequestedFormat(credentialEntity, JSON_VC))
                     .thenReturn(Mono.just("vcString")); // Simplified for demonstration
 
             // Mock objectMapper.writeValueAsString to simulate JSON serialization
@@ -134,7 +134,7 @@ class PresentationServiceImplTest {
                     .verifyComplete();
 
             verify(brokerService).getCredentialByIdAndUserId(processId, selectedVcList.get(0).id(), userId);
-            verify(dataService).getVerifiableCredentialOnRequestedFormat(credentialEntity, VC_JSON);
+            verify(dataService).getVerifiableCredentialOnRequestedFormat(credentialEntity, JSON_VC);
         }
     }
 }

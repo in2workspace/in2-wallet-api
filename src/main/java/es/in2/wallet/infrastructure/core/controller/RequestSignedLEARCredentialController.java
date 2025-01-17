@@ -1,6 +1,6 @@
 package es.in2.wallet.infrastructure.core.controller;
 
-import es.in2.wallet.application.workflow.issuance.DeferredCredentialDomeProfileWorkflow;
+import es.in2.wallet.application.workflows.issuance.DeferredCredentialDomeProfileWorkflow;
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerAndUserIdFromToken;
+import static es.in2.wallet.domain.utils.ApplicationUtils.getCleanBearerAndUserIdFromToken;
 
 @RestController
 @RequestMapping("/api/v1/request-signed-credential")
