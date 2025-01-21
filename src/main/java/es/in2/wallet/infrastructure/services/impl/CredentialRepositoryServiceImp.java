@@ -41,14 +41,17 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_VC;
 @Service
 @RequiredArgsConstructor
 public class CredentialRepositoryServiceImp implements CredentialRepositoryService {
+
     private final CredentialRepository credentialRepository;
     private final ObjectMapper objectMapper;
 
+    // ---------------------------------------------------------------------
+    // Save Credential
+    // ---------------------------------------------------------------------
     @Override
     public Mono<UUID> saveCredential(String processId, UUID userId, CredentialResponse credentialResponse) {
         Timestamp currentTimestamp = Timestamp.from(Instant.now());
 
-        // Basic null checks
         if (credentialResponse == null) {
             return Mono.error(new IllegalArgumentException("CredentialResponse is null"));
         }
@@ -74,15 +77,10 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
                             credentialRepository.save(credentialEntity)
                                     .doOnSuccess(savedCredential ->
                                             log.info("[Process ID: {}] Deferred credential with ID {} saved successfully.",
-                                                    processId,
-                                                    savedCredential.getCredentialId())
+                                                    processId, savedCredential.getCredentialId())
                                     )
                                     .thenReturn(credentialEntity.getCredentialId())
-                    )
-                    .onErrorResume(e -> {
-                        log.error("[Process ID: {}] Error saving credential (no format): {}", processId, e.getMessage(), e);
-                        return Mono.error(new RuntimeException("Error processing Verifiable Credential with no format", e));
-                    });
+                    );
         }
 
         // Otherwise, handle known formats (JWT_VC, CWT_VC)
@@ -107,21 +105,243 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
                                 credentialRepository.save(credentialEntity)
                                         .doOnSuccess(savedCredential ->
                                                 log.info("[Process ID: {}] Credential with ID {} saved successfully.",
-                                                        processId,
-                                                        savedCredential.getCredentialId())
+                                                        processId, savedCredential.getCredentialId())
                                         )
                                         .thenReturn(credentialEntity.getCredentialId())
                         )
+                );
+    }
+
+    // ---------------------------------------------------------------------
+    // Deferred Credential
+    // ---------------------------------------------------------------------
+    @Override
+    public Mono<Void> saveDeferredCredential(
+            String processId,
+            String userId,
+            String credentialId,
+            CredentialResponse credentialResponse
+    ) {
+        return parseStringToUuid(userId, "userId")
+                .zipWith(parseStringToUuid(credentialId, "credentialId"))
+                .flatMap(tuple -> {
+                    UUID userUuid = tuple.getT1();
+                    UUID credUuid = tuple.getT2();
+                    // We need to ensure the credential is in ISSUED status
+                    return fetchCredentialOrErrorInIssuedStatus(credUuid, userUuid);
+                })
+                .flatMap(existingCredential -> updateCredentialEntity(existingCredential, credentialResponse))
+                .doOnSuccess(updatedEntity ->
+                        log.info("[Process ID: {}] Deferred credential {} updated to VALID for user {}",
+                                processId, updatedEntity.getCredentialId(), userId)
                 )
-                .onErrorResume(e -> {
-                    log.error("[Process ID: {}] Error saving credential: {}", processId, e.getMessage(), e);
-                    return Mono.error(new RuntimeException("Error processing Verifiable Credential", e));
+                .then()
+                .doOnError(error ->
+                        log.error("[Process ID: {}] Error saving deferred credential ID {}: {}",
+                                processId, credentialId, error.getMessage(), error)
+                );
+    }
+
+    // ---------------------------------------------------------------------
+    // Fetch All Credentials by User
+    // ---------------------------------------------------------------------
+    @Override
+    public Mono<List<CredentialsBasicInfo>> getCredentialsByUserId(String processId, String userId) {
+        return parseStringToUuid(userId, "userId")
+                .flatMapMany(credentialRepository::findAllByUserId)
+                .map(this::mapToCredentialsBasicInfo)
+                .collectList()
+                .flatMap(credentialsInfo -> {
+                    if (credentialsInfo.isEmpty()) {
+                        return Mono.error(new NoSuchVerifiableCredentialException(
+                                "No credentials found for userId: " + userId
+                        ));
+                    }
+                    return Mono.just(credentialsInfo);
                 });
     }
 
-    /**
-     * Builds the Credential entity based on the provided parameters.
-     */
+    // ---------------------------------------------------------------------
+    // Helper to map from Credential entity to DTO
+    // ---------------------------------------------------------------------
+    private CredentialsBasicInfo mapToCredentialsBasicInfo(Credential credential) {
+        JsonNode jsonVc = parseJsonVc(credential.getJsonVc());
+        JsonNode credentialSubject = jsonVc.get("credentialSubject");
+
+        // if there's a 'validUntil' node, parse it
+        ZonedDateTime validUntil = null;
+        JsonNode validUntilNode = jsonVc.get("validUntil");
+        if (validUntilNode != null && !validUntilNode.isNull()) {
+            validUntil = parseZonedDateTime(validUntilNode.asText());
+        }
+
+        // Convert the int in DB -> enum constant
+        CredentialStatus status = CredentialStatus.fromCode(credential.getCredentialStatus());
+
+        return CredentialsBasicInfo.builder()
+                .id(credential.getCredentialId().toString())
+                .vcType(credential.getCredentialType())   // e.g., ["VerifiableCredential", "SomeOtherType"]
+                .credentialStatus(status)
+                .availableFormats(determineAvailableFormats(credential.getCredentialFormat()))
+                .credentialSubject(credentialSubject)
+                .validUntil(validUntil)
+                .build();
+    }
+
+    // ---------------------------------------------------------------------
+    // Filter credentials by user AND type in JWT_VC format
+    // ---------------------------------------------------------------------
+    @Override
+    public Mono<List<CredentialsBasicInfo>> getCredentialsByUserIdAndType(
+            String processId,
+            String userId,
+            String requiredType
+    ) {
+        return parseStringToUuid(userId, "userId")
+                .flatMapMany(credentialRepository::findAllByUserId)
+                .filter(credential -> {
+                    boolean matchesType = credential.getCredentialType().contains(requiredType);
+                    boolean isJwtVc = credential.getCredentialFormat() != null
+                            && credential.getCredentialFormat().equals(CredentialFormats.JWT_VC.getCode());
+                    return matchesType && isJwtVc;
+                })
+                .map(this::mapToCredentialsBasicInfo)
+                .collectList()
+                .flatMap(credentialsInfo -> {
+                    if (credentialsInfo.isEmpty()) {
+                        return Mono.error(new NoSuchVerifiableCredentialException(
+                                "No credentials found for userId=" + userId
+                                        + " with type=" + requiredType
+                                        + " in JWT_VC format."
+                        ));
+                    }
+                    return Mono.just(credentialsInfo);
+                });
+    }
+
+    // ---------------------------------------------------------------------
+    // Return raw credential data (checked ownership)
+    // ---------------------------------------------------------------------
+    @Override
+    public Mono<String> getCredentialDataByIdAndUserId(
+            String processId,
+            String userId,
+            String credentialId
+    ) {
+        return parseStringToUuid(userId, "userId")
+                .zipWith(parseStringToUuid(credentialId, "credentialId"))
+                .flatMap(tuple -> {
+                    UUID userUuid = tuple.getT1();
+                    UUID credUuid = tuple.getT2();
+                    return fetchCredentialOrError(credUuid, userUuid);  // no special status required
+                })
+                .map(credential -> {
+                    String data = credential.getCredentialData();
+                    log.info("[Process ID: {}] Successfully retrieved credential data for credentialId={}, userId={}",
+                            processId, credential.getCredentialId(), userId);
+                    return data;
+                });
+    }
+
+    // ---------------------------------------------------------------------
+    // Extract DID
+    // ---------------------------------------------------------------------
+    @Override
+    public Mono<String> extractDidFromCredential(String processId, String credentialId, String userId) {
+        return parseStringToUuid(userId, "userId")
+                .zipWith(parseStringToUuid(credentialId, "credentialId"))
+                .flatMap(tuple -> {
+                    UUID userUuid = tuple.getT1();
+                    UUID credUuid = tuple.getT2();
+                    return fetchCredentialOrError(credUuid, userUuid);
+                })
+                .flatMap(credential -> {
+                    // Parse the VC JSON
+                    JsonNode vcNode = parseJsonVc(credential.getJsonVc());
+
+                    // Decide if LEARCredentialEmployee
+                    boolean isLear = credential.getCredentialType().stream()
+                            .anyMatch("LEARCredentialEmployee"::equals);
+
+                    // Extract DID from the correct path
+                    JsonNode didNode = isLear
+                            ? vcNode.at("/credentialSubject/mandate/mandatee/id")
+                            : vcNode.at("/credentialSubject/id");
+
+                    if (didNode.isMissingNode() || didNode.asText().isBlank()) {
+                        return Mono.error(new NoSuchVerifiableCredentialException("DID not found in credential"));
+                    }
+                    return Mono.just(didNode.asText());
+                });
+    }
+
+    // ---------------------------------------------------------------------
+    // Delete credential
+    // ---------------------------------------------------------------------
+    @Override
+    public Mono<Void> deleteCredential(String processId, String credentialId, String userId) {
+        return parseStringToUuid(userId, "userId")
+                .zipWith(parseStringToUuid(credentialId, "credentialId"))
+                .flatMap(tuple -> {
+                    UUID userUuid = tuple.getT1();
+                    UUID credUuid = tuple.getT2();
+                    return fetchCredentialOrError(credUuid, userUuid);
+                })
+                .flatMap(credentialRepository::delete)
+                .doOnSuccess(unused ->
+                        log.info("[Process ID: {}] Credential with ID {} successfully deleted for user {}",
+                                processId, credentialId, userId)
+                );
+    }
+
+    // ---------------------------------------------------------------------
+    // Private Helper to fetch credential from DB and check ownership
+    // (optionally can also check status)
+    // ---------------------------------------------------------------------
+    private Mono<Credential> fetchCredentialOrError(UUID credId, UUID userId) {
+        // No status check
+        return credentialRepository.findById(credId)
+                .switchIfEmpty(Mono.error(new NoSuchVerifiableCredentialException(
+                        "No credential found for ID: " + credId
+                )))
+                .flatMap(credential -> {
+                    if (!credential.getUserId().equals(userId)) {
+                        return Mono.error(new IllegalStateException(
+                                "User ID mismatch. Credential belongs to user " + credential.getUserId()
+                        ));
+                    }
+                    return Mono.just(credential);
+                });
+    }
+
+    private Mono<Credential> fetchCredentialOrErrorInIssuedStatus(UUID credId, UUID userId) {
+        return fetchCredentialOrError(credId, userId)
+                .flatMap(credential -> {
+                    if (credential.getCredentialStatus() != CredentialStatus.ISSUED.getCode()) {
+                        return Mono.error(new IllegalStateException(
+                                "Credential is not in ISSUED status (found " + credential.getCredentialStatus() + ")"
+                        ));
+                    }
+                    return Mono.just(credential);
+                });
+    }
+
+
+    // ---------------------------------------------------------------------
+    // Parsing Helpers
+    // ---------------------------------------------------------------------
+    private Mono<UUID> parseStringToUuid(String value, String fieldName) {
+        return Mono.fromCallable(() -> {
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException(fieldName + " is null or blank");
+            }
+            return UUID.fromString(value);
+        });
+    }
+
+    // ---------------------------------------------------------------------
+    // Build Credential Entity
+    // ---------------------------------------------------------------------
     private Credential buildCredentialEntity(
             UUID credentialId,
             UUID userUuid,
@@ -145,9 +365,9 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
                 .build();
     }
 
-    /**
-     * Helper method that parses a plain JSON string (non-signed format).
-     */
+    // ---------------------------------------------------------------------
+    // Parsing JSON for Non-Signed Credential
+    // ---------------------------------------------------------------------
     private Mono<JsonNode> parseAsPlainJson(String rawJson) {
         return Mono.fromCallable(() -> {
             if (rawJson == null || rawJson.isBlank()) {
@@ -157,10 +377,9 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
         }).onErrorMap(e -> new ParseErrorException("Error parsing plain JSON credential: " + e.getMessage()));
     }
 
-    /**
-     * Extracts the credential format from a known set of formats (JWT_VC, CWT_VC).
-     * If it's unsupported, raises an error.
-     */
+    // ---------------------------------------------------------------------
+    // Extract Format
+    // ---------------------------------------------------------------------
     private Mono<Integer> extractCredentialFormat(CredentialResponse credentialResponse) {
         if (credentialResponse.format() == null) {
             return Mono.error(new IllegalArgumentException("CredentialResponse format is null"));
@@ -174,12 +393,10 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
         };
     }
 
-    /**
-     * Extracts the Verifiable Credential JSON based on the format.
-     * If format is null, use parseAsPlainJson directly (handled in the main code).
-     */
+    // ---------------------------------------------------------------------
+    // Extract VC JSON based on Format
+    // ---------------------------------------------------------------------
     private Mono<JsonNode> extractVcJson(CredentialResponse credentialResponse) {
-        // We assume credentialResponse.format() is NOT null here
         return switch (credentialResponse.format()) {
             case JWT_VC -> extractVcJsonFromJwt(credentialResponse.credential());
             case CWT_VC -> extractVcJsonFromCwt(credentialResponse.credential());
@@ -219,6 +436,9 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
         }).onErrorMap(e -> new ParseErrorException("Error processing CWT: " + e.getMessage()));
     }
 
+    // ---------------------------------------------------------------------
+    // Extract ID and Types from the VC JSON
+    // ---------------------------------------------------------------------
     private Mono<String> extractVerifiableCredentialIdFromVcJson(JsonNode vcJson) {
         return Mono.defer(() -> {
             if (vcJson == null) {
@@ -248,11 +468,17 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
         });
     }
 
+    // ---------------------------------------------------------------------
+    // CWT Decoding (Base45 -> DEFLATE -> CBOR -> JSON)
+    // ---------------------------------------------------------------------
     private String decodeToJSONstring(String encodedData) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] decodedData = Base45.getDecoder().decode(encodedData);
-            CompressorInputStream inputStream = new CompressorStreamFactory()
-                    .createCompressorInputStream(CompressorStreamFactory.DEFLATE, new ByteArrayInputStream(decodedData));
+            CompressorInputStream inputStream =
+                    new CompressorStreamFactory().createCompressorInputStream(
+                            CompressorStreamFactory.DEFLATE,
+                            new ByteArrayInputStream(decodedData)
+                    );
             IOUtils.copy(inputStream, out);
             CBORObject cbor = CBORObject.DecodeFromBytes(out.toByteArray());
             return cbor.ToJSONString();
@@ -261,153 +487,51 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
         }
     }
 
-    @Override
-    public Mono<Void> saveDeferredCredential(
-            String processId,
-            String userId,
-            String credentialId,
-            CredentialResponse credentialResponse
-    ) {
-        return parseCredentialId(credentialId)
-                .flatMap(uuid -> fetchAndValidateExistingCredential(userId, uuid))
-                .flatMap(existingCredential -> updateCredentialEntity(existingCredential, credentialResponse))
-                .doOnSuccess(updatedEntity ->
-                        log.info("[Process ID: {}] Deferred credential {} updated to VALID for user {}",
-                                processId, updatedEntity.getCredentialId(), userId)
-                )
-                .then()
-                .doOnError(error ->
-                        log.error("[Process ID: {}] Error saving deferred credential ID {}: {}",
-                                processId, credentialId, error.getMessage(), error)
-                );
-    }
-
-    /**
-     * Converts the incoming credentialId (String) to a UUID.
-     *    Returns a Mono.error(...) if credentialId is null, blank, or invalid.
-     */
-    private Mono<UUID> parseCredentialId(String credentialId) {
-        return Mono.fromCallable(() -> {
-            if (credentialId == null || credentialId.isBlank()) {
-                throw new IllegalArgumentException("Credential ID is null or blank");
-            }
-            return UUID.fromString(credentialId);
-        });
-    }
-
-    /**
-     * Retrieves the existing credential entity from the DB and validates:
-     *    - The credential belongs to the given userId
-     *    - The credential is in ISSUED status
-     */
-    private Mono<Credential> fetchAndValidateExistingCredential(String userId, UUID credentialUuid) {
-        return credentialRepository.findById(credentialUuid)
-                .switchIfEmpty(Mono.error(new IllegalStateException(
-                        "No credential found for ID: " + credentialUuid
-                )))
-                .flatMap(existingCredential -> {
-                    if (!existingCredential.getUserId().toString().equalsIgnoreCase(userId)) {
-                        return Mono.error(new IllegalStateException(
-                                "User ID mismatch. Credential belongs to user " + existingCredential.getUserId()
-                        ));
-                    }
-                    if (existingCredential.getCredentialStatus() != CredentialStatus.ISSUED.getCode()) {
-                        return Mono.error(new IllegalStateException(
-                                "Credential is not in ISSUED status (found " + existingCredential.getCredentialStatus() + ")"
-                        ));
-                    }
-                    return Mono.just(existingCredential);
-                });
-    }
-
-    /**
-     * Updates the existing credential entity:
-     *    - Sets status from ISSUED to VALID
-     *    - Sets format, raw credential data, updatedAt timestamp
-     *    - Saves the entity
-     */
+    // ---------------------------------------------------------------------
+    // Update Credential (Deferred: ISSUED -> VALID, format, data, etc.)
+    // ---------------------------------------------------------------------
     private Mono<Credential> updateCredentialEntity(Credential existingCredential, CredentialResponse credentialResponse) {
         return extractCredentialFormat(credentialResponse)
                 .flatMap(credentialFormat -> {
-                    // set status from ISSUED to VALID
                     existingCredential.setCredentialStatus(CredentialStatus.VALID.getCode());
                     existingCredential.setCredentialFormat(credentialFormat);
                     existingCredential.setCredentialData(credentialResponse.credential());
                     existingCredential.setUpdatedAt(Timestamp.from(Instant.now()));
-
                     return credentialRepository.save(existingCredential);
                 });
     }
 
-    @Override
-    public Mono<List<CredentialsBasicInfo>> getCredentialsByUserId(String processId, String userId) {
-        return parseUserId(userId)
-                .flatMap(credentialRepository::findCredentialsByUserId)
-                .flatMap(credentials -> {
-                    if (credentials.isEmpty()) {
-                        return Mono.error(new NoSuchVerifiableCredentialException(
-                                "No credentials found for userId: " + userId
-                        ));
-                    }
-                    List<CredentialsBasicInfo> infoList = credentials.stream()
-                            .map(this::mapToCredentialsBasicInfo)
-                            .toList();
-
-                    return Mono.just(infoList);
-                });
-    }
-
-
-    private CredentialsBasicInfo mapToCredentialsBasicInfo(Credential credential) {
-        JsonNode jsonVc = parseJsonVc(credential.getJsonVc());
-        JsonNode credentialSubject = jsonVc.get("credentialSubject");
-
-        // if there's a 'validUntil' node, parse it
-        ZonedDateTime validUntil = null;
-        JsonNode validUntilNode = jsonVc.get("validUntil");
-        if (validUntilNode != null && !validUntilNode.isNull()) {
-            validUntil = parseZonedDateTime(validUntilNode.asText());
-        }
-
-        // Convert the int in DB -> enum constant
-        CredentialStatus status = CredentialStatus.fromCode(credential.getCredentialStatus());
-
-        return CredentialsBasicInfo.builder()
-                .id(credential.getCredentialId().toString())
-                .vcType(credential.getCredentialType())   // e.g., ["VerifiableCredential","SomeOtherType"]
-                .credentialStatus(status)
-                .availableFormats(determineAvailableFormats(credential.getCredentialFormat()))
-                .credentialSubject(credentialSubject)
-                .validUntil(validUntil)
-                .build();
-    }
-
+    // ---------------------------------------------------------------------
+    // Determine Available Formats for the BasicInfo DTO
+    // ---------------------------------------------------------------------
     private List<String> determineAvailableFormats(Integer credentialFormat) {
         if (credentialFormat == null) {
             return Collections.emptyList();
         }
-        // Here we do the "reverse" mapping from an int code to a format name
         try {
             CredentialFormats formatEnum = CredentialFormats.fromCode(credentialFormat);
-            // Return whichever representation you prefer
             return List.of(formatEnum.name());
         } catch (IllegalArgumentException e) {
             return List.of("UNKNOWN_FORMAT");
         }
     }
 
+    // ---------------------------------------------------------------------
+    // Parse ZonedDateTime
+    // ---------------------------------------------------------------------
     private ZonedDateTime parseZonedDateTime(String dateString) {
         try {
-            // Try parsing as standard ISO-8601, e.g. "2024-04-21T09:29:30Z"
             return ZonedDateTime.parse(dateString);
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException("Invalid date format for validUntil: " + dateString, e);
         }
     }
 
+    // ---------------------------------------------------------------------
+    // parseJsonVc - If blank, returns empty object node
+    // ---------------------------------------------------------------------
     private JsonNode parseJsonVc(String rawJson) {
         if (rawJson == null || rawJson.isBlank()) {
-            // Return an empty object node or throw an exception, depending on your needs
             return objectMapper.createObjectNode();
         }
         try {
@@ -416,15 +540,4 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
             throw new IllegalArgumentException("Failed to parse credential JSON: " + e.getMessage(), e);
         }
     }
-
-
-    private Mono<UUID> parseUserId(String userId) {
-        return Mono.fromCallable(() -> {
-            if (userId == null || userId.isBlank()) {
-                throw new IllegalArgumentException("userId is null or blank");
-            }
-            return UUID.fromString(userId);
-        });
-    }
-
 }

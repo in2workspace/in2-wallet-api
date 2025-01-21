@@ -1,10 +1,8 @@
 package es.in2.wallet.application.workflows.data.impl;
 
-import es.in2.wallet.application.ports.BrokerService;
+import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.ports.VaultService;
 import es.in2.wallet.application.workflows.data.DataWorkflow;
-import es.in2.wallet.application.dto.CredentialsBasicInfo;
-import es.in2.wallet.domain.services.DataService;
 import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +45,12 @@ public class DataWorkflowImpl implements DataWorkflow {
 
     @Override
     public Mono<Void> deleteCredentialByIdAndUserId(String processId, String credentialId, String userId) {
-        return null;
+        return credentialRepositoryService.extractDidFromCredential(processId, credentialId, userId)
+                .flatMap(vaultService::deleteSecretByKey)
+                .then(credentialRepositoryService.deleteCredential(processId, credentialId, userId))
+                .doOnSuccess(aVoid -> log.info("Delete VC with Id: {} successfully completed", credentialId))
+                .onErrorResume(Mono::error);
     }
+
 
 }

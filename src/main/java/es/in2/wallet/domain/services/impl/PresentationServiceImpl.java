@@ -4,16 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.wallet.application.ports.AppConfig;
-import es.in2.wallet.application.ports.BrokerService;
-import es.in2.wallet.domain.exceptions.ParseErrorException;
 import es.in2.wallet.application.dto.CredentialsBasicInfo;
-import es.in2.wallet.application.dto.DomeVerifiablePresentation;
 import es.in2.wallet.application.dto.VcSelectorResponse;
 import es.in2.wallet.application.dto.VerifiablePresentation;
-import es.in2.wallet.domain.services.DataService;
+import es.in2.wallet.application.ports.AppConfig;
 import es.in2.wallet.domain.services.PresentationService;
 import es.in2.wallet.domain.services.SignerService;
+import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,7 +21,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-import static es.in2.wallet.domain.utils.ApplicationConstants.*;
+import static es.in2.wallet.domain.utils.ApplicationConstants.JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1;
+import static es.in2.wallet.domain.utils.ApplicationConstants.VERIFIABLE_PRESENTATION;
 import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 
 @Slf4j
@@ -33,9 +31,8 @@ import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 public class PresentationServiceImpl implements PresentationService {
 
     private final ObjectMapper objectMapper;
-    private final DataService dataService;
-    private final BrokerService brokerService;
     private final SignerService signerService;
+    private final CredentialRepositoryService credentialRepositoryService;
 
     private final AppConfig appConfig;
 
@@ -50,7 +47,7 @@ public class PresentationServiceImpl implements PresentationService {
      */
     @Override
     public Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse,String nonce, String audience) {
-        return createSignedVerifiablePresentation(processId, authorizationToken, nonce, audience, vcSelectorResponse.selectedVcList(), JWT_VC);
+        return createSignedVerifiablePresentation(processId, authorizationToken, nonce, audience, vcSelectorResponse.selectedVcList());
     }
 
     /**
@@ -63,100 +60,70 @@ public class PresentationServiceImpl implements PresentationService {
      * @param audience             The intended audience of the VP.
      */
     @Override
-    public Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken, CredentialsBasicInfo credentialsBasicInfo, String nonce, String audience) {
-        return createSignedVerifiablePresentation(processId, authorizationToken, nonce, audience, List.of(credentialsBasicInfo), CWT_VC);
+    public Mono<String> createSignedTurnstileVerifiablePresentation(String processId, String authorizationToken, CredentialsBasicInfo credentialsBasicInfo, String nonce, String audience) {
+        return createSignedVerifiablePresentation(processId, authorizationToken, nonce, audience, List.of(credentialsBasicInfo));
     }
 
-    @Override
-    public Mono<String> createEncodedVerifiablePresentationForDome(String processId, String authorizationToken, VcSelectorResponse vcSelectorResponse) {
-        return createVerifiablePresentationForDome(processId, authorizationToken,vcSelectorResponse);
-    }
-
-    private Mono<String> createSignedVerifiablePresentation(String processId, String authorizationToken,String nonce, String audience, List<CredentialsBasicInfo> selectedVcList, String format) {
+    private Mono<String> createSignedVerifiablePresentation(
+            String processId,
+            String authorizationToken,
+            String nonce,
+            String audience,
+            List<CredentialsBasicInfo> selectedVcList
+    ) {
         log.info("Starting to create Signed Verifiable Presentation for processId: {}", processId);
 
         // Step 1: Get User ID from the authorization token
         return getUserIdFromToken(authorizationToken)
-                .doOnSubscribe(subscription -> log.debug("Getting user ID from the authorization token for processId: {}", processId))
+                .doOnSubscribe(sub -> log.debug("Getting user ID from token, processId: {}", processId))
+
+                // Step 2: Get Verifiable Credentials in the chosen format (only once)
                 .flatMap(userId -> {
-                            log.debug("User ID obtained successfully for processId: {}", processId);
+                    log.debug("User ID obtained: {}, processId: {}", userId, processId);
+                    return getVerifiableCredentials(processId, userId, selectedVcList);
+                })
+                .doOnSubscribe(sub -> log.debug("Fetching Verifiable Credentials, processId: {}", processId))
 
-                            // Step 2: Get Verifiable Credentials in JWT format
-                            return getVerifiableCredentials(processId,userId,selectedVcList, JWT_VC)
-                                    .doOnSubscribe(sub -> log.debug("Fetching Verifiable Credentials in JWT format for processId: {}", processId))
-                                    .flatMap(verifiableCredentialsListJWT -> {
-                                                log.debug("Successfully fetched Verifiable Credentials in JWT format for processId: {}", processId);
+                // Step 3: Extract DID from the first Verifiable Credential
+                .flatMap(verifiableCredentialsList -> getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsList)
+                        .flatMap(did -> {
+                            log.debug("DID extracted successfully: {}, processId: {}", did, processId);
 
-                                                // Step 3: Extract DID from the first Verifiable Credential
-                                                return getSubjectDidFromTheFirstVcOfTheList(verifiableCredentialsListJWT)
-                                                        .doOnSubscribe(sub -> log.debug("Extracting DID from the first Verifiable Credential for processId: {}", processId))
-                                                        .flatMap(did -> {
-                                                                    log.debug("Successfully extracted DID for processId: {}", processId);
+                            // Step 4: Create the unsigned presentation
+                            return createUnsignedPresentationForSigning(verifiableCredentialsList, did, nonce, audience)
+                                    .doOnSubscribe(sub -> log.debug("Creating unsigned Verifiable Presentation, processId: {}", processId))
 
-                                                                    // Step 4: Get Verifiable Credentials in the selected format
-                                                                    return getVerifiableCredentials(processId,userId,selectedVcList, format)
-                                                                            .doOnSubscribe(sub -> log.debug("Fetching Verifiable Credentials in {} format for processId: {}", format, processId))
-                                                                            .flatMap(verifiableCredentialsList -> // Create the unsigned verifiable presentation
-                                                                                    {
-                                                                                        log.debug("Successfully fetched Verifiable Credentials in {} format for processId: {}", format, processId);
+                                    // Step 5: Build JWT for Verifiable Presentation
+                                    .flatMap(document -> signerService.buildJWTSFromJsonNode(document, did, "vp")
+                                            .doOnSubscribe(sub -> log.debug("Building JWT for Verifiable Presentation, processId: {}", processId))
 
-                                                                                        // Step 5: Create unsigned Verifiable Presentation for signing
-                                                                                        return createUnsignedPresentationForSigning(verifiableCredentialsList, did,nonce,audience)
-                                                                                                .doOnSubscribe(sub -> log.debug("Creating unsigned Verifiable Presentation for processId: {}", processId))
-                                                                                                .flatMap(document -> {
-                                                                                                    log.debug("Successfully created unsigned Verifiable Presentation for processId: {}", processId);
-
-                                                                                                    // Step 6: Build JWT for Verifiable Presentation
-                                                                                                    return signerService.buildJWTSFromJsonNode(document, did, "vp")
-                                                                                                            .doOnSubscribe(sub -> log.debug("Building JWT for Verifiable Presentation for processId: {}", processId))
-                                                                                                            .flatMap(jwt -> {
-                                                                                                                log.debug("Successfully built JWT for Verifiable Presentation for processId: {}", processId);
-
-                                                                                                                // Step 7: Encode the presentation
-                                                                                                                return encodePresentation(jwt)
-                                                                                                                        .doOnSubscribe(sub -> log.debug("Encoding Verifiable Presentation for processId: {}", processId))
-                                                                                                                        .doOnSuccess(encodedPresentation -> log.info("ProcessID: {} - Verifiable Presentation created successfully: {}", processId, encodedPresentation))
-                                                                                                                        .doOnError(error -> log.error("Error occurred while encoding Verifiable Presentation for processId: {}: {}", processId, error.getMessage()));
-                                                                                                            });
-                                                                                                });
-                                                                                    });
-                                                                }
-                                                                );
-                                            }
+                                            // Step 6: Encode the presentation
+                                            .flatMap(jwt -> encodePresentation(jwt)
+                                                    .doOnSubscribe(sub -> log.debug("Encoding Verifiable Presentation, processId: {}", processId))
+                                                    .doOnSuccess(encodedPresentation -> log.info(
+                                                            "ProcessID: {} - Verifiable Presentation created successfully: {}",
+                                                            processId, encodedPresentation
+                                                    ))
                                             )
-                                            // Handle errors
-                                            .onErrorResume(e -> {
-                                                log.warn("Error in creating Verifiable Presentation: ", e);
-                                                return Mono.error(e);
-                                            });
-                        }
-                        );
+                                    );
+                        })
+                )
+
+                // Handle errors
+                .onErrorResume(e -> {
+                    log.warn("Error in creating Verifiable Presentation, processId: {}: {}", processId, e.getMessage());
+                    return Mono.error(e);
+                });
     }
 
-    private Mono<String> createVerifiablePresentationForDome(String processId, String authorizationToken,VcSelectorResponse vcSelectorResponse) {
-        return  getUserIdFromToken(authorizationToken)
-                .flatMap(userId ->getVerifiableCredentials(processId,userId,vcSelectorResponse.selectedVcList(), JSON_VC)
-                                .flatMap(verifiableCredentialsList -> createDomePresentation(verifiableCredentialsList, vcSelectorResponse.nonce()))
-                                .flatMap(this::encodePresentation)
-                        )
-                        // Log success
-                        .doOnSuccess(verifiablePresentation -> log.info("ProcessID: {} - DOME Verifiable Presentation created successfully: {}", processId, verifiablePresentation))
-                        // Handle errors
-                        .onErrorResume(e -> {
-                            log.warn("Error in creating Verifiable Presentation: ", e);
-                            return Mono.error(e);
-                        });
-    }
     /**
-     * Retrieves a list of Verifiable Credential JWTs based on the VCs selected in the VcSelectorResponse.
+     * Retrieves a list of Verifiable Credential based on the VCs selected in the VcSelectorResponse.
      *
      * @param selectedVcList       The selected VCs.
-     * @param format               The format of the VCs
      */
-    private Mono<List<String>> getVerifiableCredentials(String processId, String userId, List<CredentialsBasicInfo> selectedVcList, String format) {
+    private Mono<List<String>> getVerifiableCredentials(String processId, String userId, List<CredentialsBasicInfo> selectedVcList) {
         return Flux.fromIterable(selectedVcList)
-                .flatMap(credential -> brokerService.getCredentialByIdAndUserId(processId,credential.id(),userId))
-                .flatMap(credentialEntity -> dataService.getVerifiableCredentialOnRequestedFormat(credentialEntity,format))
+                .flatMap(credential -> credentialRepositoryService.getCredentialDataByIdAndUserId(processId,credential.id(),userId))
                 .collectList();
     }
 
@@ -230,38 +197,6 @@ public class PresentationServiceImpl implements PresentationService {
             JWTClaimsSet payload = payloadBuilder.build();
             log.debug(payload.toString());
             return objectMapper.readTree(payload.toString());
-        });
-    }
-
-    /**
-     * Creates an unsigned Verifiable Presentation containing the selected VCs.
-     *
-     * @param vcs       The list of VC JWTs to include in the VP.
-     */
-    private Mono<String> createDomePresentation(
-            List<String> vcs, String nonce) {
-        return Mono.fromCallable(() -> {
-            List<JsonNode> vcsJsonList = vcs.stream()
-                    .map(vc -> {
-                        try {
-                            return objectMapper.readTree(vc);
-                        } catch (Exception e) {
-                            throw new ParseErrorException("Error parsing VC string to JsonNode");
-                        }
-                    })
-                    .toList();
-
-            DomeVerifiablePresentation vp = DomeVerifiablePresentation
-                    .builder()
-                    .holder("did:my:wallet")
-                    .nonce(nonce)
-                    .context(List.of(JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1))
-                    .type(List.of(VERIFIABLE_PRESENTATION))
-                    .verifiableCredential(vcsJsonList)
-                    .build();
-
-            return objectMapper.writeValueAsString(vp);
-
         });
     }
 

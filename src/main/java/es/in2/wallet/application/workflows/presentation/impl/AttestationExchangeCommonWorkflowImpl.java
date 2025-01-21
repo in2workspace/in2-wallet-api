@@ -1,12 +1,15 @@
 package es.in2.wallet.application.workflows.presentation.impl;
 
-import es.in2.wallet.application.ports.BrokerService;
-import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
 import es.in2.wallet.application.dto.AuthorizationRequestOIDC4VP;
 import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.dto.VcSelectorRequest;
 import es.in2.wallet.application.dto.VcSelectorResponse;
-import es.in2.wallet.domain.services.*;
+import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
+import es.in2.wallet.domain.services.AuthorizationRequestService;
+import es.in2.wallet.domain.services.AuthorizationResponseService;
+import es.in2.wallet.domain.services.PresentationService;
+import es.in2.wallet.domain.services.VerifierValidationService;
+import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,7 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
     private final AuthorizationResponseService authorizationResponseService;
     private final VerifierValidationService verifierValidationService;
     private final PresentationService presentationService;
+    private final CredentialRepositoryService credentialRepositoryService;
 
     @Override
     public Mono<VcSelectorRequest> processAuthorizationRequest(String processId, String authorizationToken, String qrContent) {
@@ -47,12 +51,10 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                         .flatMap(element -> {
                             // Verificar si el elemento es igual a LEAR_CREDENTIAL_EMPLOYEE_SCOPE
                             String credentialType = element.equals(LEAR_CREDENTIAL_EMPLOYEE_SCOPE)
-                                    ? "LEARCredentialEmployee" // Cambia a lo que sea necesario
+                                    ? "LEARCredentialEmployee"
                                     : element;
 
-                            // Llamar al brokerService con el tipo de credencial adecuado
-                            return brokerService.getCredentialByCredentialTypeAndUserId(processId, credentialType, userId)
-                                    .flatMap(dataService::getUserVCsInJson);
+                            return credentialRepositoryService.getCredentialsByUserIdAndType(processId, userId, credentialType);
                         })
                         .collectList()  // This will collect all lists into a single list
                         .flatMap(lists -> {

@@ -3,13 +3,14 @@ package es.in2.wallet.infrastructure.ebsi.config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import es.in2.wallet.application.dto.CredentialResponse;
 import es.in2.wallet.application.ports.AppConfig;
-import es.in2.wallet.application.ports.BrokerService;
-import es.in2.wallet.application.dto.CredentialEntity;
-import es.in2.wallet.domain.services.DataService;
+import es.in2.wallet.domain.exceptions.NoSuchVerifiableCredentialException;
 import es.in2.wallet.domain.services.DidKeyGeneratorService;
 import es.in2.wallet.domain.utils.ApplicationUtils;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
+import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
+import es.in2.wallet.infrastructure.services.UserRepositoryService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -21,160 +22,213 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static es.in2.wallet.domain.utils.ApplicationConstants.*;
+import static es.in2.wallet.domain.utils.ApplicationConstants.CONTENT_TYPE;
+import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
-@Slf4j
-@Tag(name = "EbsiConfig", description = "Generate Did for ebsi purposes")
+@Tag(name = "EbsiConfig", description = "Generate Did for Ebsi purposes")
 public class EbsiConfig {
 
     private final ObjectMapper objectMapper;
     private final AppConfig appConfig;
     private final DidKeyGeneratorService didKeyGeneratorService;
-    private final BrokerService brokerService;
-    private final DataService dataService;
+    private final UserRepositoryService userRepositoryService;
+    private final CredentialRepositoryService credentialRepositoryService;
     private final WebClientConfig webClient;
+
+    // We store the DID we generate (if any) in memory here
     private String didForEbsi;
 
     @PostConstruct
     public void onPostConstruct() {
-        init().subscribe(
-                null,
-                error -> log.error("Initialization failed", error)
-        );
+        init()
+                .subscribe(
+                        unused -> log.info("EbsiConfig initialization completed"),
+                        error -> log.error("Initialization failed", error)
+                );
     }
 
+    /**
+     * Entry point for initialization.
+     * - Retrieves a token from the identity provider.
+     * - Extracts the userId from that token.
+     * - Checks if a credential of type "ExampleCredential" already exists for that user.
+     *    If so, we extract the DID from it.
+     * - If not found, we generate a new DID and store a new credential so that
+     *   we can pass EBSI test scenarios.
+     *
+     * @return Mono<String> with the final DID used/stored.
+     */
     public Mono<String> init() {
         return generateEbsiDid()
                 .doOnNext(did -> this.didForEbsi = did)
-                .doOnError(error -> log.error("Initialization failed", error));
+                .doOnError(error -> log.error("Initialization failed: {}", error.getMessage()));
     }
 
-    private Mono<String> generateEbsiDid() {
-        String processId = UUID.randomUUID().toString();
-        String credentialId = "urn:entities:credential:exampleCredential";
-        String vcType = "ExampleCredential";
+    /**
+     * Returns the DID that was generated/stored during init().
+     */
+    public Mono<String> getDid() {
+        return Mono.justOrEmpty(this.didForEbsi);
+    }
 
+    /**
+     * Main logic for retrieving or creating a DID credential,
+     * then returning the DID for EBSI usage.
+     */
+    private Mono<String> generateEbsiDid() {
+        // Step 1: Build the body for the IDP token request
+        String body = buildTokenRequestBody();
+
+        // Step 2: Delay (15s) then request token
+        return Mono.delay(Duration.ofSeconds(15))
+                .then(
+                        webClient.centralizedWebClient()
+                                .post()
+                                .uri(appConfig.getIdentityProviderUrl())
+                                .header(CONTENT_TYPE, APPLICATION_FORM_URLENCODED_VALUE)
+                                .bodyValue(body)
+                                .exchangeToMono(response -> {
+                                    if (response.statusCode().isError()) {
+                                        return Mono.error(new RuntimeException(
+                                                "Error retrieving token for user: " + appConfig.getIdentityProviderUsername()
+                                        ));
+                                    } else {
+                                        log.info("Token retrieval completed");
+                                        return response.bodyToMono(String.class);
+                                    }
+                                })
+                )
+                // Step 3: Parse the token from JSON
+                .flatMap(this::parseTokenFromResponse)
+                // Step 4: Extract userId from token
+                .flatMap(ApplicationUtils::getUserIdFromToken)
+                // Step 5: Check if "ExampleCredential" already exists; if yes, retrieve DID; otherwise create
+                .flatMap(this::findOrCreateDidCredential);
+    }
+
+    /**
+     * Builds the body for retrieving a token from the identity provider.
+     */
+    private String buildTokenRequestBody() {
         String clientSecret = appConfig.getIdentityProviderClientSecret().trim();
         String decodedSecret;
-
         try {
             byte[] decodedBytes = Base64.getDecoder().decode(clientSecret);
             decodedSecret = new String(decodedBytes, StandardCharsets.UTF_8);
-
-            String reEncodedSecret = Base64.getEncoder().encodeToString(decodedSecret.getBytes(StandardCharsets.UTF_8)).trim();
-            if (!clientSecret.equals(reEncodedSecret)) {
+            String reEncoded = Base64.getEncoder().encodeToString(decodedSecret.getBytes(StandardCharsets.UTF_8)).trim();
+            if (!clientSecret.equals(reEncoded)) {
                 decodedSecret = clientSecret;
             }
         } catch (IllegalArgumentException ex) {
             decodedSecret = clientSecret;
         }
-
-        String body = "grant_type=" + URLEncoder.encode("password", StandardCharsets.UTF_8) +
-                "&username=" + URLEncoder.encode(appConfig.getIdentityProviderUsername(), StandardCharsets.UTF_8) +
-                "&password=" + URLEncoder.encode(appConfig.getIdentityProviderPassword(), StandardCharsets.UTF_8) +
-                "&client_id=" + URLEncoder.encode(appConfig.getIdentityProviderClientId(), StandardCharsets.UTF_8) +
-                "&client_secret=" + URLEncoder.encode(decodedSecret, StandardCharsets.UTF_8);
-
-        return Mono.delay(Duration.ofSeconds(15))
-                .then(webClient.centralizedWebClient()
-                        .post()
-                        .uri(appConfig.getIdentityProviderUrl())
-                        .header(CONTENT_TYPE, CONTENT_TYPE_URL_ENCODED_FORM)
-                        .bodyValue(body)
-                        .exchangeToMono(response -> {
-                            if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
-                                return Mono.error(new RuntimeException("Error getting token from user: " + appConfig.getIdentityProviderUsername()));
-                            } else {
-                                log.info("Token retrieval completed");
-                                return response.bodyToMono(String.class);
-                            }
-                        }))
-                .flatMap(response -> {
-                    log.debug(response);
-                    Map<String, Object> jsonObject;
-                    try {
-                        jsonObject = objectMapper.readValue(response, new TypeReference<>() {});
-                    } catch (JsonProcessingException e) {
-                        return Mono.error(new RuntimeException(e));
-                    }
-                    String token = jsonObject.get("access_token").toString();
-                    return Mono.just(token);
-                })
-                .flatMap(ApplicationUtils::getUserIdFromToken)
-                .flatMap(userId -> brokerService.getEntityById(processId, USER_ENTITY_PREFIX + userId)
-                        .flatMap(optionalEntity -> optionalEntity
-                                .map(entity -> getDidForUserCredential(processId, userId, vcType))
-                                .orElseGet(() -> generateDid()
-                                        .flatMap(did -> createAndAddCredentialWithADidToPassEbsiTest(processId, userId, did, credentialId, vcType)
-                                                .thenReturn(did)
-                                        )
-                                )
-                        )
-                )
-                .doOnError(e -> log.error("Error while processing did generation: {}", e.getMessage()))
-                .onErrorResume(e -> Mono.error(new RuntimeException("The user already exists: " + e)));
+        return "grant_type=" + urlEncode("password") +
+                "&username=" + urlEncode(appConfig.getIdentityProviderUsername()) +
+                "&password=" + urlEncode(appConfig.getIdentityProviderPassword()) +
+                "&client_id=" + urlEncode(appConfig.getIdentityProviderClientId()) +
+                "&client_secret=" + urlEncode(decodedSecret);
     }
 
+    private String urlEncode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Parse the token (as a String JSON) to extract "access_token" from the JSON response.
+     */
+    private Mono<String> parseTokenFromResponse(String jsonResponse) {
+        log.debug("Token JSON response: {}", jsonResponse);
+        try {
+            Map<String, Object> jsonObject = objectMapper.readValue(jsonResponse, new TypeReference<>() {});
+            if (jsonObject.containsKey("access_token")) {
+                return Mono.just(jsonObject.get("access_token").toString());
+            } else {
+                return Mono.error(new RuntimeException("No 'access_token' field found in response"));
+            }
+        } catch (JsonProcessingException e) {
+            return Mono.error(new RuntimeException("Error parsing token JSON", e));
+        }
+    }
+
+    /**
+     * Either finds an existing DID credential of the given type for the user
+     * or creates a brand-new DID and credential if not found.
+     */
+    private Mono<String> findOrCreateDidCredential(String userId) {
+        String processId = UUID.randomUUID().toString();
+
+        // Try to fetch an existing credential for the user with the given type (in JWT_VC format)
+        return credentialRepositoryService.getCredentialsByUserIdAndType(processId, userId, "ExampleCredential")
+                .flatMap(credentials -> {
+                    // If we found some credential(s), extract the DID from the first
+                    if (!credentials.isEmpty()) {
+                        String firstCredId = credentials.get(0).id(); // the "id" field in CredentialsBasicInfo
+                        return credentialRepositoryService.extractDidFromCredential(processId, firstCredId, userId);
+                    }
+                    // If none found, generate new DID + create new credential
+                    return createNewDidAndCredential(processId, userId);
+                })
+                // If no credentials exist, the above code moves to create them
+                // If there's an error "NoSuchVerifiableCredentialException", we also create a new one
+                .onErrorResume(NoSuchVerifiableCredentialException.class, ex -> {
+                    log.info("No credential found for userId={}, type={}. Creating new DID...", userId, "ExampleCredential");
+                    return createNewDidAndCredential(processId, userId);
+                });
+    }
+
+    /**
+     * Generates a brand-new DID and creates a credential referencing it.
+     */
+    private Mono<String> createNewDidAndCredential(String processId, String userId) {
+        return generateDid()
+                .flatMap(did -> createAndAddCredentialForEbsiTest(processId, userId, did)
+                        .thenReturn(did)
+                );
+    }
+
+    /**
+     * Calls DidKeyGeneratorService to produce a DID.
+     */
     private Mono<String> generateDid() {
         return didKeyGeneratorService.generateDidKeyJwkJcsPub();
     }
 
-    private Mono<Void> createAndAddCredentialWithADidToPassEbsiTest(String processId, String userId, String did, String credentialId, String type) {
-        String credentialEntity = String.format("""
-                            {
-                              "id": "%s",
-                              "type": "Credential",
-                              "status": {
-                                "type": "Property",
-                                "value": "ISSUED"
-                              },
-                              "credentialType": {
-                                "type": "Property",
-                                "value": ["%s", "VerifiableCredential"]
-                              },
-                              "json_vc": {
-                                "type": "Property",
-                                "value": {
-                                  "id": "urn:credential:exampleCredential",
-                                  "credentialSubject": {
-                                    "id" : "%s"
-                                  }
-                                }
-                              },
-                              "belongsTo": {
-                                "type": "Relationship",
-                                "object": "urn:entities:walletUser:%s"
-                              }
-                            }
-                            """, credentialId, type, did, userId);
-        return dataService.createUserEntity(userId)
-                .flatMap(createdUserId -> brokerService.postEntity(processId, createdUserId))
-                .then(brokerService.postEntity(processId, credentialEntity));
-    }
+    /**
+     * Creates a new user (if not exists) in the userRepositoryService,
+     * then stores a new credential (with format=null => plain JSON).
+     * The credential references the DID in its "credentialSubject.id".
+     */
+    private Mono<Void> createAndAddCredentialForEbsiTest(String processId, String userId, String did) {
 
-    private Mono<String> getDidForUserCredential(String processId, String userId, String type) {
-        return brokerService.getCredentialByCredentialTypeAndUserId(processId, type, userId)
-                .flatMap(credentialsJson -> {
-                    try {
-                        List<CredentialEntity> credentials = objectMapper.readValue(credentialsJson, new TypeReference<>() {});
-                        CredentialEntity firstCredential = credentials.get(0);
-                        String firstCredentialJson = objectMapper.writeValueAsString(firstCredential);
-                        return dataService.extractDidFromVerifiableCredential(firstCredentialJson);
-                    } catch (Exception e) {
-                        return Mono.error(new RuntimeException("Error processing credentials", e));
-                    }
-                });
-    }
+        String credentialId = UUID.randomUUID().toString();
+        String plainJsonVc = """
+        {
+          "id": "%s",
+          "credentialSubject": {
+            "id": "%s"
+          }
+        }
+        """
+                .formatted(credentialId, did)
+                .trim();
 
-    public Mono<String> getDid() {
-        return Mono.just(this.didForEbsi);
+        // We'll store it as a plain credential (format=null => code checks "if format == null => parseAsPlainJson(...)")
+        CredentialResponse newCredentialResponse = CredentialResponse.builder()
+                .credential(plainJsonVc)
+                .build();
+
+        return userRepositoryService.storeUser(processId, userId)
+                .flatMap(userUuid -> {
+                    log.info("User {} stored with uuid={}", userId, userUuid);
+                    return credentialRepositoryService.saveCredential(processId, userUuid, newCredentialResponse);
+                })
+                .doOnSuccess(savedCredId -> log.info("Created new credential {} for userId={}, with DID={}", savedCredId, userId, did))
+                .then();
     }
 }
-
-
