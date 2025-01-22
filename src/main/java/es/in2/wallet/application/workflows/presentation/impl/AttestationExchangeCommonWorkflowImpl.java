@@ -54,7 +54,7 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                                     ? "LEARCredentialEmployee"
                                     : element;
 
-                            return credentialRepositoryService.getCredentialsByUserIdAndType(processId, userId, credentialType);
+                            return  credentialRepositoryService.getCredentialsByUserIdAndType(processId, userId, credentialType);
                         })
                         .collectList()  // This will collect all lists into a single list
                         .flatMap(lists -> {

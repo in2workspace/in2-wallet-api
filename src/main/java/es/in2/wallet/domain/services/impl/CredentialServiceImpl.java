@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.dto.*;
 import es.in2.wallet.domain.exceptions.FailedDeserializingException;
 import es.in2.wallet.domain.exceptions.FailedSerializingException;
-import es.in2.wallet.domain.exceptions.ParseErrorException;
 import es.in2.wallet.domain.services.CredentialService;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
@@ -216,7 +215,7 @@ public class CredentialServiceImpl implements CredentialService {
                                                     .build());
                                         } catch (Exception e) {
                                             log.error("Error parsing credential response: {}", e.getMessage());
-                                            sink.error(new ParseErrorException(
+                                            sink.error(new FailedDeserializingException(
                                                     "Error parsing credential response: " + responseBody
                                             ));
                                         }

@@ -238,7 +238,7 @@ class CredentialRepositoryServiceImpTest {
         Credential existing = Credential.builder()
                 .credentialId(credUuid)
                 .userId(userUuid)
-                .credentialType(List.of("VerifiableCredential"))
+                .credentialType(List.of("VerifiableCredential", "AnotherType"))
                 .jsonVc(credential)
                 .build();
 
@@ -288,25 +288,30 @@ class CredentialRepositoryServiceImpTest {
     }
 
     @Test
-    void testGetCredentialsByUserId_Success() {
+    void testGetCredentialsByUserId_Success() throws JsonProcessingException {
         String processId = "procABC";
         UUID userUuid = UUID.randomUUID();
+        String credential1 = "credential1";
+        String credential2 = "credential2";
 
         // Suppose the repository returns 2 credentials for the user
         Credential c1 = Credential.builder()
                 .credentialId(UUID.randomUUID())
                 .userId(userUuid)
-                .credentialType(List.of("VerifiableCredential", "SomeType"))
+                .credentialType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
                 .credentialStatus(CredentialStatus.VALID.getCode())
-                .jsonVc("{\"credentialSubject\":{\"id\":\"did:example:123\"}}")
+                .jsonVc(credential1)
                 .build();
         Credential c2 = Credential.builder()
                 .credentialId(UUID.randomUUID())
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "AnotherType"))
                 .credentialStatus(CredentialStatus.ISSUED.getCode())
-                .jsonVc("{\"credentialSubject\":{\"id\":\"did:example:456\"}}")
+                .jsonVc(credential2)
                 .build();
+
+        when(objectMapper.readTree(credential1)).thenReturn(getJsonNodeCredentialLearCredentialEmployee());
+        when(objectMapper.readTree(credential2)).thenReturn(getJsonNodeCredential());
 
         when(credentialRepository.findAllByUserId(userUuid))
                 .thenReturn(Flux.just(c1, c2));
@@ -315,9 +320,7 @@ class CredentialRepositoryServiceImpTest {
                 credentialRepositoryService.getCredentialsByUserId(processId, userUuid.toString());
 
         StepVerifier.create(result)
-                .assertNext(list -> {
-                    assertEquals(2, list.size());
-                })
+                .assertNext(list -> assertEquals(2, list.size()))
                 .verifyComplete();
     }
 
@@ -388,7 +391,8 @@ class CredentialRepositoryServiceImpTest {
                                 }
                             }
                         }
-                     }
+                     },
+                     "validUntil": "2026-12-31T23:59:59Z"
                 }
                 """;
         ObjectMapper objectMapper2 = new ObjectMapper();
@@ -401,10 +405,12 @@ class CredentialRepositoryServiceImpTest {
                     "id": "8c7a6213-544d-450d-8e3d-b41fa9009198",
                     "type": [
                         "VerifiableCredential",
-                        "LEARCredentialEmployee"
+                        "AnotherType"
                     ],
                     "credentialSubject" : {
-                        "id" : "did:example:basic"                     }
+                        "id" : "did:example:basic"
+                    },
+                    "validUntil": "2026-12-31T23:59:59Z"
                 }
                 """;
         ObjectMapper objectMapper2 = new ObjectMapper();

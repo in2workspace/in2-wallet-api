@@ -123,7 +123,7 @@ public class PresentationServiceImpl implements PresentationService {
      */
     private Mono<List<String>> getVerifiableCredentials(String processId, String userId, List<CredentialsBasicInfo> selectedVcList) {
         return Flux.fromIterable(selectedVcList)
-                .flatMap(credential -> credentialRepositoryService.getCredentialDataByIdAndUserId(processId,credential.id(),userId))
+                .flatMap(credential -> credentialRepositoryService.getCredentialDataByIdAndUserId(processId,userId, credential.id()))
                 .collectList();
     }
 

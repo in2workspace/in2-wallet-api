@@ -5,15 +5,6 @@ public class ApplicationConstants {
         throw new IllegalStateException("Utility class");
     }
 
-    public static final String USER_ENTITY_PREFIX = "urn:entities:walletUser:";
-    public static final String WALLET_USER_TYPE = "WalletUser";
-    public static final String CREDENTIAL_TYPE = "Credential";
-    public static final String TRANSACTION_TYPE = "Transaction";
-    public static final String PROPERTY_TYPE = "Property";
-    public static final String RELATIONSHIP_TYPE = "Relationship";
-    public static final String CREDENTIAL_ENTITY_PREFIX = "urn:entities:credential:";
-    public static final String TRANSACTION_ENTITY_PREFIX = "urn:entities:transaction:";
-    public static final String ATTRIBUTES = "/attrs";
     public static final String PROCESS_ID = "ProcessId";
     public static final String DID = "did";
     public static final long MSB = 0x80L;
@@ -32,7 +23,7 @@ public class ApplicationConstants {
     public static final String CONTENT_TYPE_URL_ENCODED_FORM = "application/x-www-form-urlencoded";
     public static final String JWT_ISS_CLAIM = "iss";
     public static final String SCOPE_CLAIM = "scope";
-    public static final String JSON_VC = "json_vc";
+    public static final String JSON_VC = "";
     public static final String CWT_VC = "cwt_vc";
     public static final String CREDENTIAL_SUBJECT = "credentialSubject";
     public static final String VALID_UNTIL = "validUntil";

@@ -34,8 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static es.in2.wallet.domain.utils.ApplicationConstants.CWT_VC;
-import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_VC;
+import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 
 @Slf4j
 @Service
@@ -385,7 +384,7 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
             return Mono.error(new IllegalArgumentException("CredentialResponse format is null"));
         }
         return switch (credentialResponse.format()) {
-            case JWT_VC -> Mono.just(CredentialFormats.JWT_VC.getCode());
+            case JWT_VC, JWT_VC_JSON -> Mono.just(CredentialFormats.JWT_VC.getCode());
             case CWT_VC -> Mono.just(CredentialFormats.CWT_VC.getCode());
             default -> Mono.error(new IllegalArgumentException(
                     "Unsupported credential format: " + credentialResponse.format()

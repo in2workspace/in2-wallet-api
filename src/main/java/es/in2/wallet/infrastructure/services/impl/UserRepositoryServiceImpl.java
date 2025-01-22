@@ -17,31 +17,35 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class UserRepositoryServiceImpl implements UserRepositoryService {
+
     private final UserRepository userRepository;
 
     @Override
     public Mono<UUID> storeUser(String processId, String userId) {
+        // Convert the String userId to UUID
         UUID uuid = UUID.fromString(userId);
         Timestamp currentTimestamp = new Timestamp(Instant.now().toEpochMilli());
 
-        log.debug("[Process ID: {}] Start processing user with ID {}", processId, userId);
-
         return userRepository.findById(uuid)
+                // If user is found, skip saving and just return userId
                 .flatMap(existingUser -> {
-                    log.info("[Process ID: {}] User with ID {} already exists.", processId, userId);
-                    return Mono.empty();
+                    log.info("[{}] User {} already exists.", processId, userId);
+                    // Return a non-empty Mono => switchIfEmpty won't run
+                    return Mono.just(uuid);
                 })
-                .switchIfEmpty(
-                        userRepository.save(User.builder()
-                                        .userId(uuid)
-                                        .createdAt(currentTimestamp)
-                                        .updatedAt(currentTimestamp)
-                                        .build())
-                                .doOnSuccess(user -> log.info("[Process ID: {}] User with ID {} created successfully.", processId, userId))
-                                .then()
-                )
-                .doOnTerminate(() -> log.debug("[Process ID: {}] Finished processing user with ID {}", processId, userId))
-                .then(Mono.just(uuid));
+                // If user is not found, create the new user
+                .switchIfEmpty(Mono.defer(() -> {
+                    User newUser = User.builder()
+                            .userId(uuid)
+                            .createdAt(currentTimestamp)
+                            .updatedAt(currentTimestamp)
+                            .build();
+
+                    return userRepository.save(newUser)
+                            .doOnSuccess(u -> log.info("[{}] User {} created successfully.", processId, userId))
+                            // We map the saved user to the same UUID
+                            .map(u -> uuid);
+                }));
     }
 }
 
