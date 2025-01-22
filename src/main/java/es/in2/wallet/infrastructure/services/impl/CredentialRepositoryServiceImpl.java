@@ -39,7 +39,7 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CredentialRepositoryServiceImp implements CredentialRepositoryService {
+public class CredentialRepositoryServiceImpl implements CredentialRepositoryService {
 
     private final CredentialRepository credentialRepository;
     private final ObjectMapper objectMapper;
@@ -121,8 +121,8 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
             String credentialId,
             CredentialResponse credentialResponse
     ) {
-        return parseStringToUuid(userId, "userId")
-                .zipWith(parseStringToUuid(credentialId, "credentialId"))
+        return parseStringToUuid(userId, USER_ID)
+                .zipWith(parseStringToUuid(credentialId, CREDENTIAL_ID))
                 .flatMap(tuple -> {
                     UUID userUuid = tuple.getT1();
                     UUID credUuid = tuple.getT2();
@@ -146,7 +146,7 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
     // ---------------------------------------------------------------------
     @Override
     public Mono<List<CredentialsBasicInfo>> getCredentialsByUserId(String processId, String userId) {
-        return parseStringToUuid(userId, "userId")
+        return parseStringToUuid(userId, USER_ID)
                 .flatMapMany(credentialRepository::findAllByUserId)
                 .map(this::mapToCredentialsBasicInfo)
                 .collectList()
@@ -196,7 +196,7 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
             String userId,
             String requiredType
     ) {
-        return parseStringToUuid(userId, "userId")
+        return parseStringToUuid(userId, USER_ID)
                 .flatMapMany(credentialRepository::findAllByUserId)
                 .filter(credential -> {
                     boolean matchesType = credential.getCredentialType().contains(requiredType);
@@ -227,8 +227,8 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
             String userId,
             String credentialId
     ) {
-        return parseStringToUuid(userId, "userId")
-                .zipWith(parseStringToUuid(credentialId, "credentialId"))
+        return parseStringToUuid(userId, USER_ID)
+                .zipWith(parseStringToUuid(credentialId, CREDENTIAL_ID))
                 .flatMap(tuple -> {
                     UUID userUuid = tuple.getT1();
                     UUID credUuid = tuple.getT2();
@@ -247,8 +247,8 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
     // ---------------------------------------------------------------------
     @Override
     public Mono<String> extractDidFromCredential(String processId, String credentialId, String userId) {
-        return parseStringToUuid(userId, "userId")
-                .zipWith(parseStringToUuid(credentialId, "credentialId"))
+        return parseStringToUuid(userId, USER_ID)
+                .zipWith(parseStringToUuid(credentialId, CREDENTIAL_ID))
                 .flatMap(tuple -> {
                     UUID userUuid = tuple.getT1();
                     UUID credUuid = tuple.getT2();
@@ -279,8 +279,8 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
     // ---------------------------------------------------------------------
     @Override
     public Mono<Void> deleteCredential(String processId, String credentialId, String userId) {
-        return parseStringToUuid(userId, "userId")
-                .zipWith(parseStringToUuid(credentialId, "credentialId"))
+        return parseStringToUuid(userId, USER_ID)
+                .zipWith(parseStringToUuid(credentialId, CREDENTIAL_ID))
                 .flatMap(tuple -> {
                     UUID userUuid = tuple.getT1();
                     UUID credUuid = tuple.getT2();
@@ -471,13 +471,13 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
     // CWT Decoding (Base45 -> DEFLATE -> CBOR -> JSON)
     // ---------------------------------------------------------------------
     private String decodeToJSONstring(String encodedData) {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] decodedData = Base45.getDecoder().decode(encodedData);
-            CompressorInputStream inputStream =
-                    new CompressorStreamFactory().createCompressorInputStream(
-                            CompressorStreamFactory.DEFLATE,
-                            new ByteArrayInputStream(decodedData)
-                    );
+        try (
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                CompressorInputStream inputStream = new CompressorStreamFactory()
+                        .createCompressorInputStream(
+                                CompressorStreamFactory.DEFLATE,
+                                new ByteArrayInputStream(Base45.getDecoder().decode(encodedData)))
+        ) {
             IOUtils.copy(inputStream, out);
             CBORObject cbor = CBORObject.DecodeFromBytes(out.toByteArray());
             return cbor.ToJSONString();
@@ -485,6 +485,7 @@ public class CredentialRepositoryServiceImp implements CredentialRepositoryServi
             throw new ParseErrorException("Error decoding data: " + e.getMessage());
         }
     }
+
 
     // ---------------------------------------------------------------------
     // Update Credential (Deferred: ISSUED -> VALID, format, data, etc.)

@@ -11,7 +11,7 @@ import es.in2.wallet.domain.entities.Credential;
 import es.in2.wallet.domain.enums.CredentialFormats;
 import es.in2.wallet.domain.enums.CredentialStatus;
 import es.in2.wallet.infrastructure.repositories.CredentialRepository;
-import es.in2.wallet.infrastructure.services.impl.CredentialRepositoryServiceImp;
+import es.in2.wallet.infrastructure.services.impl.CredentialRepositoryServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -29,7 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class CredentialRepositoryServiceImpTest {
+class CredentialRepositoryServiceImplTest {
 
     @Mock
     private CredentialRepository credentialRepository;
@@ -38,7 +38,7 @@ class CredentialRepositoryServiceImpTest {
     private ObjectMapper objectMapper;
 
     @InjectMocks
-    private CredentialRepositoryServiceImp credentialRepositoryService;
+    private CredentialRepositoryServiceImpl credentialRepositoryService;
 
     @Test
     void testSaveCredential_PlainJsonFormat_Success() throws JsonProcessingException {

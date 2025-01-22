@@ -1,5 +1,7 @@
 package es.in2.wallet.domain.utils;
 
+import org.springframework.security.core.parameters.P;
+
 public class ApplicationConstants {
     private ApplicationConstants() {
         throw new IllegalStateException("Utility class");
@@ -35,6 +37,8 @@ public class ApplicationConstants {
     public static final String JWT_VC = "jwt_vc";
     public static final String JWT_VC_JSON = "jwt_vc_json";
     public static final String JWT_VP = "jwt_vp";
+    public static final String USER_ID = "userId";
+    public static final String CREDENTIAL_ID = "credentialId";
     public static final String AVAILABLE_FORMATS = "available_formats";
     public static final String ALLOWED_METHODS = "*";
     public static final String GLOBAL_ENDPOINTS_API = "/api/v1/**";
