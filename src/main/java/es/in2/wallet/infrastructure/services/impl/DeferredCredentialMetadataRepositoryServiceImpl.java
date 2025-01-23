@@ -17,9 +17,17 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class DeferredCredentialMetadataRepositoryServiceImpl implements DeferredCredentialMetadataRepositoryService {
+
     private final DeferredCredentialMetadataRepository deferredCredentialMetadataRepository;
+
     @Override
-    public Mono<UUID> saveDeferredCredentialMetadata(String processId, UUID credentialId, String transactionId, String accessToken, String deferredEndpoint) {
+    public Mono<UUID> saveDeferredCredentialMetadata(
+            String processId,
+            UUID credentialId,
+            String transactionId,
+            String accessToken,
+            String deferredEndpoint
+    ) {
         Timestamp currentTimestamp = new Timestamp(Instant.now().toEpochMilli());
         return deferredCredentialMetadataRepository.save(
                 DeferredCredentialMetadata.builder()
@@ -35,11 +43,11 @@ public class DeferredCredentialMetadataRepositoryServiceImpl implements Deferred
     }
 
     @Override
-    public Mono<DeferredCredentialMetadata> getDeferredCredentialMetadataByCredentialId(String processId, String credentialId) {
-        return deferredCredentialMetadataRepository.findByCredentialId(UUID.fromString(credentialId))
-                .switchIfEmpty(Mono.error(new NoSuchDeferredCredentialMetadataException(
-                        "No deferred credential metadata found for credentialId: " + credentialId
-                )))
+    public Mono<DeferredCredentialMetadata> getDeferredCredentialMetadataByCredentialId(
+            String processId,
+            String credentialId
+    ) {
+        return findOrError(credentialId)
                 .doOnSuccess(metadata ->
                         log.info("[Process ID: {}] Found deferred credential metadata for credential ID {}.",
                                 processId, credentialId)
@@ -51,14 +59,14 @@ public class DeferredCredentialMetadataRepositoryServiceImpl implements Deferred
     }
 
     @Override
-    public Mono<Void> deleteDeferredCredentialMetadataByCredentialId(String processId, String credentialId) {
-        return deferredCredentialMetadataRepository.findByCredentialId(UUID.fromString(credentialId))
-                .switchIfEmpty(Mono.error(new NoSuchDeferredCredentialMetadataException(
-                        "No deferred credential metadata found for credentialId: " + credentialId
-                )))
+    public Mono<Void> deleteDeferredCredentialMetadataByCredentialId(
+            String processId,
+            String credentialId
+    ) {
+        return findOrError(credentialId)
                 .flatMap(deferredCredentialMetadataRepository::delete)
                 .then()
-                .doOnSuccess(metadata ->
+                .doOnSuccess(unused ->
                         log.info("[Process ID: {}] Deleted deferred credential metadata for credential ID {}.",
                                 processId, credentialId)
                 )
@@ -69,18 +77,19 @@ public class DeferredCredentialMetadataRepositoryServiceImpl implements Deferred
     }
 
     @Override
-    public Mono<Void> updateDeferredCredentialMetadataTransactionIdByCredentialId(String processId, String credentialId, String transactionId) {
-        return deferredCredentialMetadataRepository.findByCredentialId(UUID.fromString(credentialId))
-                .switchIfEmpty(Mono.error(new NoSuchDeferredCredentialMetadataException(
-                        "No deferred credential metadata found for credentialId: " + credentialId
-                )))
+    public Mono<Void> updateDeferredCredentialMetadataTransactionIdByCredentialId(
+            String processId,
+            String credentialId,
+            String transactionId
+    ) {
+        return findOrError(credentialId)
                 .flatMap(metadata -> {
                     metadata.setTransactionId(UUID.fromString(transactionId));
                     metadata.setUpdatedAt(new Timestamp(Instant.now().toEpochMilli()));
                     return deferredCredentialMetadataRepository.save(metadata);
                 })
                 .then()
-                .doOnSuccess(metadata ->
+                .doOnSuccess(unused ->
                         log.info("[Process ID: {}] Updated deferred credential metadata for credential ID {}.",
                                 processId, credentialId)
                 )
@@ -89,4 +98,12 @@ public class DeferredCredentialMetadataRepositoryServiceImpl implements Deferred
                                 processId, credentialId, error.getMessage(), error)
                 );
     }
+
+    private Mono<DeferredCredentialMetadata> findOrError(String credentialId) {
+        return deferredCredentialMetadataRepository.findByCredentialId(UUID.fromString(credentialId))
+                .switchIfEmpty(Mono.error(new NoSuchDeferredCredentialMetadataException(
+                        "No deferred credential metadata found for credentialId: " + credentialId
+                )));
+    }
+
 }

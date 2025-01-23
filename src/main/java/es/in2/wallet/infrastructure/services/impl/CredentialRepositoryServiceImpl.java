@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import com.upokecenter.cbor.CBORObject;
+import es.in2.wallet.application.dto.CredentialEntityBuildParams;
 import es.in2.wallet.application.dto.CredentialResponse;
 import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.domain.entities.Credential;
@@ -62,54 +63,61 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
                             extractCredentialTypes(vcJson),
                             extractVerifiableCredentialIdFromVcJson(vcJson),
                             (types, credId) -> buildCredentialEntity(
-                                    UUID.fromString(credId),
-                                    userId,
-                                    types,
-                                    null,   // No credentialFormat
-                                    null,   // No credentialData
-                                    vcJson,
-                                    CredentialStatus.ISSUED.getCode(),
-                                    currentTimestamp
+                                    CredentialEntityBuildParams.builder()
+                                            .credentialId(UUID.fromString(credId))
+                                            .userId(userId)
+                                            .credentialTypes(types)
+                                            .credentialFormat(null)
+                                            .credentialData(null)
+                                            .vcJson(vcJson)
+                                            .credentialStatus(CredentialStatus.ISSUED.getCode())  // Deferred => ISSUED
+                                            .timestamp(currentTimestamp)
+                                            .build()
                             )
                     ))
                     .flatMap(credentialEntity ->
                             credentialRepository.save(credentialEntity)
-                                    .doOnSuccess(savedCredential ->
-                                            log.info("[Process ID: {}] Deferred credential with ID {} saved successfully.",
-                                                    processId, savedCredential.getCredentialId())
-                                    )
+                                    .doOnSuccess(saved -> log.info(
+                                            "[Process ID: {}] Deferred credential with ID {} saved successfully.",
+                                            processId,
+                                            saved.getCredentialId()
+                                    ))
                                     .thenReturn(credentialEntity.getCredentialId())
                     );
         }
 
         // Otherwise, handle known formats (JWT_VC, CWT_VC)
         return extractCredentialFormat(credentialResponse)
-                .flatMap(credentialFormat -> extractVcJson(credentialResponse)
-                        .flatMap(vcJson -> Mono.zip(
-                                extractCredentialTypes(vcJson),
-                                extractVerifiableCredentialIdFromVcJson(vcJson),
-                                (credentialTypes, credentialId) ->
-                                        buildCredentialEntity(
-                                                UUID.fromString(credentialId),
-                                                userId,
-                                                credentialTypes,
-                                                credentialFormat,
-                                                credentialResponse.credential(),  // store raw credential data
-                                                vcJson,
-                                                CredentialStatus.VALID.getCode(), // store as VALID code
-                                                currentTimestamp
+                .flatMap(credentialFormat ->
+                        extractVcJson(credentialResponse)
+                                .flatMap(vcJson -> Mono.zip(
+                                        extractCredentialTypes(vcJson),
+                                        extractVerifiableCredentialIdFromVcJson(vcJson),
+                                        (credentialTypes, credentialId) -> buildCredentialEntity(
+                                                CredentialEntityBuildParams.builder()
+                                                        .credentialId(UUID.fromString(credentialId))
+                                                        .userId(userId)
+                                                        .credentialTypes(credentialTypes)
+                                                        .credentialFormat(credentialFormat)
+                                                        .credentialData(credentialResponse.credential()) // raw credential data
+                                                        .vcJson(vcJson)
+                                                        .credentialStatus(CredentialStatus.VALID.getCode()) // store as VALID code
+                                                        .timestamp(currentTimestamp)
+                                                        .build()
                                         )
-                        ))
-                        .flatMap(credentialEntity ->
-                                credentialRepository.save(credentialEntity)
-                                        .doOnSuccess(savedCredential ->
-                                                log.info("[Process ID: {}] Credential with ID {} saved successfully.",
-                                                        processId, savedCredential.getCredentialId())
-                                        )
-                                        .thenReturn(credentialEntity.getCredentialId())
-                        )
+                                ))
+                                .flatMap(credentialEntity ->
+                                        credentialRepository.save(credentialEntity)
+                                                .doOnSuccess(saved -> log.info(
+                                                        "[Process ID: {}] Credential with ID {} saved successfully.",
+                                                        processId,
+                                                        saved.getCredentialId()
+                                                ))
+                                                .thenReturn(credentialEntity.getCredentialId())
+                                )
                 );
     }
+
 
     // ---------------------------------------------------------------------
     // Deferred Credential
@@ -342,25 +350,18 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
     // Build Credential Entity
     // ---------------------------------------------------------------------
     private Credential buildCredentialEntity(
-            UUID credentialId,
-            UUID userUuid,
-            List<String> credentialTypes,
-            Integer credentialFormat,
-            String credentialData,
-            JsonNode vcJson,
-            int credentialStatus,
-            Timestamp timestamp
+            CredentialEntityBuildParams params
     ) {
         return Credential.builder()
-                .credentialId(credentialId)
-                .userId(userUuid)
-                .credentialType(credentialTypes)
-                .credentialStatus(credentialStatus)  // store int code for status
-                .credentialFormat(credentialFormat)  // store int code for format
-                .credentialData(credentialData)
-                .jsonVc(vcJson.toString())
-                .createdAt(timestamp)
-                .updatedAt(timestamp)
+                .credentialId(params.credentialId())
+                .userId(params.userId())
+                .credentialType(params.credentialTypes())
+                .credentialStatus(params.credentialStatus())  // store int code for status
+                .credentialFormat(params.credentialFormat())  // store int code for format
+                .credentialData(params.credentialData())
+                .jsonVc(params.vcJson().toString())
+                .createdAt(params.timestamp())
+                .updatedAt(params.timestamp())
                 .build();
     }
 

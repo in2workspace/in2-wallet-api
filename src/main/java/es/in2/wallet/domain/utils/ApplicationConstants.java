@@ -1,7 +1,5 @@
 package es.in2.wallet.domain.utils;
 
-import org.springframework.security.core.parameters.P;
-
 public class ApplicationConstants {
     private ApplicationConstants() {
         throw new IllegalStateException("Utility class");

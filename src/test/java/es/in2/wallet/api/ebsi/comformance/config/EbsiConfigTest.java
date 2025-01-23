@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.ports.AppConfig;
 import es.in2.wallet.domain.services.DidKeyGeneratorService;
-import es.in2.wallet.domain.utils.ApplicationUtils;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import es.in2.wallet.infrastructure.ebsi.config.EbsiConfig;
 import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
@@ -15,8 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.ClientResponse;
@@ -54,9 +51,6 @@ class EbsiConfigTest {
 
     @Mock
     private WebClientConfig webClientConfig;
-
-    // If you have a static utility for token, mock it or handle it differently
-    // e.g.: @MockStatic(EbsiConfigUtils.class)
 
     @InjectMocks
     private EbsiConfig ebsiConfig;
@@ -111,7 +105,6 @@ class EbsiConfigTest {
         WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
         when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
-        // The token JSON: {"access_token": token}
         Map<String, Object> mapWithToken = Map.of("access_token", token);
         when(objectMapper.readValue(eq("token"), any(TypeReference.class)))
                 .thenReturn(mapWithToken);
@@ -157,7 +150,6 @@ class EbsiConfigTest {
         WebClient webClient = WebClient.builder().exchangeFunction(exchangeFunction).build();
         when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
 
-        // The token JSON: {"access_token": token}
         Map<String, Object> mapWithToken = Map.of("access_token", token);
         when(objectMapper.readValue(eq("token"), any(TypeReference.class)))
                 .thenReturn(mapWithToken);
