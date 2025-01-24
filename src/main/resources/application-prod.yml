@@ -10,6 +10,8 @@ spring:
   flyway:
     url: "jdbc:postgresql://localhost:5434/wallet?schema=wallet"
     locations: classpath:db/migration
+    user: "postgres"
+    password: "postgres"
 
 logging:
   pattern:
@@ -55,19 +57,6 @@ springdoc:
 
 server:
   port: 8080
-
-broker:
-  provider: scorpio
-  external-url:
-    scheme: http
-    domain: localhost
-    port: 9090
-  internal-url:
-    scheme: http
-    domain: localhost
-    port: 9090
-  paths:
-    entities: "/ngsi-ld/v1/entities"
 
 app:
   config-source:

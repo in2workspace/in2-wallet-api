@@ -1,5 +1,4 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE SCHEMA IF NOT EXISTS wallet;
 
 -- Create User table
 CREATE TABLE IF NOT EXISTS wallet.user (
