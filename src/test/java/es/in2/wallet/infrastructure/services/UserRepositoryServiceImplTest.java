@@ -32,7 +32,7 @@ class UserRepositoryServiceImplTest {
         UUID userUuid = UUID.fromString(userIdStr);
 
         User existingUser = User.builder().userId(userUuid).build();
-        when(userRepository.findById(userUuid))
+        when(userRepository.findByUserId(userUuid))
                 .thenReturn(Mono.just(existingUser));
 
         Mono<UUID> result = userRepositoryService.storeUser(processId, userIdStr);
@@ -41,7 +41,7 @@ class UserRepositoryServiceImplTest {
                 .expectNext(userUuid)
                 .verifyComplete();
 
-        verify(userRepository).findById(userUuid);
+        verify(userRepository).findByUserId(userUuid);
         verify(userRepository, never()).save(any());
     }
 
@@ -51,7 +51,7 @@ class UserRepositoryServiceImplTest {
         String userIdStr = UUID.randomUUID().toString();
         UUID userUuid = UUID.fromString(userIdStr);
 
-        when(userRepository.findById(userUuid))
+        when(userRepository.findByUserId(userUuid))
                 .thenReturn(Mono.empty());
 
         // We only stub save(...) for this scenario
@@ -65,7 +65,7 @@ class UserRepositoryServiceImplTest {
                 .expectNext(userUuid)
                 .verifyComplete();
 
-        verify(userRepository).findById(userUuid);
+        verify(userRepository).findByUserId(userUuid);
         verify(userRepository).save(argThat(u -> u.getUserId().equals(userUuid)));
     }
 }
