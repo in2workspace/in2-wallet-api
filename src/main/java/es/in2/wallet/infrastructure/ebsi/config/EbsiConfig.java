@@ -210,6 +210,7 @@ public class EbsiConfig {
         String plainJsonVc = """
         {
           "id": "%s",
+          "type": ["VerifiableCredential", "ExampleCredential"],
           "credentialSubject": {
             "id": "%s"
           }
