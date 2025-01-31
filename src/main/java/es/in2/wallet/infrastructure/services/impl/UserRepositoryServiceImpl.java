@@ -26,7 +26,7 @@ public class UserRepositoryServiceImpl implements UserRepositoryService {
         UUID uuid = UUID.fromString(userId);
         Timestamp currentTimestamp = new Timestamp(Instant.now().toEpochMilli());
 
-        return userRepository.findById(uuid)
+        return userRepository.findByUserId(uuid)
                 // If user is found, skip saving and just return userId
                 .flatMap(existingUser -> {
                     log.info("[{}] User {} already exists.", processId, userId);
