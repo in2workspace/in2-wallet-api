@@ -172,7 +172,7 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
     // Helper to map from Credential entity to DTO
     // ---------------------------------------------------------------------
     private CredentialsBasicInfo mapToCredentialsBasicInfo(Credential credential) {
-        JsonNode jsonVc = parseJsonVc(credential.getJsonVc());
+        JsonNode jsonVc = credential.getJsonVc();
         JsonNode credentialSubject = jsonVc.get("credentialSubject");
 
         // if there's a 'validUntil' node, parse it
@@ -264,7 +264,7 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
                 })
                 .flatMap(credential -> {
                     // Parse the VC JSON
-                    JsonNode vcNode = parseJsonVc(credential.getJsonVc());
+                    JsonNode vcNode = credential.getJsonVc();
 
                     // Decide if LEARCredentialEmployee
                     boolean isLear = credential.getCredentialType().stream()
@@ -359,7 +359,7 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
                 .credentialStatus(params.credentialStatus())  // store int code for status
                 .credentialFormat(params.credentialFormat())  // store int code for format
                 .credentialData(params.credentialData())
-                .jsonVc(params.vcJson().toString())
+                .jsonVc(params.vcJson())
                 .createdAt(params.timestamp())
                 .updatedAt(params.timestamp())
                 .build();
