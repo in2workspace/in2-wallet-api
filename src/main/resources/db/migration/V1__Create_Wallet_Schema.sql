@@ -1,4 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE SCHEMA IF NOT EXISTS wallet;
 
 -- Create User table
 CREATE TABLE IF NOT EXISTS wallet.user (
@@ -7,6 +8,10 @@ CREATE TABLE IF NOT EXISTS wallet.user (
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
 );
+
+-- Add unique constraint to user_id
+ALTER TABLE wallet.user
+    ADD CONSTRAINT user_user_id_uk UNIQUE (user_id);
 
 -- Create Credential table
 CREATE TABLE IF NOT EXISTS wallet.credential (
@@ -22,6 +27,10 @@ CREATE TABLE IF NOT EXISTS wallet.credential (
     updated_at TIMESTAMP NOT NULL,
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES wallet.user (user_id) ON DELETE CASCADE
 );
+
+-- Add unique constraint to credential_id
+ALTER TABLE wallet.credential
+    ADD CONSTRAINT credential_credential_id_uk UNIQUE (credential_id);
 
 -- Create DeferredCredentialMetadata table
 CREATE TABLE IF NOT EXISTS wallet.deferred_credential_metadata (
