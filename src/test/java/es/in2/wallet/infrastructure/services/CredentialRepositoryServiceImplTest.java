@@ -239,11 +239,13 @@ class CredentialRepositoryServiceImplTest {
                 .credentialId(credUuid)
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "AnotherType"))
-                .jsonVc(getJsonNodeCredential())
+                .jsonVc(credential)
                 .build();
 
         when(credentialRepository.findById(credUuid))
                 .thenReturn(Mono.just(existing));
+
+        when(objectMapper.readTree(credential)).thenReturn(getJsonNodeCredential());
 
         Mono<String> result =
                 credentialRepositoryService.extractDidFromCredential(processId,
@@ -261,16 +263,18 @@ class CredentialRepositoryServiceImplTest {
         String processId = "procDid";
         UUID userUuid = UUID.randomUUID();
         UUID credUuid = UUID.randomUUID();
+        String credential = "credential";
 
         // The credential has type "LEARCredentialEmployee", so DID is at /credentialSubject/mandate/mandatee/id
         Credential existing = Credential.builder()
                 .credentialId(credUuid)
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
-                .jsonVc(getJsonNodeCredentialLearCredentialEmployee())
+                .jsonVc(credential)
                 .build();
 
         when(credentialRepository.findById(credUuid)).thenReturn(Mono.just(existing));
+        when(objectMapper.readTree(credential)).thenReturn(getJsonNodeCredentialLearCredentialEmployee());
 
         Mono<String> result =
                 credentialRepositoryService.extractDidFromCredential(processId,
@@ -287,6 +291,8 @@ class CredentialRepositoryServiceImplTest {
     void testGetCredentialsByUserId_Success() throws JsonProcessingException {
         String processId = "procABC";
         UUID userUuid = UUID.randomUUID();
+        String credential1 = "credential1";
+        String credential2 = "credential2";
 
         // Suppose the repository returns 2 credentials for the user
         Credential c1 = Credential.builder()
@@ -294,15 +300,18 @@ class CredentialRepositoryServiceImplTest {
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
                 .credentialStatus(CredentialStatus.VALID.getCode())
-                .jsonVc(getJsonNodeCredentialLearCredentialEmployee())
+                .jsonVc(credential1)
                 .build();
         Credential c2 = Credential.builder()
                 .credentialId(UUID.randomUUID())
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "AnotherType"))
                 .credentialStatus(CredentialStatus.ISSUED.getCode())
-                .jsonVc(getJsonNodeCredential())
+                .jsonVc(credential2)
                 .build();
+
+        when(objectMapper.readTree(credential1)).thenReturn(getJsonNodeCredentialLearCredentialEmployee());
+        when(objectMapper.readTree(credential2)).thenReturn(getJsonNodeCredential());
 
         when(credentialRepository.findAllByUserId(userUuid))
                 .thenReturn(Flux.just(c1, c2));

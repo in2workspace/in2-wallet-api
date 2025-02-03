@@ -1,5 +1,5 @@
 package es.in2.wallet.domain.entities;
-import com.fasterxml.jackson.databind.JsonNode;
+
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
@@ -40,7 +40,7 @@ public class Credential {
     private String credentialData;
 
     @Column("json_vc")
-    private JsonNode jsonVc;
+    private String jsonVc;
 
     @Column("created_at")
     private Timestamp createdAt;

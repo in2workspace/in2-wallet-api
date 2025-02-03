@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS wallet.credential (
     credential_status INTEGER NOT NULL,
     credential_format INTEGER,
     credential_data VARCHAR(255),
-    json_vc JSONB NOT NULL,
+    json_vc TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES wallet.user (user_id) ON DELETE CASCADE
