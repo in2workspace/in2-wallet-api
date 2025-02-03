@@ -398,7 +398,7 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
     // ---------------------------------------------------------------------
     private Mono<JsonNode> extractVcJson(CredentialResponse credentialResponse) {
         return switch (credentialResponse.format()) {
-            case JWT_VC -> extractVcJsonFromJwt(credentialResponse.credential());
+            case JWT_VC, JWT_VC_JSON -> extractVcJsonFromJwt(credentialResponse.credential());
             case CWT_VC -> extractVcJsonFromCwt(credentialResponse.credential());
             default -> Mono.error(new IllegalArgumentException(
                     "Unsupported credential format: " + credentialResponse.format()
