@@ -48,7 +48,7 @@ class CredentialRepositoryServiceImplTest {
         String credential = "credential";
         String credentialId = "8c7a6213-544d-450d-8e3d-b41fa9009198";
         CredentialResponse response = CredentialResponse.builder()
-                .format(null)
+                .transactionId("tx123")
                 .credential(credential)
                 .build();
 

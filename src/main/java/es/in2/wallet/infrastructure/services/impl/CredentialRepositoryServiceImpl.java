@@ -57,7 +57,7 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
         }
 
         // If format is null, treat it as a plain (non-signed) credential
-        if (credentialResponse.format() == null) {
+        if (credentialResponse.transactionId() != null) {
             return parseAsPlainJson(credentialResponse.credential())
                     .flatMap(vcJson -> Mono.zip(
                             extractCredentialTypes(vcJson),
