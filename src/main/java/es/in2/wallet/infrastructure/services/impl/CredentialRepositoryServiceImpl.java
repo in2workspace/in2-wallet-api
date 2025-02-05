@@ -49,32 +49,35 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
     // Save Credential
     // ---------------------------------------------------------------------
     @Override
-    public Mono<UUID> saveCredential(String processId, UUID userId, CredentialResponse credentialResponse) {
+    public Mono<UUID> saveCredential(String processId, UUID userId, CredentialResponse credentialResponse, String format) {
         Timestamp currentTimestamp = Timestamp.from(Instant.now());
 
         if (credentialResponse == null) {
             return Mono.error(new IllegalArgumentException("CredentialResponse is null"));
         }
 
-        // If format is null, treat it as a plain (non-signed) credential
+        // If transactionId is present, treat it as a plain (non-signed) credential
         if (credentialResponse.transactionId() != null) {
-            return parseAsPlainJson(credentialResponse.credential())
-                    .flatMap(vcJson -> Mono.zip(
-                            extractCredentialTypes(vcJson),
-                            extractVerifiableCredentialIdFromVcJson(vcJson),
-                            (types, credId) -> buildCredentialEntity(
-                                    CredentialEntityBuildParams.builder()
-                                            .credentialId(UUID.fromString(credId))
-                                            .userId(userId)
-                                            .credentialTypes(types)
-                                            .credentialFormat(null)
-                                            .credentialData(null)
-                                            .vcJson(vcJson)
-                                            .credentialStatus(CredentialStatus.ISSUED.getCode())  // Deferred => ISSUED
-                                            .timestamp(currentTimestamp)
-                                            .build()
-                            )
-                    ))
+            return extractCredentialFormat(format)
+                    .flatMap(credentialFormat ->
+                            parseAsPlainJson(credentialResponse.credential())
+                                    .flatMap(vcJson -> Mono.zip(
+                                            extractCredentialTypes(vcJson),
+                                            extractVerifiableCredentialIdFromVcJson(vcJson),
+                                            (types, credId) -> buildCredentialEntity(
+                                                    CredentialEntityBuildParams.builder()
+                                                            .credentialId(UUID.fromString(credId))
+                                                            .userId(userId)
+                                                            .credentialTypes(types)
+                                                            .credentialFormat(credentialFormat)
+                                                            .credentialData(null)
+                                                            .vcJson(vcJson)
+                                                            .credentialStatus(CredentialStatus.ISSUED.getCode())  // Deferred => ISSUED
+                                                            .timestamp(currentTimestamp)
+                                                            .build()
+                                            )
+                                    ))
+                    )
                     .flatMap(credentialEntity ->
                             credentialRepository.save(credentialEntity)
                                     .doOnSuccess(saved -> log.info(
@@ -87,9 +90,9 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
         }
 
         // Otherwise, handle known formats (JWT_VC, CWT_VC)
-        return extractCredentialFormat(credentialResponse)
+        return extractCredentialFormat(format)
                 .flatMap(credentialFormat ->
-                        extractVcJson(credentialResponse)
+                        extractVcJson(credentialResponse, format)
                                 .flatMap(vcJson -> Mono.zip(
                                         extractCredentialTypes(vcJson),
                                         extractVerifiableCredentialIdFromVcJson(vcJson),
@@ -380,15 +383,15 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
     // ---------------------------------------------------------------------
     // Extract Format
     // ---------------------------------------------------------------------
-    private Mono<Integer> extractCredentialFormat(CredentialResponse credentialResponse) {
-        if (credentialResponse.format() == null) {
+    private Mono<Integer> extractCredentialFormat(String format) {
+        if (format == null || format.isBlank()) {
             return Mono.error(new IllegalArgumentException("CredentialResponse format is null"));
         }
-        return switch (credentialResponse.format()) {
+        return switch (format) {
             case JWT_VC, JWT_VC_JSON -> Mono.just(CredentialFormats.JWT_VC.getCode());
             case CWT_VC -> Mono.just(CredentialFormats.CWT_VC.getCode());
             default -> Mono.error(new IllegalArgumentException(
-                    "Unsupported credential format: " + credentialResponse.format()
+                    "Unsupported credential format: " + format
             ));
         };
     }
@@ -396,8 +399,8 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
     // ---------------------------------------------------------------------
     // Extract VC JSON based on Format
     // ---------------------------------------------------------------------
-    private Mono<JsonNode> extractVcJson(CredentialResponse credentialResponse) {
-        return switch (credentialResponse.format()) {
+    private Mono<JsonNode> extractVcJson(CredentialResponse credentialResponse, String format) {
+        return switch (format) {
             case JWT_VC, JWT_VC_JSON -> extractVcJsonFromJwt(credentialResponse.credential());
             case CWT_VC -> extractVcJsonFromCwt(credentialResponse.credential());
             default -> Mono.error(new IllegalArgumentException(
@@ -489,18 +492,15 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
 
 
     // ---------------------------------------------------------------------
-    // Update Credential (Deferred: ISSUED -> VALID, format, data, etc.)
+    // Update Credential (Deferred: ISSUED -> VALID, data, etc.)
     // ---------------------------------------------------------------------
     private Mono<Credential> updateCredentialEntity(Credential existingCredential, CredentialResponse credentialResponse) {
-        return extractCredentialFormat(credentialResponse)
-                .flatMap(credentialFormat -> {
-                    existingCredential.setCredentialStatus(CredentialStatus.VALID.getCode());
-                    existingCredential.setCredentialFormat(credentialFormat);
-                    existingCredential.setCredentialData(credentialResponse.credential());
-                    existingCredential.setUpdatedAt(Timestamp.from(Instant.now()));
-                    return credentialRepository.save(existingCredential);
-                });
+        existingCredential.setCredentialStatus(CredentialStatus.VALID.getCode());
+        existingCredential.setCredentialData(credentialResponse.credential());
+        existingCredential.setUpdatedAt(Timestamp.from(Instant.now()));
+        return credentialRepository.save(existingCredential);
     }
+
 
     // ---------------------------------------------------------------------
     // Determine Available Formats for the BasicInfo DTO

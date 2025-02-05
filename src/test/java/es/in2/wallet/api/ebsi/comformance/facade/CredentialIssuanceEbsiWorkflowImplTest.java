@@ -94,7 +94,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userRepositoryService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
-            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse)).thenReturn(Mono.just(credentialId));
+            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse,credentialOffer.credentials().get(0).format())).thenReturn(Mono.just(credentialId));
 
             StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
         }
@@ -133,7 +133,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userRepositoryService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
-            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse)).thenReturn(Mono.just(credentialId));
+            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse, credentialOffer.credentials().get(0).format())).thenReturn(Mono.just(credentialId));
 
             StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
         }
@@ -177,7 +177,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userRepositoryService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
-            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse)).thenReturn(Mono.just(credentialId));
+            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse, credentialOffer.credentials().get(0).format())).thenReturn(Mono.just(credentialId));
 
             StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
         }
@@ -221,7 +221,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userRepositoryService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
-            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse)).thenReturn(Mono.just(credentialId));
+            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse, credentialOffer.credentials().get(0).format())).thenReturn(Mono.just(credentialId));
 
             StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
         }

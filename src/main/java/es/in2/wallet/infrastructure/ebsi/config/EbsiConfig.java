@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static es.in2.wallet.domain.utils.ApplicationConstants.CONTENT_TYPE;
+import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_VC;
 import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 
 @Slf4j
@@ -227,7 +228,7 @@ public class EbsiConfig {
         return userRepositoryService.storeUser(processId, userId)
                 .flatMap(userUuid -> {
                     log.info("User {} stored with uuid={}", userId, userUuid);
-                    return credentialRepositoryService.saveCredential(processId, userUuid, newCredentialResponse);
+                    return credentialRepositoryService.saveCredential(processId, userUuid, newCredentialResponse, JWT_VC);
                 })
                 .doOnSuccess(savedCredId -> log.info("Created new credential {} for userId={}, with DID={}", savedCredId, userId, did))
                 .then();

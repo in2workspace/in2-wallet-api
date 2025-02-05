@@ -101,7 +101,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userRepositoryService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
-            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse)).thenReturn(Mono.just(credentialId));
+            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse, credentialOffer.credentials().get(0).format())).thenReturn(Mono.just(credentialId));
 
             StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
         }
@@ -145,8 +145,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userRepositoryService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
-            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse)).thenReturn(Mono.just(credentialId));
-
+            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse, credentialOffer.credentials().get(0).format())).thenReturn(Mono.just(credentialId));
 
             StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
         }
@@ -165,7 +164,9 @@ class CredentialIssuanceCommonWorkflowImplTest {
 
             CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder()
                     .credentialsConfigurationsSupported(Map.of("LEARCredential",
-                            CredentialIssuerMetadata.CredentialsConfigurationsSupported.builder().format(JWT_VC).build()))
+                            CredentialIssuerMetadata.CredentialsConfigurationsSupported.builder()
+                                    .format(JWT_VC)
+                                    .build()))
                     .credentialIssuer("issuer")
                     .deferredCredentialEndpoint("https://example.com/deferred")
                     .build();
@@ -193,7 +194,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, null)).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userRepositoryService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
-            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse)).thenReturn(Mono.just(credentialId));
+            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse, JWT_VC)).thenReturn(Mono.just(credentialId));
             when(deferredCredentialMetadataRepositoryService.saveDeferredCredentialMetadata(processId, credentialId, credentialResponse.transactionId(), tokenResponse.accessToken(), credentialIssuerMetadata.deferredCredentialEndpoint())).thenReturn(Mono.empty());
 
             StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
@@ -239,7 +240,7 @@ class CredentialIssuanceCommonWorkflowImplTest {
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(credentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types())).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userRepositoryService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
-            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse)).thenReturn(Mono.just(credentialId));
+            when(credentialRepositoryService.saveCredential(processId, userUuid, credentialResponse, credentialOffer.credentials().get(0).format())).thenReturn(Mono.just(credentialId));
 
             StepVerifier.create(credentialIssuanceServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
         }

@@ -113,7 +113,7 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                         .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0),credentialIssuerMetadata)
                                 .flatMap( format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
                                         .flatMap(jwt -> credentialService.getCredential(jwt,tokenResponse,credentialIssuerMetadata,format,null))
-                                        .flatMap(credentialResponseWithStatus -> handleCredentialResponse(processId, credentialResponseWithStatus, authorizationToken,tokenResponse,credentialIssuerMetadata))
+                                        .flatMap(credentialResponseWithStatus -> handleCredentialResponse(processId, credentialResponseWithStatus, authorizationToken,tokenResponse,credentialIssuerMetadata, format))
                                 )));
     }
 
@@ -208,7 +208,7 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                                 credential.types()))
                         .flatMap(credentialResponseWithStatus -> {
                             String newNonce = credentialResponseWithStatus.credentialResponse().c_nonce() != null ? credentialResponseWithStatus.credentialResponse().c_nonce() : nonce;
-                            return handleCredentialResponse(processId, credentialResponseWithStatus, authorizationToken, tokenResponse, credentialIssuerMetadata)
+                            return handleCredentialResponse(processId, credentialResponseWithStatus, authorizationToken, tokenResponse, credentialIssuerMetadata, credential.format())
                                     .thenReturn(newNonce);  // Return the new nonce for the next iteration
                         }))
                 .onErrorResume(e -> {
@@ -230,7 +230,8 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
             CredentialResponseWithStatus credentialResponseWithStatus,
             String authorizationToken,
             TokenResponse tokenResponse,
-            CredentialIssuerMetadata credentialIssuerMetadata
+            CredentialIssuerMetadata credentialIssuerMetadata,
+            String format
     ) {
         return getUserIdFromToken(authorizationToken)
                 // Store the user
@@ -242,7 +243,8 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                 .flatMap(userUuid -> credentialRepositoryService.saveCredential(
                         processId,
                         userUuid,
-                        credentialResponseWithStatus.credentialResponse()
+                        credentialResponseWithStatus.credentialResponse(),
+                        format
                 ))
                 .doOnNext(credentialUuid ->
                         log.info("ProcessID: {} - Saved credentialUuid: {}", processId, credentialUuid.toString())

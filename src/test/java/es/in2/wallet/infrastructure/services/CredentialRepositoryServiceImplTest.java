@@ -51,6 +51,7 @@ class CredentialRepositoryServiceImplTest {
                 .transactionId("tx123")
                 .credential(credential)
                 .build();
+        String format = "jwt_vc";
 
         // Suppose the repository will return a saved credential with a known ID
         Credential savedEntity = Credential.builder()
@@ -66,7 +67,7 @@ class CredentialRepositoryServiceImplTest {
         when(objectMapper.readTree(credential)).thenReturn(getJsonNodeCredentialLearCredentialEmployee());
 
         // WHEN
-        Mono<UUID> result = credentialRepositoryService.saveCredential(processId, userId, response);
+        Mono<UUID> result = credentialRepositoryService.saveCredential(processId, userId, response, format);
 
         // THEN
         StepVerifier.create(result)
@@ -80,7 +81,6 @@ class CredentialRepositoryServiceImplTest {
         Credential passedToSave = captor.getValue();
         assertEquals(userId, passedToSave.getUserId());
         assertEquals(CredentialStatus.ISSUED.getCode(), passedToSave.getCredentialStatus());
-        assertNull(passedToSave.getCredentialFormat());
         assertNull(passedToSave.getCredentialData());
         // plus any other checks you wish to make
     }
@@ -91,9 +91,9 @@ class CredentialRepositoryServiceImplTest {
         String processId = "proc123";
         UUID userId = UUID.randomUUID();
         String credential = "someJwtData";
+        String format = "jwt_vc";
         // This is the 'CredentialResponse' with format=JWT_VC
         CredentialResponse response = CredentialResponse.builder()
-                .format("jwt_vc")
                 .credential(credential)
                 .build();
 
@@ -139,7 +139,7 @@ class CredentialRepositoryServiceImplTest {
             when(objectMapper.readTree(fakePayloadJson)).thenReturn(rootNode);
 
             // WHEN
-            Mono<UUID> result = credentialRepositoryService.saveCredential(processId, userId, response);
+            Mono<UUID> result = credentialRepositoryService.saveCredential(processId, userId, response, format);
 
             // THEN
             StepVerifier.create(result)
@@ -163,12 +163,11 @@ class CredentialRepositoryServiceImplTest {
         String processId = "proc123";
         UUID userId = UUID.randomUUID();
         CredentialResponse response = CredentialResponse.builder()
-                .format("FOO_FORMAT")
                 .credential("foo-data")
                 .build();
 
         // WHEN
-        Mono<UUID> result = credentialRepositoryService.saveCredential(processId, userId, response);
+        Mono<UUID> result = credentialRepositoryService.saveCredential(processId, userId, response, "FOO_FORMAT");
 
         // THEN
         StepVerifier.create(result)
@@ -206,7 +205,6 @@ class CredentialRepositoryServiceImplTest {
         when(credentialRepository.save(captor.capture())).thenReturn(Mono.just(updated));
 
         CredentialResponse deferredResponse = CredentialResponse.builder()
-                .format("jwt_vc")
                 .credential("some-jwt-data")
                 .build();
 

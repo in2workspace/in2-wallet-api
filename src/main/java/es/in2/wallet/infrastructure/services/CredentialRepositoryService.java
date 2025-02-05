@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface CredentialRepositoryService {
-    Mono<UUID> saveCredential(String processId, UUID userId, CredentialResponse credentialResponse);
+    Mono<UUID> saveCredential(String processId, UUID userId, CredentialResponse credentialResponse, String format);
     Mono<Void> saveDeferredCredential(String processId, String userId, String credentialId, CredentialResponse credentialResponse);
     Mono<List<CredentialsBasicInfo>> getCredentialsByUserId(String processId, String userId);
     Mono<String> extractDidFromCredential(String processId, String credentialId, String userId);

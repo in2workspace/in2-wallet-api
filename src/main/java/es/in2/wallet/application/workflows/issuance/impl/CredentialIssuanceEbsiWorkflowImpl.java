@@ -13,8 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import static es.in2.wallet.domain.utils.ApplicationUtils.extractResponseType;
-import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.domain.utils.ApplicationUtils.*;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -117,7 +117,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
     private Mono<Void> getCredential(String processId, String authorizationToken, TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce) {
             return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
                     .flatMap(jwt -> credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
-                    .flatMap(credentialResponse -> handleCredentialResponse(processId,credentialResponse ,authorizationToken, tokenResponse, credentialIssuerMetadata));
+                    .flatMap(credentialResponse -> handleCredentialResponse(processId,credentialResponse ,authorizationToken, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format()));
     }
 
     private Mono<Void> handleCredentialResponse(
@@ -125,7 +125,8 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
             CredentialResponseWithStatus credentialResponseWithStatus,
             String authorizationToken,
             TokenResponse tokenResponse,
-            CredentialIssuerMetadata credentialIssuerMetadata
+            CredentialIssuerMetadata credentialIssuerMetadata,
+            String format
     ) {
         return getUserIdFromToken(authorizationToken)
                 // Store the user
@@ -137,7 +138,8 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
                 .flatMap(userUuid -> credentialRepositoryService.saveCredential(
                         processId,
                         userUuid,
-                        credentialResponseWithStatus.credentialResponse()
+                        credentialResponseWithStatus.credentialResponse(),
+                        format
                 ))
                 .doOnNext(credentialUuid ->
                         log.info("ProcessID: {} - Saved credentialUuid: {}", processId, credentialUuid.toString())
