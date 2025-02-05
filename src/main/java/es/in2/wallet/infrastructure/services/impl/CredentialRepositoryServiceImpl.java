@@ -164,7 +164,7 @@ public class CredentialRepositoryServiceImpl implements CredentialRepositoryServ
                 .flatMap(credentialsInfo -> {
                     if (credentialsInfo.isEmpty()) {
                         return Mono.error(new NoSuchVerifiableCredentialException(
-                                "No credentials found for userId: " + userId
+                                "The credentials list is empty. Cannot proceed."
                         ));
                     }
                     return Mono.just(credentialsInfo);
