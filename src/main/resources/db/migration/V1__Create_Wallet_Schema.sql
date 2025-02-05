@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS wallet.credential (
     credential_type TEXT[] NOT NULL,
     credential_status INTEGER NOT NULL,
     credential_format INTEGER,
-    credential_data VARCHAR(255),
+    credential_data TEXT,
     json_vc TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
