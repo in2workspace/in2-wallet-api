@@ -223,6 +223,7 @@ public class EbsiConfig {
         // We'll store it as a plain credential (format=null => code checks "if format == null => parseAsPlainJson(...)")
         CredentialResponse newCredentialResponse = CredentialResponse.builder()
                 .credential(plainJsonVc)
+                .transactionId(UUID.randomUUID().toString())
                 .build();
 
         return userRepositoryService.storeUser(processId, userId)
