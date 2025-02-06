@@ -6,8 +6,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum CredentialFormats {
-    JWT_VC(0),
-    CWT_VC(1);
+    JWT_VC(1),
+    CWT_VC(2);
 
     private final int code;
 
