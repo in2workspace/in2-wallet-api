@@ -3,14 +3,14 @@ CREATE SCHEMA IF NOT EXISTS wallet;
 
 -- Create User table
 CREATE TABLE IF NOT EXISTS wallet.user (
-    id uuid PRIMARY KEY UNIQUE DEFAULT,
+    id uuid PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL
 );
 
 -- Create Credential table
 CREATE TABLE IF NOT EXISTS wallet.credential (
-    id uuid PRIMARY KEY UNIQUE DEFAULT,
+    id uuid PRIMARY KEY,
     user_id uuid NOT NULL,
     credential_type TEXT[] NOT NULL,
     credential_status VARCHAR(50) NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS wallet.credential (
     json_vc TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
-    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES wallet.user (user_id) ON DELETE CASCADE
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES wallet.user (id) ON DELETE CASCADE
 );
 
 -- Create DeferredCredentialMetadata table
@@ -31,5 +31,5 @@ CREATE TABLE IF NOT EXISTS wallet.deferred_credential_metadata (
     deferred_endpoint VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
-    CONSTRAINT fk_credential FOREIGN KEY (credential_id) REFERENCES wallet.credential (credential_id) ON DELETE CASCADE
+    CONSTRAINT fk_credential FOREIGN KEY (credential_id) REFERENCES wallet.credential (id) ON DELETE CASCADE
 );
