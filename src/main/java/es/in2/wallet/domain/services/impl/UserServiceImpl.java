@@ -1,22 +1,20 @@
-package es.in2.wallet.infrastructure.services.impl;
+package es.in2.wallet.domain.services.impl;
 
 import es.in2.wallet.domain.entities.User;
-import es.in2.wallet.infrastructure.repositories.UserRepository;
-import es.in2.wallet.infrastructure.services.UserRepositoryService;
+import es.in2.wallet.domain.repositories.UserRepository;
+import es.in2.wallet.domain.services.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserRepositoryServiceImpl implements UserRepositoryService {
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
@@ -24,9 +22,9 @@ public class UserRepositoryServiceImpl implements UserRepositoryService {
     public Mono<UUID> storeUser(String processId, String userId) {
         // Convert the String userId to UUID
         UUID uuid = UUID.fromString(userId);
-        Timestamp currentTimestamp = new Timestamp(Instant.now().toEpochMilli());
+        Instant now = Instant.now();
 
-        return userRepository.findByUserId(uuid)
+        return userRepository.findById(uuid)
                 // If user is found, skip saving and just return userId
                 .flatMap(existingUser -> {
                     log.info("[{}] User {} already exists.", processId, userId);
@@ -36,9 +34,9 @@ public class UserRepositoryServiceImpl implements UserRepositoryService {
                 // If user is not found, create the new user
                 .switchIfEmpty(Mono.defer(() -> {
                     User newUser = User.builder()
-                            .userId(uuid)
-                            .createdAt(currentTimestamp)
-                            .updatedAt(currentTimestamp)
+                            .id(uuid)
+                            .createdAt(now)
+                            .updatedAt(now)
                             .build();
 
                     return userRepository.save(newUser)

@@ -10,8 +10,8 @@ import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.domain.entities.Credential;
 import es.in2.wallet.domain.enums.CredentialFormats;
 import es.in2.wallet.domain.enums.CredentialStatus;
-import es.in2.wallet.infrastructure.repositories.CredentialRepository;
-import es.in2.wallet.infrastructure.services.impl.CredentialRepositoryServiceImpl;
+import es.in2.wallet.domain.repositories.CredentialRepository;
+import es.in2.wallet.domain.services.impl.CredentialServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -29,7 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class CredentialRepositoryServiceImplTest {
+class CredentialServiceImplTest {
 
     @Mock
     private CredentialRepository credentialRepository;
@@ -38,7 +38,7 @@ class CredentialRepositoryServiceImplTest {
     private ObjectMapper objectMapper;
 
     @InjectMocks
-    private CredentialRepositoryServiceImpl credentialRepositoryService;
+    private CredentialServiceImpl credentialRepositoryService;
 
     @Test
     void testSaveCredential_PlainJsonFormat_Success() throws JsonProcessingException {
@@ -55,7 +55,7 @@ class CredentialRepositoryServiceImplTest {
 
         // Suppose the repository will return a saved credential with a known ID
         Credential savedEntity = Credential.builder()
-                .credentialId(UUID.fromString(credentialId))
+                .id(UUID.fromString(credentialId))
                 .userId(userId)
                 .build();
 
@@ -80,7 +80,7 @@ class CredentialRepositoryServiceImplTest {
         // Check the captured entity's fields
         Credential passedToSave = captor.getValue();
         assertEquals(userId, passedToSave.getUserId());
-        assertEquals(CredentialStatus.ISSUED.getCode(), passedToSave.getCredentialStatus());
+        assertEquals(CredentialStatus.ISSUED.toString(), passedToSave.getCredentialStatus());
         assertNull(passedToSave.getCredentialData());
         // plus any other checks you wish to make
     }
@@ -101,7 +101,7 @@ class CredentialRepositoryServiceImplTest {
 
         // Suppose the repository will return a saved credential with a known ID
         Credential savedEntity = Credential.builder()
-                .credentialId(UUID.fromString(credentialId))
+                .id(UUID.fromString(credentialId))
                 .userId(userId)
                 .build();
 
@@ -149,9 +149,9 @@ class CredentialRepositoryServiceImplTest {
             verify(credentialRepository).save(any(Credential.class));
 
             Credential passedToSave = captor.getValue();
-            assertEquals(CredentialStatus.VALID.getCode(), passedToSave.getCredentialStatus());
+            assertEquals(CredentialStatus.VALID.toString(), passedToSave.getCredentialStatus());
             assertEquals(userId, passedToSave.getUserId());
-            assertEquals(CredentialFormats.JWT_VC.getCode(), passedToSave.getCredentialFormat());
+            assertEquals(CredentialFormats.JWT_VC.toString(), passedToSave.getCredentialFormat());
             assertEquals(credential, passedToSave.getCredentialData());
         }
     }
@@ -187,18 +187,18 @@ class CredentialRepositoryServiceImplTest {
 
         // The existing credential
         Credential existing = Credential.builder()
-                .credentialId(credId)
+                .id(credId)
                 .userId(userId)
-                .credentialStatus(CredentialStatus.ISSUED.getCode())
+                .credentialStatus(CredentialStatus.ISSUED.toString())
                 .build();
 
-        when(credentialRepository.findByCredentialId(credId)).thenReturn(Mono.just(existing));
+        when(credentialRepository.findById(credId)).thenReturn(Mono.just(existing));
 
         // Suppose once we update the credential, we store it as VALID
         Credential updated = Credential.builder()
-                .credentialId(credId)
+                .id(credId)
                 .userId(userId)
-                .credentialStatus(CredentialStatus.VALID.getCode())
+                .credentialStatus(CredentialStatus.VALID.toString())
                 .build();
 
         ArgumentCaptor<Credential> captor = ArgumentCaptor.forClass(Credential.class);
@@ -221,7 +221,7 @@ class CredentialRepositoryServiceImplTest {
 
         // Check that the repository saved with status = VALID
         Credential passedToSave = captor.getValue();
-        assertEquals(CredentialStatus.VALID.getCode(), passedToSave.getCredentialStatus());
+        assertEquals(CredentialStatus.VALID.toString(), passedToSave.getCredentialStatus());
         assertEquals("some-jwt-data", passedToSave.getCredentialData());
     }
 
@@ -234,13 +234,13 @@ class CredentialRepositoryServiceImplTest {
 
         // The credential has no LEARCredentialEmployee => DID is at /credentialSubject/id
         Credential existing = Credential.builder()
-                .credentialId(credUuid)
+                .id(credUuid)
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "AnotherType"))
                 .jsonVc(credential)
                 .build();
 
-        when(credentialRepository.findByCredentialId(credUuid))
+        when(credentialRepository.findById(credUuid))
                 .thenReturn(Mono.just(existing));
 
         when(objectMapper.readTree(credential)).thenReturn(getJsonNodeCredential());
@@ -265,13 +265,13 @@ class CredentialRepositoryServiceImplTest {
 
         // The credential has type "LEARCredentialEmployee", so DID is at /credentialSubject/mandate/mandatee/id
         Credential existing = Credential.builder()
-                .credentialId(credUuid)
+                .id(credUuid)
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
                 .jsonVc(credential)
                 .build();
 
-        when(credentialRepository.findByCredentialId(credUuid)).thenReturn(Mono.just(existing));
+        when(credentialRepository.findById(credUuid)).thenReturn(Mono.just(existing));
         when(objectMapper.readTree(credential)).thenReturn(getJsonNodeCredentialLearCredentialEmployee());
 
         Mono<String> result =
@@ -294,17 +294,17 @@ class CredentialRepositoryServiceImplTest {
 
         // Suppose the repository returns 2 credentials for the user
         Credential c1 = Credential.builder()
-                .credentialId(UUID.randomUUID())
+                .id(UUID.randomUUID())
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
-                .credentialStatus(CredentialStatus.VALID.getCode())
+                .credentialStatus(CredentialStatus.VALID.toString())
                 .jsonVc(credential1)
                 .build();
         Credential c2 = Credential.builder()
-                .credentialId(UUID.randomUUID())
+                .id(UUID.randomUUID())
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "AnotherType"))
-                .credentialStatus(CredentialStatus.ISSUED.getCode())
+                .credentialStatus(CredentialStatus.ISSUED.toString())
                 .jsonVc(credential2)
                 .build();
 
@@ -329,12 +329,12 @@ class CredentialRepositoryServiceImplTest {
         UUID credUuid = UUID.randomUUID();
 
         Credential existing = Credential.builder()
-                .credentialId(credUuid)
+                .id(credUuid)
                 .userId(userUuid)
                 .credentialData("some-raw-data-here")
                 .build();
 
-        when(credentialRepository.findByCredentialId(credUuid)).thenReturn(Mono.just(existing));
+        when(credentialRepository.findById(credUuid)).thenReturn(Mono.just(existing));
 
         Mono<String> result = credentialRepositoryService.getCredentialDataByIdAndUserId(
                 processId,
@@ -354,11 +354,11 @@ class CredentialRepositoryServiceImplTest {
         UUID credUuid = UUID.randomUUID();
 
         Credential existing = Credential.builder()
-                .credentialId(credUuid)
+                .id(credUuid)
                 .userId(userUuid)
                 .build();
 
-        when(credentialRepository.findByCredentialId(credUuid))
+        when(credentialRepository.findById(credUuid))
                 .thenReturn(Mono.just(existing));
         when(credentialRepository.delete(existing))
                 .thenReturn(Mono.empty());

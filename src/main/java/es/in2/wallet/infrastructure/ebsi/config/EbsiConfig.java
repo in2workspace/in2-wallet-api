@@ -6,11 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.dto.CredentialResponse;
 import es.in2.wallet.application.ports.AppConfig;
 import es.in2.wallet.domain.exceptions.NoSuchVerifiableCredentialException;
+import es.in2.wallet.domain.services.CredentialService;
 import es.in2.wallet.domain.services.DidKeyGeneratorService;
+import es.in2.wallet.domain.services.UserService;
 import es.in2.wallet.domain.utils.ApplicationUtils;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
-import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
-import es.in2.wallet.infrastructure.services.UserRepositoryService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -38,8 +38,8 @@ public class EbsiConfig {
     private final ObjectMapper objectMapper;
     private final AppConfig appConfig;
     private final DidKeyGeneratorService didKeyGeneratorService;
-    private final UserRepositoryService userRepositoryService;
-    private final CredentialRepositoryService credentialRepositoryService;
+    private final UserService userService;
+    private final CredentialService credentialService;
     private final WebClientConfig webClient;
 
     // We store the DID we generate (if any) in memory here
@@ -165,12 +165,12 @@ public class EbsiConfig {
         String processId = UUID.randomUUID().toString();
 
         // Try to fetch an existing credential for the user with the given type (in JWT_VC format)
-        return credentialRepositoryService.getCredentialsByUserIdAndType(processId, userId, "ExampleCredential")
+        return credentialService.getCredentialsByUserIdAndType(processId, userId, "ExampleCredential")
                 .flatMap(credentials -> {
                     // If we found some credential(s), extract the DID from the first
                     if (!credentials.isEmpty()) {
                         String firstCredId = credentials.get(0).id(); // the "id" field in CredentialsBasicInfo
-                        return credentialRepositoryService.extractDidFromCredential(processId, firstCredId, userId);
+                        return credentialService.extractDidFromCredential(processId, firstCredId, userId);
                     }
                     // If none found, generate new DID + create new credential
                     return createNewDidAndCredential(processId, userId);
@@ -226,10 +226,10 @@ public class EbsiConfig {
                 .transactionId(UUID.randomUUID().toString())
                 .build();
 
-        return userRepositoryService.storeUser(processId, userId)
+        return userService.storeUser(processId, userId)
                 .flatMap(userUuid -> {
                     log.info("User {} stored with uuid={}", userId, userUuid);
-                    return credentialRepositoryService.saveCredential(processId, userUuid, newCredentialResponse, JWT_VC);
+                    return credentialService.saveCredential(processId, userUuid, newCredentialResponse, JWT_VC);
                 })
                 .doOnSuccess(savedCredId -> log.info("Created new credential {} for userId={}, with DID={}", savedCredId, userId, did))
                 .then();

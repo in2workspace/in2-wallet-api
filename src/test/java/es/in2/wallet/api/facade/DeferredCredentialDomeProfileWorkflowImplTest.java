@@ -5,8 +5,8 @@ import es.in2.wallet.application.dto.CredentialResponseWithStatus;
 import es.in2.wallet.application.workflows.issuance.impl.DeferredCredentialDomeProfileWorkflowImpl;
 import es.in2.wallet.domain.entities.DeferredCredentialMetadata;
 import es.in2.wallet.domain.services.CredentialService;
-import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
-import es.in2.wallet.infrastructure.services.DeferredCredentialMetadataRepositoryService;
+import es.in2.wallet.domain.services.DeferredCredentialMetadataService;
+import es.in2.wallet.domain.services.OID4VCICredentialService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,11 +24,11 @@ import static org.mockito.Mockito.when;
 class DeferredCredentialDomeProfileWorkflowImplTest {
 
     @Mock
+    private OID4VCICredentialService OID4VCICredentialService;
+    @Mock
     private CredentialService credentialService;
     @Mock
-    private CredentialRepositoryService credentialRepositoryService;
-    @Mock
-    private DeferredCredentialMetadataRepositoryService deferredCredentialMetadataRepositoryService;
+    private DeferredCredentialMetadataService deferredCredentialMetadataService;
 
     @InjectMocks
     private DeferredCredentialDomeProfileWorkflowImpl service;
@@ -59,15 +59,15 @@ class DeferredCredentialDomeProfileWorkflowImplTest {
                 .credentialResponse(credentialResponse)
                 .build();
 
-        when(deferredCredentialMetadataRepositoryService.getDeferredCredentialMetadataByCredentialId(processId, credentialId))
+        when(deferredCredentialMetadataService.getDeferredCredentialMetadataByCredentialId(processId, credentialId))
                 .thenReturn(Mono.just(deferredCredentialMetadata));
 
-        when(credentialService.getCredentialDomeDeferredCase(transactionUuid.toString(),accessToken,deferredEndpoint)).thenReturn(Mono.just(credentialResponseWithStatus));
+        when(OID4VCICredentialService.getCredentialDomeDeferredCase(transactionUuid.toString(),accessToken,deferredEndpoint)).thenReturn(Mono.just(credentialResponseWithStatus));
 
-        when(credentialRepositoryService.saveDeferredCredential(processId, userId, credentialId, credentialResponse))
+        when(credentialService.saveDeferredCredential(processId, userId, credentialId, credentialResponse))
                 .thenReturn(Mono.empty());
 
-        when(deferredCredentialMetadataRepositoryService.deleteDeferredCredentialMetadataByCredentialId(processId, credentialId))
+        when(deferredCredentialMetadataService.deleteDeferredCredentialMetadataByCredentialId(processId, credentialId))
                 .thenReturn(Mono.empty());
 
         StepVerifier.create(service.requestDeferredCredential(processId, userId, credentialId))
@@ -100,12 +100,12 @@ class DeferredCredentialDomeProfileWorkflowImplTest {
                 .credentialResponse(credentialResponse)
                 .build();
 
-        when(deferredCredentialMetadataRepositoryService.getDeferredCredentialMetadataByCredentialId(processId, credentialId))
+        when(deferredCredentialMetadataService.getDeferredCredentialMetadataByCredentialId(processId, credentialId))
                 .thenReturn(Mono.just(deferredCredentialMetadata));
 
-        when(credentialService.getCredentialDomeDeferredCase(transactionUuid.toString(),accessToken,deferredEndpoint)).thenReturn(Mono.just(credentialResponseWithStatus));
+        when(OID4VCICredentialService.getCredentialDomeDeferredCase(transactionUuid.toString(),accessToken,deferredEndpoint)).thenReturn(Mono.just(credentialResponseWithStatus));
 
-        when(deferredCredentialMetadataRepositoryService.updateDeferredCredentialMetadataTransactionIdByCredentialId(processId, credentialId, newTransactionUuid))
+        when(deferredCredentialMetadataService.updateDeferredCredentialMetadataTransactionIdByCredentialId(processId, credentialId, newTransactionUuid))
                 .thenReturn(Mono.empty());
 
         StepVerifier.create(service.requestDeferredCredential(processId, userId, credentialId))

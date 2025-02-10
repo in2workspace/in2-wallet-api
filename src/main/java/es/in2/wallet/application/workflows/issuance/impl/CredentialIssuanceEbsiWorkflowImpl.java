@@ -4,9 +4,6 @@ import es.in2.wallet.application.dto.*;
 import es.in2.wallet.application.workflows.issuance.CredentialIssuanceEbsiWorkflow;
 import es.in2.wallet.domain.services.*;
 import es.in2.wallet.infrastructure.ebsi.config.EbsiConfig;
-import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
-import es.in2.wallet.infrastructure.services.DeferredCredentialMetadataRepositoryService;
-import es.in2.wallet.infrastructure.services.UserRepositoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,16 +21,16 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
     private final EbsiConfig ebsiConfig;
     private final CredentialIssuerMetadataService credentialIssuerMetadataService;
     private final AuthorisationServerMetadataService authorisationServerMetadataService;
-    private final CredentialService credentialService;
+    private final OID4VCICredentialService OID4VCICredentialService;
     private final PreAuthorizedService preAuthorizedService;
     private final EbsiIdTokenService ebsiIdTokenService;
     private final EbsiVpTokenService ebsiVpTokenService;
     private final ProofJWTService proofJWTService;
     private final EbsiAuthorisationService ebsiAuthorisationService;
     private final SignerService signerService;
-    private final UserRepositoryService userRepositoryService;
-    private final CredentialRepositoryService credentialRepositoryService;
-    private final DeferredCredentialMetadataRepositoryService deferredCredentialMetadataRepositoryService;
+    private final UserService userService;
+    private final CredentialService credentialService;
+    private final DeferredCredentialMetadataService deferredCredentialMetadataService;
 
 
     /**
@@ -116,7 +113,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
 
     private Mono<Void> getCredential(String processId, String authorizationToken, TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce) {
             return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
-                    .flatMap(jwt -> credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
+                    .flatMap(jwt -> OID4VCICredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
                     .flatMap(credentialResponse -> handleCredentialResponse(processId,credentialResponse ,authorizationToken, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format()));
     }
 
@@ -130,12 +127,12 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
     ) {
         return getUserIdFromToken(authorizationToken)
                 // Store the user
-                .flatMap(userId -> userRepositoryService.storeUser(processId, userId))
+                .flatMap(userId -> userService.storeUser(processId, userId))
                 .doOnNext(userUuid ->
                         log.info("ProcessID: {} - Stored userUuid: {}", processId, userUuid.toString())
                 )
                 // Save the credential
-                .flatMap(userUuid -> credentialRepositoryService.saveCredential(
+                .flatMap(userUuid -> credentialService.saveCredential(
                         processId,
                         userUuid,
                         credentialResponseWithStatus.credentialResponse(),
@@ -149,7 +146,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
                     if (credentialResponseWithStatus.statusCode().equals(HttpStatus.ACCEPTED)) {
                         log.info("ProcessID: {} - Status ACCEPTED, saving deferred credential metadata", processId);
 
-                        return deferredCredentialMetadataRepositoryService.saveDeferredCredentialMetadata(
+                        return deferredCredentialMetadataService.saveDeferredCredentialMetadata(
                                         processId,
                                         credentialUuid,
                                         credentialResponseWithStatus.credentialResponse().transactionId(),

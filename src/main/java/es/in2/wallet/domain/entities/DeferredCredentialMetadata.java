@@ -5,15 +5,13 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
 @Setter
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
-@ToString
+@EqualsAndHashCode(of = "id")
 @Table("wallet.deferred_credential_metadata")
 public class DeferredCredentialMetadata {
     @Id
@@ -33,8 +31,8 @@ public class DeferredCredentialMetadata {
     private String deferredEndpoint;
 
     @Column("created_at")
-    private Timestamp createdAt;
+    private Instant createdAt;
 
     @Column("updated_at")
-    private Timestamp updatedAt;
+    private Instant updatedAt;
 }

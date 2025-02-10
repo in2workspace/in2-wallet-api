@@ -2,8 +2,8 @@ package es.in2.wallet.infrastructure.services;
 
 import es.in2.wallet.domain.entities.DeferredCredentialMetadata;
 import es.in2.wallet.domain.exceptions.NoSuchDeferredCredentialMetadataException;
-import es.in2.wallet.infrastructure.repositories.DeferredCredentialMetadataRepository;
-import es.in2.wallet.infrastructure.services.impl.DeferredCredentialMetadataRepositoryServiceImpl;
+import es.in2.wallet.domain.repositories.DeferredCredentialMetadataRepository;
+import es.in2.wallet.domain.services.impl.DeferredCredentialMetadataServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -13,7 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -23,13 +22,13 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class DeferredCredentialMetadataRepositoryServiceImplTest {
+class DeferredCredentialMetadataServiceImplTest {
 
     @Mock
     private DeferredCredentialMetadataRepository deferredCredentialMetadataRepository;
 
     @InjectMocks
-    private DeferredCredentialMetadataRepositoryServiceImpl service;
+    private DeferredCredentialMetadataServiceImpl service;
 
     @Test
     void testSaveDeferredCredentialMetadata_Success() {
@@ -39,7 +38,7 @@ class DeferredCredentialMetadataRepositoryServiceImplTest {
         String transactionId = UUID.randomUUID().toString();
         String accessToken = "some-token";
         String deferredEndpoint = "https://example.com/deferred";
-        Timestamp now = new Timestamp(Instant.now().toEpochMilli());
+        Instant now = Instant.now();
 
         // We'll capture exactly what is passed to the repository
         ArgumentCaptor<DeferredCredentialMetadata> captor =
@@ -204,7 +203,7 @@ class DeferredCredentialMetadataRepositoryServiceImplTest {
         DeferredCredentialMetadata updated = DeferredCredentialMetadata.builder()
                 .credentialId(credentialId)
                 .transactionId(UUID.fromString(newTransactionIdStr))
-                .updatedAt(new Timestamp(Instant.now().toEpochMilli()))
+                .updatedAt(Instant.now())
                 .build();
 
         when(deferredCredentialMetadataRepository.findByCredentialId(credentialId))

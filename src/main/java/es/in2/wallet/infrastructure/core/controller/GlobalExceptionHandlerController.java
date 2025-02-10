@@ -1,4 +1,4 @@
-package es.in2.wallet.domain.exceptions.handler;
+package es.in2.wallet.infrastructure.core.controller;
 
 import es.in2.wallet.domain.exceptions.*;
 import es.in2.wallet.application.dto.GlobalErrorMessage;
@@ -15,7 +15,7 @@ import java.util.concurrent.TimeoutException;
 
 @RestControllerAdvice
 @Slf4j
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandlerController {
     @ExceptionHandler(FailedCommunicationException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     @ResponseBody

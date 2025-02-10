@@ -3,7 +3,7 @@ package es.in2.wallet.application.workflows.data.impl;
 import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.ports.VaultService;
 import es.in2.wallet.application.workflows.data.DataWorkflow;
-import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
+import es.in2.wallet.domain.services.CredentialService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DataWorkflowImpl implements DataWorkflow {
 
-    private final CredentialRepositoryService credentialRepositoryService;
+    private final CredentialService credentialService;
     private final VaultService vaultService;
 
     /**
@@ -27,7 +27,7 @@ public class DataWorkflowImpl implements DataWorkflow {
      */
     @Override
     public Mono<List<CredentialsBasicInfo>> getAllCredentialsByUserId(String processId, String userId) {
-        return credentialRepositoryService.getCredentialsByUserId(processId, userId)
+        return credentialService.getCredentialsByUserId(processId, userId)
                 .doOnSuccess(list -> log.info("Retrieved VCs for userId: {}", userId))
                 .onErrorResume(Mono::error);
     }
@@ -45,9 +45,9 @@ public class DataWorkflowImpl implements DataWorkflow {
 
     @Override
     public Mono<Void> deleteCredentialByIdAndUserId(String processId, String credentialId, String userId) {
-        return credentialRepositoryService.extractDidFromCredential(processId, credentialId, userId)
+        return credentialService.extractDidFromCredential(processId, credentialId, userId)
                 .flatMap(vaultService::deleteSecretByKey)
-                .then(credentialRepositoryService.deleteCredential(processId, credentialId, userId))
+                .then(credentialService.deleteCredential(processId, credentialId, userId))
                 .doOnSuccess(aVoid -> log.info("Delete VC with Id: {} successfully completed", credentialId))
                 .onErrorResume(Mono::error);
     }

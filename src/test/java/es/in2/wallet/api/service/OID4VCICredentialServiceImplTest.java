@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.dto.*;
 import es.in2.wallet.domain.exceptions.FailedDeserializingException;
 import es.in2.wallet.domain.exceptions.FailedSerializingException;
-import es.in2.wallet.domain.services.impl.CredentialServiceImpl;
+import es.in2.wallet.domain.services.impl.OID4VCICredentialServiceImpl;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,14 +29,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class CredentialServiceImplTest {
+class OID4VCICredentialServiceImplTest {
     @Mock
     private ObjectMapper objectMapper;
 
     @Mock
     private WebClientConfig webClientConfig;
     @InjectMocks
-    private CredentialServiceImpl credentialService;
+    private OID4VCICredentialServiceImpl credentialService;
 
     @Test
     void getCredentialTest() throws JsonProcessingException {

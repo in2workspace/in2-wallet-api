@@ -1,4 +1,4 @@
-package es.in2.wallet.infrastructure.repositories;
+package es.in2.wallet.domain.repositories;
 
 import es.in2.wallet.domain.entities.DeferredCredentialMetadata;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;

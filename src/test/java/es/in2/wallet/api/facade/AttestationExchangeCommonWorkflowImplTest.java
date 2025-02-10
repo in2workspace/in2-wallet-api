@@ -5,12 +5,8 @@ import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.dto.VcSelectorRequest;
 import es.in2.wallet.application.dto.VcSelectorResponse;
 import es.in2.wallet.application.workflows.presentation.impl.AttestationExchangeCommonWorkflowImpl;
-import es.in2.wallet.domain.services.AuthorizationRequestService;
-import es.in2.wallet.domain.services.AuthorizationResponseService;
-import es.in2.wallet.domain.services.PresentationService;
-import es.in2.wallet.domain.services.VerifierValidationService;
+import es.in2.wallet.domain.services.*;
 import es.in2.wallet.domain.utils.ApplicationUtils;
-import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,7 +31,7 @@ class AttestationExchangeCommonWorkflowImplTest {
     @Mock
     private VerifierValidationService verifierValidationService;
     @Mock
-    private CredentialRepositoryService credentialRepositoryService;
+    private CredentialService credentialService;
     @Mock
     private PresentationService presentationService;
     @InjectMocks
@@ -55,7 +51,7 @@ class AttestationExchangeCommonWorkflowImplTest {
             when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(jwtAuthorizationRequest));
             when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(authorizationRequestOIDC4VP));
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialRepositoryService.getCredentialsByUserIdAndType(processId, "userId", "scope1")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
+            when(credentialService.getCredentialsByUserIdAndType(processId, "userId", "scope1")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
 
             StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))
                     .expectNext(expectedVcSelectorRequest)

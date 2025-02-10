@@ -1,8 +1,8 @@
 package es.in2.wallet.infrastructure.services;
 
 import es.in2.wallet.domain.entities.User;
-import es.in2.wallet.infrastructure.repositories.UserRepository;
-import es.in2.wallet.infrastructure.services.impl.UserRepositoryServiceImpl;
+import es.in2.wallet.domain.repositories.UserRepository;
+import es.in2.wallet.domain.services.impl.UserServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,13 +17,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class UserRepositoryServiceImplTest {
+class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
 
     @InjectMocks
-    private UserRepositoryServiceImpl userRepositoryService;
+    private UserServiceImpl userRepositoryService;
 
     @Test
     void testStoreUser_UserExists() {
@@ -31,8 +31,8 @@ class UserRepositoryServiceImplTest {
         String userIdStr = UUID.randomUUID().toString();
         UUID userUuid = UUID.fromString(userIdStr);
 
-        User existingUser = User.builder().userId(userUuid).build();
-        when(userRepository.findByUserId(userUuid))
+        User existingUser = User.builder().id(userUuid).build();
+        when(userRepository.findById(userUuid))
                 .thenReturn(Mono.just(existingUser));
 
         Mono<UUID> result = userRepositoryService.storeUser(processId, userIdStr);
@@ -41,7 +41,7 @@ class UserRepositoryServiceImplTest {
                 .expectNext(userUuid)
                 .verifyComplete();
 
-        verify(userRepository).findByUserId(userUuid);
+        verify(userRepository).findById(userUuid);
         verify(userRepository, never()).save(any());
     }
 
@@ -51,12 +51,12 @@ class UserRepositoryServiceImplTest {
         String userIdStr = UUID.randomUUID().toString();
         UUID userUuid = UUID.fromString(userIdStr);
 
-        when(userRepository.findByUserId(userUuid))
+        when(userRepository.findById(userUuid))
                 .thenReturn(Mono.empty());
 
         // We only stub save(...) for this scenario
-        User savedUser = User.builder().userId(userUuid).build();
-        when(userRepository.save(argThat(u -> u.getUserId().equals(userUuid))))
+        User savedUser = User.builder().id(userUuid).build();
+        when(userRepository.save(argThat(u -> u.getId().equals(userUuid))))
                 .thenReturn(Mono.just(savedUser));
 
         Mono<UUID> result = userRepositoryService.storeUser(processId, userIdStr);
@@ -65,7 +65,7 @@ class UserRepositoryServiceImplTest {
                 .expectNext(userUuid)
                 .verifyComplete();
 
-        verify(userRepository).findByUserId(userUuid);
-        verify(userRepository).save(argThat(u -> u.getUserId().equals(userUuid)));
+        verify(userRepository).findById(userUuid);
+        verify(userRepository).save(argThat(u -> u.getId().equals(userUuid)));
     }
 }

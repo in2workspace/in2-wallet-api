@@ -5,11 +5,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.ports.AppConfig;
+import es.in2.wallet.domain.services.CredentialService;
 import es.in2.wallet.domain.services.DidKeyGeneratorService;
+import es.in2.wallet.domain.services.UserService;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import es.in2.wallet.infrastructure.ebsi.config.EbsiConfig;
-import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
-import es.in2.wallet.infrastructure.services.UserRepositoryService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -44,10 +44,10 @@ class EbsiConfigTest {
     private DidKeyGeneratorService didKeyGeneratorService;
 
     @Mock
-    private CredentialRepositoryService credentialRepositoryService;
+    private CredentialService credentialService;
 
     @Mock
-    private UserRepositoryService userRepositoryService;
+    private UserService userService;
 
     @Mock
     private WebClientConfig webClientConfig;
@@ -114,11 +114,11 @@ class EbsiConfigTest {
         CredentialsBasicInfo existingCredInfo = CredentialsBasicInfo.builder()
                 .id("urn:entities:credential:exampleCredential-xyz")
                 .build();
-        when(credentialRepositoryService.getCredentialsByUserIdAndType(anyString(), eq(userId), eq("ExampleCredential")))
+        when(credentialService.getCredentialsByUserIdAndType(anyString(), eq(userId), eq("ExampleCredential")))
                 .thenReturn(Mono.just(List.of(existingCredInfo)));
 
         // So we extract the DID from that credential
-        when(credentialRepositoryService.extractDidFromCredential(anyString(), eq(existingCredInfo.id()), eq(userId)))
+        when(credentialService.extractDidFromCredential(anyString(), eq(existingCredInfo.id()), eq(userId)))
                 .thenReturn(Mono.just(expectedDid));
 
         // WHEN / THEN
@@ -157,7 +157,7 @@ class EbsiConfigTest {
         // This scenario: No credential => we must generate one
         // We mock 'getCredentialsByUserIdAndType' to throw a NoSuchVerifiableCredentialException
         // or return an empty list. Let's do empty list for simplicity:
-        when(credentialRepositoryService.getCredentialsByUserIdAndType(anyString(), eq(userId), eq("ExampleCredential")))
+        when(credentialService.getCredentialsByUserIdAndType(anyString(), eq(userId), eq("ExampleCredential")))
                 .thenReturn(Mono.just(List.of()));
 
         // Then we generate a new DID
@@ -166,12 +166,12 @@ class EbsiConfigTest {
 
         // We store the user, returning some user UUID
         UUID storedUserUuid = UUID.randomUUID();
-        when(userRepositoryService.storeUser(anyString(), eq(userId)))
+        when(userService.storeUser(anyString(), eq(userId)))
                 .thenReturn(Mono.just(storedUserUuid));
 
         // We save the new credential
         UUID newCredentialId = UUID.randomUUID();
-        when(credentialRepositoryService.saveCredential(anyString(), eq(storedUserUuid), any(), anyString()))
+        when(credentialService.saveCredential(anyString(), eq(storedUserUuid), any(), anyString()))
                 .thenReturn(Mono.just(newCredentialId));
 
         // WHEN / THEN

@@ -5,27 +5,21 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
-@Setter
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
-@ToString
+@EqualsAndHashCode(of = "id")
 @Table("wallet.user")
 public class User {
     @Id
     @Column("id")
     private UUID id;
 
-    @Column("user_id")
-    private UUID userId;
-
     @Column("created_at")
-    private Timestamp createdAt;
+    private Instant createdAt;
 
     @Column("updated_at")
-    private Timestamp updatedAt;
+    private Instant updatedAt;
 }

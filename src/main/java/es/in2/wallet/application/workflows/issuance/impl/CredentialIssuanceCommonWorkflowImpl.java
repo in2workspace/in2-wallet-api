@@ -3,9 +3,6 @@ package es.in2.wallet.application.workflows.issuance.impl;
 import es.in2.wallet.application.dto.*;
 import es.in2.wallet.application.workflows.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.domain.services.*;
-import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
-import es.in2.wallet.infrastructure.services.DeferredCredentialMetadataRepositoryService;
-import es.in2.wallet.infrastructure.services.UserRepositoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,16 +24,16 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
     private final CredentialIssuerMetadataService credentialIssuerMetadataService;
     private final AuthorisationServerMetadataService authorisationServerMetadataService;
     private final PreAuthorizedService preAuthorizedService;
-    private final CredentialService credentialService;
+    private final OID4VCICredentialService OID4VCICredentialService;
     private final DidKeyGeneratorService didKeyGeneratorService;
     private final ProofJWTService proofJWTService;
     private final SignerService signerService;
     private final EbsiIdTokenService ebsiIdTokenService;
     private final EbsiVpTokenService ebsiVpTokenService;
     private final EbsiAuthorisationService ebsiAuthorisationService;
-    private final UserRepositoryService userRepositoryService;
-    private final CredentialRepositoryService credentialRepositoryService;
-    private final DeferredCredentialMetadataRepositoryService deferredCredentialMetadataRepositoryService;
+    private final UserService userService;
+    private final CredentialService credentialService;
+    private final DeferredCredentialMetadataService deferredCredentialMetadataService;
 
 
     @Override
@@ -112,7 +109,7 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                 getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
                         .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0),credentialIssuerMetadata)
                                 .flatMap( format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
-                                        .flatMap(jwt -> credentialService.getCredential(jwt,tokenResponse,credentialIssuerMetadata,format,null))
+                                        .flatMap(jwt -> OID4VCICredentialService.getCredential(jwt,tokenResponse,credentialIssuerMetadata,format,null))
                                         .flatMap(credentialResponseWithStatus -> handleCredentialResponse(processId, credentialResponseWithStatus, authorizationToken,tokenResponse,credentialIssuerMetadata, format))
                                 )));
     }
@@ -201,7 +198,7 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                                        CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce,
                                        CredentialOffer.Credential credential) {
         return Mono.defer(() -> buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
-                        .flatMap(jwt -> credentialService.getCredential(jwt,
+                        .flatMap(jwt -> OID4VCICredentialService.getCredential(jwt,
                                 tokenResponse,
                                 credentialIssuerMetadata,
                                 credential.format(),
@@ -235,12 +232,12 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
     ) {
         return getUserIdFromToken(authorizationToken)
                 // Store the user
-                .flatMap(userId -> userRepositoryService.storeUser(processId, userId))
+                .flatMap(userId -> userService.storeUser(processId, userId))
                 .doOnNext(userUuid ->
                         log.info("ProcessID: {} - Stored userUuid: {}", processId, userUuid.toString())
                 )
                 // Save the credential
-                .flatMap(userUuid -> credentialRepositoryService.saveCredential(
+                .flatMap(userUuid -> credentialService.saveCredential(
                         processId,
                         userUuid,
                         credentialResponseWithStatus.credentialResponse(),
@@ -254,7 +251,7 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                     if (credentialResponseWithStatus.statusCode().equals(HttpStatus.ACCEPTED)) {
                         log.info("ProcessID: {} - Status ACCEPTED, saving deferred credential metadata", processId);
 
-                        return deferredCredentialMetadataRepositoryService.saveDeferredCredentialMetadata(
+                        return deferredCredentialMetadataService.saveDeferredCredentialMetadata(
                                         processId,
                                         credentialUuid,
                                         credentialResponseWithStatus.credentialResponse().transactionId(),

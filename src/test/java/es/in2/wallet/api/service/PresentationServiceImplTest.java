@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.dto.VcSelectorResponse;
 import es.in2.wallet.application.ports.AppConfig;
+import es.in2.wallet.domain.services.CredentialService;
 import es.in2.wallet.domain.services.SignerService;
 import es.in2.wallet.domain.services.impl.PresentationServiceImpl;
 import es.in2.wallet.domain.utils.ApplicationUtils;
-import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,7 +36,7 @@ class PresentationServiceImplTest {
     private SignerService signerService;
 
     @Mock
-    private CredentialRepositoryService credentialRepositoryService;
+    private CredentialService credentialService;
 
     @Mock
     private AppConfig appConfig;
@@ -75,7 +75,7 @@ class PresentationServiceImplTest {
             when(appConfig.getCredentialPresentationExpirationUnit()).thenReturn("minutes");
 
             // Simulate the user data service returning a list of verifiable credential JWTs
-            when(credentialRepositoryService.getCredentialDataByIdAndUserId(processId,userId,credentialsBasicInfo.id())).thenReturn(Mono.just(vcJwt));
+            when(credentialService.getCredentialDataByIdAndUserId(processId,userId,credentialsBasicInfo.id())).thenReturn(Mono.just(vcJwt));
 
             when(objectMapper.writeValueAsString(any())).thenReturn(vpClaims);
             when(objectMapper.readTree(anyString())).thenAnswer(invocation -> {

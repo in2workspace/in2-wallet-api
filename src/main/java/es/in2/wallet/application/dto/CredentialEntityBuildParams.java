@@ -1,9 +1,11 @@
 package es.in2.wallet.application.dto;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import es.in2.wallet.domain.enums.CredentialFormats;
+import es.in2.wallet.domain.enums.CredentialStatus;
 import lombok.Builder;
 
-import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,10 +14,10 @@ public record CredentialEntityBuildParams(
         UUID credentialId,
         UUID userId,
         List<String> credentialTypes,
-        Integer credentialFormat,
+        CredentialFormats credentialFormat,
         String credentialData,
         JsonNode vcJson,
-        int credentialStatus,
-        Timestamp timestamp
+        CredentialStatus credentialStatus,
+        Instant currentTime
 ) {}
 

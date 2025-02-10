@@ -7,7 +7,7 @@ import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.ports.VaultService;
 import es.in2.wallet.application.workflows.data.impl.DataWorkflowImpl;
 import es.in2.wallet.domain.enums.CredentialStatus;
-import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
+import es.in2.wallet.domain.services.CredentialService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 class DataWorkflowImplTest {
 
     @Mock
-    private CredentialRepositoryService credentialRepositoryService;
+    private CredentialService credentialService;
 
     @Mock
     private VaultService vaultService;
@@ -51,12 +51,12 @@ class DataWorkflowImplTest {
 
         List<CredentialsBasicInfo> expectedCredentials = List.of(new CredentialsBasicInfo("id1", List.of("type"), CredentialStatus.VALID, List.of("jwt_vc", "cwt_vc"), credentialSubject, ZonedDateTime.now()));
 
-        when(credentialRepositoryService.getCredentialsByUserId(processId, userId)).thenReturn(Mono.just(expectedCredentials));
+        when(credentialService.getCredentialsByUserId(processId, userId)).thenReturn(Mono.just(expectedCredentials));
 
         StepVerifier.create(userDataFacadeService.getAllCredentialsByUserId(processId, userId))
                 .expectNext(expectedCredentials)
                 .verifyComplete();
-        verify(credentialRepositoryService).getCredentialsByUserId(processId, userId);
+        verify(credentialService).getCredentialsByUserId(processId, userId);
     }
 
 
@@ -67,16 +67,16 @@ class DataWorkflowImplTest {
         String credentialId = "cred1";
         String did = "did:example:123";
 
-        when(credentialRepositoryService.extractDidFromCredential(processId, credentialId, userId)).thenReturn(Mono.just(did));
+        when(credentialService.extractDidFromCredential(processId, credentialId, userId)).thenReturn(Mono.just(did));
         when(vaultService.deleteSecretByKey(did)).thenReturn(Mono.empty());
-        when(credentialRepositoryService.deleteCredential(processId, credentialId, userId)).thenReturn(Mono.empty());
+        when(credentialService.deleteCredential(processId, credentialId, userId)).thenReturn(Mono.empty());
 
         StepVerifier.create(userDataFacadeService.deleteCredentialByIdAndUserId(processId, credentialId, userId))
                 .verifyComplete();
 
-        verify(credentialRepositoryService).extractDidFromCredential(processId, credentialId, userId);
+        verify(credentialService).extractDidFromCredential(processId, credentialId, userId);
         verify(vaultService).deleteSecretByKey(did);
-        verify(credentialRepositoryService).deleteCredential(processId, credentialId, userId);
+        verify(credentialService).deleteCredential(processId, credentialId, userId);
     }
 
 }

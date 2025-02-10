@@ -8,9 +8,9 @@ import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.dto.VcSelectorResponse;
 import es.in2.wallet.application.dto.VerifiablePresentation;
 import es.in2.wallet.application.ports.AppConfig;
+import es.in2.wallet.domain.services.CredentialService;
 import es.in2.wallet.domain.services.PresentationService;
 import es.in2.wallet.domain.services.SignerService;
-import es.in2.wallet.infrastructure.services.CredentialRepositoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,7 +32,7 @@ public class PresentationServiceImpl implements PresentationService {
 
     private final ObjectMapper objectMapper;
     private final SignerService signerService;
-    private final CredentialRepositoryService credentialRepositoryService;
+    private final CredentialService credentialService;
 
     private final AppConfig appConfig;
 
@@ -123,7 +123,7 @@ public class PresentationServiceImpl implements PresentationService {
      */
     private Mono<List<String>> getVerifiableCredentials(String processId, String userId, List<CredentialsBasicInfo> selectedVcList) {
         return Flux.fromIterable(selectedVcList)
-                .flatMap(credential -> credentialRepositoryService.getCredentialDataByIdAndUserId(processId,userId, credential.id()))
+                .flatMap(credential -> credentialService.getCredentialDataByIdAndUserId(processId,userId, credential.id()))
                 .collectList();
     }
 

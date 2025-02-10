@@ -1,22 +1,21 @@
-package es.in2.wallet.infrastructure.services.impl;
+package es.in2.wallet.domain.services.impl;
 
 import es.in2.wallet.domain.entities.DeferredCredentialMetadata;
 import es.in2.wallet.domain.exceptions.NoSuchDeferredCredentialMetadataException;
-import es.in2.wallet.infrastructure.repositories.DeferredCredentialMetadataRepository;
-import es.in2.wallet.infrastructure.services.DeferredCredentialMetadataRepositoryService;
+import es.in2.wallet.domain.repositories.DeferredCredentialMetadataRepository;
+import es.in2.wallet.domain.services.DeferredCredentialMetadataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DeferredCredentialMetadataRepositoryServiceImpl implements DeferredCredentialMetadataRepositoryService {
+public class DeferredCredentialMetadataServiceImpl implements DeferredCredentialMetadataService {
 
     private final DeferredCredentialMetadataRepository deferredCredentialMetadataRepository;
 
@@ -28,15 +27,15 @@ public class DeferredCredentialMetadataRepositoryServiceImpl implements Deferred
             String accessToken,
             String deferredEndpoint
     ) {
-        Timestamp currentTimestamp = new Timestamp(Instant.now().toEpochMilli());
+        Instant now = Instant.now();
         return deferredCredentialMetadataRepository.save(
                 DeferredCredentialMetadata.builder()
                         .credentialId(credentialId)
                         .transactionId(UUID.fromString(transactionId))
                         .accessToken(accessToken)
                         .deferredEndpoint(deferredEndpoint)
-                        .createdAt(currentTimestamp)
-                        .updatedAt(currentTimestamp)
+                        .createdAt(now)
+                        .updatedAt(now)
                 .build())
                 .then(Mono.just(credentialId))
                 .doOnSuccess(credentialUuid -> log.info("[Process ID: {}] Deferred credential metadata for credential ID {} saved successfully.", processId, credentialUuid.toString()));
@@ -85,7 +84,7 @@ public class DeferredCredentialMetadataRepositoryServiceImpl implements Deferred
         return findOrError(credentialId)
                 .flatMap(metadata -> {
                     metadata.setTransactionId(UUID.fromString(transactionId));
-                    metadata.setUpdatedAt(new Timestamp(Instant.now().toEpochMilli()));
+                    metadata.setUpdatedAt(Instant.now());
                     return deferredCredentialMetadataRepository.save(metadata);
                 })
                 .then()

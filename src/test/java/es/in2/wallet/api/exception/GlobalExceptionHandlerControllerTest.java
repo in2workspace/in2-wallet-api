@@ -1,7 +1,7 @@
 package es.in2.wallet.api.exception;
 
 import es.in2.wallet.domain.exceptions.*;
-import es.in2.wallet.domain.exceptions.handler.GlobalExceptionHandler;
+import es.in2.wallet.infrastructure.core.controller.GlobalExceptionHandlerController;
 import es.in2.wallet.application.dto.GlobalErrorMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,8 +25,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class GlobalExceptionHandlerTest {
-    private static GlobalExceptionHandler globalExceptionHandler;
+class GlobalExceptionHandlerControllerTest {
+    private static GlobalExceptionHandlerController globalExceptionHandlerController;
     private ServerHttpRequest request;
     private RequestPath requestPath;
 
@@ -69,21 +69,21 @@ class GlobalExceptionHandlerTest {
         ));
 
         List<BiFunction<Exception, ServerHttpRequest, Mono<GlobalErrorMessage>>> methods = new ArrayList<>(Arrays.asList(
-                (ex, req) -> globalExceptionHandler.failedCommunicationException((FailedCommunicationException) ex, req),
-                (ex, req) -> globalExceptionHandler.failedDeserializingException((FailedDeserializingException) ex, req),
-                (ex, req) -> globalExceptionHandler.failedSerializingException((FailedSerializingException) ex, req),
-                (ex, req) -> globalExceptionHandler.jwtInvalidFormatException((JwtInvalidFormatException) ex, req),
-                (ex, req) -> globalExceptionHandler.noSuchQrContentException((NoSuchQrContentException) ex, req),
-                (ex, req) -> globalExceptionHandler.parseErrorException((ParseErrorException) ex, req),
-                (ex, req) -> globalExceptionHandler.noSuchVerifiableCredentialException((NoSuchVerifiableCredentialException) ex, req),
-                (ex, req) -> globalExceptionHandler.noSuchTransactionException((NoSuchDeferredCredentialMetadataException) ex, req),
-                (ex, req) -> globalExceptionHandler.invalidPinException((InvalidPinException) ex, req),
-                (ex, req) -> globalExceptionHandler.credentialNotAvailableException((CredentialNotAvailableException) ex, req),
-                (ex, req) -> globalExceptionHandler.issuerNotAuthorizedException((IssuerNotAuthorizedException) ex, req),
-                (ex, req) -> globalExceptionHandler.attestationUnauthorizedException((AttestationUnauthorizedException) ex, req),
-                (ex, req) -> globalExceptionHandler.attestationClientErrorException((AttestationClientErrorException) ex, req),
-                (ex, req) -> globalExceptionHandler.attestationServerErrorException((AttestationServerErrorException) ex, req),
-                (ex, req) -> globalExceptionHandler.timeoutErrorException((TimeoutException) ex, req)
+                (ex, req) -> globalExceptionHandlerController.failedCommunicationException((FailedCommunicationException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.failedDeserializingException((FailedDeserializingException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.failedSerializingException((FailedSerializingException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.jwtInvalidFormatException((JwtInvalidFormatException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.noSuchQrContentException((NoSuchQrContentException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.parseErrorException((ParseErrorException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.noSuchVerifiableCredentialException((NoSuchVerifiableCredentialException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.noSuchTransactionException((NoSuchDeferredCredentialMetadataException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.invalidPinException((InvalidPinException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.credentialNotAvailableException((CredentialNotAvailableException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.issuerNotAuthorizedException((IssuerNotAuthorizedException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.attestationUnauthorizedException((AttestationUnauthorizedException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.attestationClientErrorException((AttestationClientErrorException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.attestationServerErrorException((AttestationServerErrorException) ex, req),
+                (ex, req) -> globalExceptionHandlerController.timeoutErrorException((TimeoutException) ex, req)
 
         ));
 
@@ -113,7 +113,7 @@ class GlobalExceptionHandlerTest {
     void setup() {
         request = mock(ServerHttpRequest.class);
         requestPath = mock(RequestPath.class);
-        globalExceptionHandler = new GlobalExceptionHandler();
+        globalExceptionHandlerController = new GlobalExceptionHandlerController();
     }
 
     @ParameterizedTest
