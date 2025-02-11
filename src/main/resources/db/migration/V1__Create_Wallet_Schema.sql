@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS wallet.credential (
     json_vc TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
-    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES wallet.user (id) ON DELETE CASCADE
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES wallet.user (user_id) ON DELETE CASCADE
 );
 
 -- Add unique constraint to credential_id
@@ -41,5 +41,5 @@ CREATE TABLE IF NOT EXISTS wallet.deferred_credential_metadata (
     deferred_endpoint VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
-    CONSTRAINT fk_credential FOREIGN KEY (credential_id) REFERENCES wallet.credential (id) ON DELETE CASCADE
+    CONSTRAINT fk_credential FOREIGN KEY (credential_id) REFERENCES wallet.credential (credential_id) ON DELETE CASCADE
 );
