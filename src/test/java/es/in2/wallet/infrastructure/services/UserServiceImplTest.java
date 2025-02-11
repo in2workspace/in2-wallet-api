@@ -32,7 +32,7 @@ class UserServiceImplTest {
         UUID userUuid = UUID.fromString(userIdStr);
 
         User existingUser = User.builder().id(userUuid).build();
-        when(userRepository.findById(userUuid))
+        when(userRepository.findByUserId(userUuid))
                 .thenReturn(Mono.just(existingUser));
 
         Mono<UUID> result = userRepositoryService.storeUser(processId, userIdStr);
@@ -41,7 +41,7 @@ class UserServiceImplTest {
                 .expectNext(userUuid)
                 .verifyComplete();
 
-        verify(userRepository).findById(userUuid);
+        verify(userRepository).findByUserId(userUuid);
         verify(userRepository, never()).save(any());
     }
 
@@ -51,12 +51,12 @@ class UserServiceImplTest {
         String userIdStr = UUID.randomUUID().toString();
         UUID userUuid = UUID.fromString(userIdStr);
 
-        when(userRepository.findById(userUuid))
+        when(userRepository.findByUserId(userUuid))
                 .thenReturn(Mono.empty());
 
         // We only stub save(...) for this scenario
         User savedUser = User.builder().id(userUuid).build();
-        when(userRepository.save(argThat(u -> u.getId().equals(userUuid))))
+        when(userRepository.save(argThat(u -> u.getUserId().equals(userUuid))))
                 .thenReturn(Mono.just(savedUser));
 
         Mono<UUID> result = userRepositoryService.storeUser(processId, userIdStr);
@@ -65,7 +65,7 @@ class UserServiceImplTest {
                 .expectNext(userUuid)
                 .verifyComplete();
 
-        verify(userRepository).findById(userUuid);
-        verify(userRepository).save(argThat(u -> u.getId().equals(userUuid)));
+        verify(userRepository).findByUserId(userUuid);
+        verify(userRepository).save(argThat(u -> u.getUserId().equals(userUuid)));
     }
 }

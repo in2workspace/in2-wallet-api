@@ -17,6 +17,9 @@ public class User {
     @Column("id")
     private UUID id;
 
+    @Column("user_id")
+    private UUID userId;
+
     @Column("created_at")
     private Instant createdAt;
 

@@ -24,7 +24,7 @@ public class UserServiceImpl implements UserService {
         UUID uuid = UUID.fromString(userId);
         Instant now = Instant.now();
 
-        return userRepository.findById(uuid)
+        return userRepository.findByUserId(uuid)
                 // If user is found, skip saving and just return userId
                 .flatMap(existingUser -> {
                     log.info("[{}] User {} already exists.", processId, userId);
@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
                 // If user is not found, create the new user
                 .switchIfEmpty(Mono.defer(() -> {
                     User newUser = User.builder()
-                            .id(uuid)
+                            .userId(uuid)
                             .createdAt(now)
                             .updatedAt(now)
                             .build();

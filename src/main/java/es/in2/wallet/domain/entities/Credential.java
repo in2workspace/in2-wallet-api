@@ -19,6 +19,9 @@ public class Credential {
     @Column("id")
     private UUID id;
 
+    @Column("credential_id")
+    private UUID credentialId;
+
     @Column("user_id")
     private UUID userId;
 

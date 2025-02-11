@@ -306,7 +306,7 @@ public class CredentialServiceImpl implements CredentialService {
     // ---------------------------------------------------------------------
     private Mono<Credential> fetchCredentialOrError(UUID credId, UUID userId) {
         // No status check
-        return credentialRepository.findById(credId)
+        return credentialRepository.findByCredentialId(credId)
                 .switchIfEmpty(Mono.error(new NoSuchVerifiableCredentialException(
                         "No credential found for ID: " + credId
                 )))

@@ -192,7 +192,7 @@ class CredentialServiceImplTest {
                 .credentialStatus(CredentialStatus.ISSUED.toString())
                 .build();
 
-        when(credentialRepository.findById(credId)).thenReturn(Mono.just(existing));
+        when(credentialRepository.findByCredentialId(credId)).thenReturn(Mono.just(existing));
 
         // Suppose once we update the credential, we store it as VALID
         Credential updated = Credential.builder()
@@ -240,7 +240,7 @@ class CredentialServiceImplTest {
                 .jsonVc(credential)
                 .build();
 
-        when(credentialRepository.findById(credUuid))
+        when(credentialRepository.findByCredentialId(credUuid))
                 .thenReturn(Mono.just(existing));
 
         when(objectMapper.readTree(credential)).thenReturn(getJsonNodeCredential());
@@ -271,7 +271,7 @@ class CredentialServiceImplTest {
                 .jsonVc(credential)
                 .build();
 
-        when(credentialRepository.findById(credUuid)).thenReturn(Mono.just(existing));
+        when(credentialRepository.findByCredentialId(credUuid)).thenReturn(Mono.just(existing));
         when(objectMapper.readTree(credential)).thenReturn(getJsonNodeCredentialLearCredentialEmployee());
 
         Mono<String> result =
@@ -334,7 +334,7 @@ class CredentialServiceImplTest {
                 .credentialData("some-raw-data-here")
                 .build();
 
-        when(credentialRepository.findById(credUuid)).thenReturn(Mono.just(existing));
+        when(credentialRepository.findByCredentialId(credUuid)).thenReturn(Mono.just(existing));
 
         Mono<String> result = credentialRepositoryService.getCredentialDataByIdAndUserId(
                 processId,
@@ -358,7 +358,7 @@ class CredentialServiceImplTest {
                 .userId(userUuid)
                 .build();
 
-        when(credentialRepository.findById(credUuid))
+        when(credentialRepository.findByCredentialId(credUuid))
                 .thenReturn(Mono.just(existing));
         when(credentialRepository.delete(existing))
                 .thenReturn(Mono.empty());
