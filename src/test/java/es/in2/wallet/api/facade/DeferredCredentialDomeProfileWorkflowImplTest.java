@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 class DeferredCredentialDomeProfileWorkflowImplTest {
 
     @Mock
-    private OID4VCICredentialService OID4VCICredentialService;
+    private OID4VCICredentialService oid4vciCredentialService;
     @Mock
     private CredentialService credentialService;
     @Mock
@@ -62,7 +62,7 @@ class DeferredCredentialDomeProfileWorkflowImplTest {
         when(deferredCredentialMetadataService.getDeferredCredentialMetadataByCredentialId(processId, credentialId))
                 .thenReturn(Mono.just(deferredCredentialMetadata));
 
-        when(OID4VCICredentialService.getCredentialDomeDeferredCase(transactionUuid.toString(),accessToken,deferredEndpoint)).thenReturn(Mono.just(credentialResponseWithStatus));
+        when(oid4vciCredentialService.getCredentialDomeDeferredCase(transactionUuid.toString(),accessToken,deferredEndpoint)).thenReturn(Mono.just(credentialResponseWithStatus));
 
         when(credentialService.saveDeferredCredential(processId, userId, credentialId, credentialResponse))
                 .thenReturn(Mono.empty());
@@ -103,7 +103,7 @@ class DeferredCredentialDomeProfileWorkflowImplTest {
         when(deferredCredentialMetadataService.getDeferredCredentialMetadataByCredentialId(processId, credentialId))
                 .thenReturn(Mono.just(deferredCredentialMetadata));
 
-        when(OID4VCICredentialService.getCredentialDomeDeferredCase(transactionUuid.toString(),accessToken,deferredEndpoint)).thenReturn(Mono.just(credentialResponseWithStatus));
+        when(oid4vciCredentialService.getCredentialDomeDeferredCase(transactionUuid.toString(),accessToken,deferredEndpoint)).thenReturn(Mono.just(credentialResponseWithStatus));
 
         when(deferredCredentialMetadataService.updateDeferredCredentialMetadataTransactionIdByCredentialId(processId, credentialId, newTransactionUuid))
                 .thenReturn(Mono.empty());
