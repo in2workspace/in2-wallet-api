@@ -289,12 +289,15 @@ class CredentialServiceImplTest {
     void testGetCredentialsByUserId_Success() throws JsonProcessingException {
         String processId = "procABC";
         UUID userUuid = UUID.randomUUID();
+        UUID credentialId1 = UUID.randomUUID();
+        UUID credentialId2 = UUID.randomUUID();
         String credential1 = "credential1";
         String credential2 = "credential2";
 
         // Suppose the repository returns 2 credentials for the user
         Credential c1 = Credential.builder()
                 .id(UUID.randomUUID())
+                .credentialId(credentialId1)
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
                 .credentialStatus(CredentialStatus.VALID.toString())
@@ -302,6 +305,7 @@ class CredentialServiceImplTest {
                 .build();
         Credential c2 = Credential.builder()
                 .id(UUID.randomUUID())
+                .credentialId(credentialId2)
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "AnotherType"))
                 .credentialStatus(CredentialStatus.ISSUED.toString())

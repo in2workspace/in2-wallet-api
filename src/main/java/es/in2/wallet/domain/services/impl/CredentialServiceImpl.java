@@ -79,9 +79,9 @@ public class CredentialServiceImpl implements CredentialService {
                                     .doOnSuccess(saved -> log.info(
                                             "[Process ID: {}] Deferred credential with ID {} saved successfully.",
                                             processId,
-                                            saved.getId()
+                                            saved.getCredentialId()
                                     ))
-                                    .thenReturn(credentialEntity.getId())
+                                    .thenReturn(credentialEntity.getCredentialId())
                     );
         }
 
@@ -110,9 +110,9 @@ public class CredentialServiceImpl implements CredentialService {
                                                 .doOnSuccess(saved -> log.info(
                                                         "[Process ID: {}] Credential with ID {} saved successfully.",
                                                         processId,
-                                                        saved.getId()
+                                                        saved.getCredentialId()
                                                 ))
-                                                .thenReturn(credentialEntity.getId())
+                                                .thenReturn(credentialEntity.getCredentialId())
                                 )
                 );
     }
@@ -139,7 +139,7 @@ public class CredentialServiceImpl implements CredentialService {
                 .flatMap(existingCredential -> updateCredentialEntity(existingCredential, credentialResponse))
                 .doOnSuccess(updatedEntity ->
                         log.info("[Process ID: {}] Deferred credential {} updated to VALID for user {}",
-                                processId, updatedEntity.getId(), userId)
+                                processId, updatedEntity.getCredentialId(), userId)
                 )
                 .then()
                 .doOnError(error ->
@@ -185,7 +185,7 @@ public class CredentialServiceImpl implements CredentialService {
         CredentialStatus status = CredentialStatus.valueOf(credential.getCredentialStatus());
 
         return CredentialsBasicInfo.builder()
-                .id(credential.getId().toString())
+                .id(credential.getCredentialId().toString())
                 .vcType(credential.getCredentialType())   // e.g., ["VerifiableCredential", "SomeOtherType"]
                 .credentialStatus(status)
                 .availableFormats(determineAvailableFormats(credential.getCredentialFormat()))
@@ -244,7 +244,7 @@ public class CredentialServiceImpl implements CredentialService {
                 .map(credential -> {
                     String data = credential.getCredentialData();
                     log.info("[Process ID: {}] Successfully retrieved credential data for credentialId={}, userId={}",
-                            processId, credential.getId(), userId);
+                            processId, credential.getCredentialId(), userId);
                     return data;
                 });
     }
@@ -352,7 +352,7 @@ public class CredentialServiceImpl implements CredentialService {
             CredentialEntityBuildParams params
     ) {
         return Credential.builder()
-                .id(params.credentialId())
+                .credentialId(params.credentialId())
                 .userId(params.userId())
                 .credentialType(params.credentialTypes())
                 .credentialStatus(params.credentialStatus().toString())
