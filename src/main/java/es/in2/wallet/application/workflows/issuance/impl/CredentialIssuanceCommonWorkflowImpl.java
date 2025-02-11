@@ -24,7 +24,7 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
     private final CredentialIssuerMetadataService credentialIssuerMetadataService;
     private final AuthorisationServerMetadataService authorisationServerMetadataService;
     private final PreAuthorizedService preAuthorizedService;
-    private final OID4VCICredentialService OID4VCICredentialService;
+    private final OID4VCICredentialService oid4vciCredentialService;
     private final DidKeyGeneratorService didKeyGeneratorService;
     private final ProofJWTService proofJWTService;
     private final SignerService signerService;
@@ -109,7 +109,7 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                 getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
                         .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0),credentialIssuerMetadata)
                                 .flatMap( format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
-                                        .flatMap(jwt -> OID4VCICredentialService.getCredential(jwt,tokenResponse,credentialIssuerMetadata,format,null))
+                                        .flatMap(jwt -> oid4vciCredentialService.getCredential(jwt,tokenResponse,credentialIssuerMetadata,format,null))
                                         .flatMap(credentialResponseWithStatus -> handleCredentialResponse(processId, credentialResponseWithStatus, authorizationToken,tokenResponse,credentialIssuerMetadata, format))
                                 )));
     }
@@ -198,7 +198,7 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                                        CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce,
                                        CredentialOffer.Credential credential) {
         return Mono.defer(() -> buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
-                        .flatMap(jwt -> OID4VCICredentialService.getCredential(jwt,
+                        .flatMap(jwt -> oid4vciCredentialService.getCredential(jwt,
                                 tokenResponse,
                                 credentialIssuerMetadata,
                                 credential.format(),

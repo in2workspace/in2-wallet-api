@@ -13,13 +13,13 @@ import reactor.core.publisher.Mono;
 @Service
 @RequiredArgsConstructor
 public class DeferredCredentialDomeProfileWorkflowImpl implements DeferredCredentialDomeProfileWorkflow {
-    private final OID4VCICredentialService OID4VCICredentialService;
+    private final OID4VCICredentialService oid4vciCredentialService;
     private final DeferredCredentialMetadataService deferredCredentialMetadataService;
     private final CredentialService credentialService;
     @Override
     public Mono<Void> requestDeferredCredential(String processId, String userId, String credentialId) {
         return deferredCredentialMetadataService.getDeferredCredentialMetadataByCredentialId(processId,credentialId)
-                .flatMap(deferredCredentialMetadata -> OID4VCICredentialService.getCredentialDomeDeferredCase(deferredCredentialMetadata.getTransactionId().toString(), deferredCredentialMetadata.getAccessToken(), deferredCredentialMetadata.getDeferredEndpoint()))
+                .flatMap(deferredCredentialMetadata -> oid4vciCredentialService.getCredentialDomeDeferredCase(deferredCredentialMetadata.getTransactionId().toString(), deferredCredentialMetadata.getAccessToken(), deferredCredentialMetadata.getDeferredEndpoint()))
                 .flatMap(credentialResponseWithStatus -> {
                     if (credentialResponseWithStatus.credentialResponse().transactionId() == null || credentialResponseWithStatus.credentialResponse().transactionId().isEmpty()) {
                         return credentialService.saveDeferredCredential(processId, userId, credentialId, credentialResponseWithStatus.credentialResponse())

@@ -21,7 +21,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
     private final EbsiConfig ebsiConfig;
     private final CredentialIssuerMetadataService credentialIssuerMetadataService;
     private final AuthorisationServerMetadataService authorisationServerMetadataService;
-    private final OID4VCICredentialService OID4VCICredentialService;
+    private final OID4VCICredentialService oid4vciCredentialService;
     private final PreAuthorizedService preAuthorizedService;
     private final EbsiIdTokenService ebsiIdTokenService;
     private final EbsiVpTokenService ebsiVpTokenService;
@@ -113,7 +113,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
 
     private Mono<Void> getCredential(String processId, String authorizationToken, TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce) {
             return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
-                    .flatMap(jwt -> OID4VCICredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
+                    .flatMap(jwt -> oid4vciCredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
                     .flatMap(credentialResponse -> handleCredentialResponse(processId,credentialResponse ,authorizationToken, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format()));
     }
 
