@@ -1,8 +1,8 @@
 package es.in2.wallet.infrastructure.core.controller;
 
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
-import es.in2.wallet.domain.model.QrContent;
-import es.in2.wallet.domain.service.QrCodeProcessorService;
+import es.in2.wallet.application.dto.QrContent;
+import es.in2.wallet.application.workflows.processor.QrCodeProcessorWorkflow;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerToken;
+import static es.in2.wallet.domain.utils.ApplicationUtils.getCleanBearerToken;
 
 @Slf4j
 @RestController
@@ -22,7 +22,7 @@ import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerToken;
 @RequiredArgsConstructor
 public class QrCodeProcessorController {
 
-    private final QrCodeProcessorService qrCodeProcessorService;
+    private final QrCodeProcessorWorkflow qrCodeProcessorWorkflow;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -35,7 +35,7 @@ public class QrCodeProcessorController {
         MDC.put("processId", processId);
         log.info("ProcessID: {} - Executing QR content: {}", processId, qrContent);
         return getCleanBearerToken(authorizationHeader)
-                .flatMap(authorizationToken -> qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent.content()));
+                .flatMap(authorizationToken -> qrCodeProcessorWorkflow.processQrContent(processId, authorizationToken, qrContent.content()));
     }
 
 }

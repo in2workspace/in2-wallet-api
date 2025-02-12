@@ -1,6 +1,6 @@
 package es.in2.wallet.infrastructure.core.config;
 
-import es.in2.wallet.application.port.AppConfig;
+import es.in2.wallet.application.ports.AppConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.GLOBAL_ENDPOINTS_API;
+import static es.in2.wallet.domain.utils.ApplicationConstants.GLOBAL_ENDPOINTS_API;
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration

@@ -1,7 +1,7 @@
 package es.in2.wallet.infrastructure.appconfiguration.service;
 
 
-import es.in2.wallet.application.port.AppConfig;
+import es.in2.wallet.application.ports.AppConfig;
 import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import es.in2.wallet.infrastructure.core.config.properties.AuthServerProperties;
 import es.in2.wallet.infrastructure.core.config.properties.VerifiablePresentationProperties;
@@ -15,7 +15,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.formatUrl;
+import static es.in2.wallet.domain.utils.ApplicationUtils.formatUrl;
 
 @Configuration
 @Slf4j

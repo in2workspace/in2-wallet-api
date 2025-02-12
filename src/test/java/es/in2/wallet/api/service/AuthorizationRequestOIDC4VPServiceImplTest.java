@@ -2,8 +2,8 @@ package es.in2.wallet.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.domain.model.AuthorizationRequestOIDC4VP;
-import es.in2.wallet.domain.service.impl.AuthorizationRequestServiceImpl;
+import es.in2.wallet.application.dto.AuthorizationRequestOIDC4VP;
+import es.in2.wallet.domain.services.impl.AuthorizationRequestServiceImpl;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,8 +19,8 @@ import reactor.test.StepVerifier;
 
 import java.util.List;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE;
-import static es.in2.wallet.domain.util.ApplicationConstants.CONTENT_TYPE_APPLICATION_JSON;
+import static es.in2.wallet.domain.utils.ApplicationConstants.CONTENT_TYPE;
+import static es.in2.wallet.domain.utils.ApplicationConstants.CONTENT_TYPE_APPLICATION_JSON;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

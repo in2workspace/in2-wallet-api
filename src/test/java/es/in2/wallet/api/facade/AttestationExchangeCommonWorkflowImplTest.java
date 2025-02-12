@@ -1,14 +1,12 @@
 package es.in2.wallet.api.facade;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.workflow.presentation.impl.AttestationExchangeCommonWorkflowImpl;
-import es.in2.wallet.domain.model.AuthorizationRequestOIDC4VP;
-import es.in2.wallet.domain.model.CredentialsBasicInfo;
-import es.in2.wallet.domain.model.VcSelectorRequest;
-import es.in2.wallet.domain.model.VcSelectorResponse;
-import es.in2.wallet.domain.service.*;
-import es.in2.wallet.domain.util.ApplicationUtils;
+import es.in2.wallet.application.dto.AuthorizationRequestOIDC4VP;
+import es.in2.wallet.application.dto.CredentialsBasicInfo;
+import es.in2.wallet.application.dto.VcSelectorRequest;
+import es.in2.wallet.application.dto.VcSelectorResponse;
+import es.in2.wallet.application.workflows.presentation.impl.AttestationExchangeCommonWorkflowImpl;
+import es.in2.wallet.domain.services.*;
+import es.in2.wallet.domain.utils.ApplicationUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,7 +19,7 @@ import reactor.test.StepVerifier;
 
 import java.util.List;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.getUserIdFromToken;
+import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,9 +31,7 @@ class AttestationExchangeCommonWorkflowImplTest {
     @Mock
     private VerifierValidationService verifierValidationService;
     @Mock
-    private DataService dataService;
-    @Mock
-    private BrokerService brokerService;
+    private CredentialService credentialService;
     @Mock
     private PresentationService presentationService;
     @InjectMocks
@@ -55,8 +51,7 @@ class AttestationExchangeCommonWorkflowImplTest {
             when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(jwtAuthorizationRequest));
             when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(authorizationRequestOIDC4VP));
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(brokerService.getCredentialByCredentialTypeAndUserId(processId, authorizationRequestOIDC4VP.scope().get(0),"userId")).thenReturn(Mono.just("credentialEntity"));
-            when(dataService.getUserVCsInJson("credentialEntity")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
+            when(credentialService.getCredentialsByUserIdAndType(processId, "userId", "scope1")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
 
             StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))
                     .expectNext(expectedVcSelectorRequest)
@@ -65,7 +60,7 @@ class AttestationExchangeCommonWorkflowImplTest {
     }
 
     @Test
-    void buildVerifiablePresentationWithSelectedVCsTest() throws JsonProcessingException {
+    void buildVerifiablePresentationWithSelectedVCsTest() {
         String processId = "123";
         String authorizationToken = "authToken";
         String nonce = "321";

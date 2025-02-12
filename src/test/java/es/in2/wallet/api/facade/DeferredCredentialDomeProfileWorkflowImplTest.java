@@ -1,19 +1,12 @@
 package es.in2.wallet.api.facade;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.workflow.issuance.impl.DeferredCredentialDomeProfileWorkflowImpl;
-import es.in2.wallet.domain.exception.CredentialNotAvailableException;
-import es.in2.wallet.domain.exception.FailedDeserializingException;
-import es.in2.wallet.domain.model.CredentialResponse;
-import es.in2.wallet.domain.model.EntityAttribute;
-import es.in2.wallet.domain.model.TransactionDataAttribute;
-import es.in2.wallet.domain.model.TransactionEntity;
-import es.in2.wallet.domain.service.CredentialService;
-import es.in2.wallet.domain.service.DataService;
+import es.in2.wallet.application.dto.CredentialResponse;
+import es.in2.wallet.application.dto.CredentialResponseWithStatus;
+import es.in2.wallet.application.workflows.issuance.impl.DeferredCredentialDomeProfileWorkflowImpl;
+import es.in2.wallet.domain.entities.DeferredCredentialMetadata;
+import es.in2.wallet.domain.services.CredentialService;
+import es.in2.wallet.domain.services.DeferredCredentialMetadataService;
+import es.in2.wallet.domain.services.OID4VCICredentialService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,71 +15,59 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.List;
+import java.util.UUID;
 
-import static es.in2.wallet.domain.util.ApplicationConstants.JWT_VC;
-import static es.in2.wallet.domain.util.ApplicationConstants.PROPERTY_TYPE;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
+import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_VC;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DeferredCredentialDomeProfileWorkflowImplTest {
 
     @Mock
-    private BrokerService brokerService;
-    @Mock
-    private ObjectMapper objectMapper;
+    private OID4VCICredentialService oid4vciCredentialService;
     @Mock
     private CredentialService credentialService;
     @Mock
-    private DataService dataService;
+    private DeferredCredentialMetadataService deferredCredentialMetadataService;
 
     @InjectMocks
     private DeferredCredentialDomeProfileWorkflowImpl service;
 
     @Test
-    void requestSignedLEARCredentialService_Success() throws JsonProcessingException {
+    void requestDeferredCredential_withNewCredential_Success(){
         String processId = "processId";
-        String userId = "userId";
-        String credentialId = "credentialId";
-        String credentialJson = "credential";
-        String transactionJson = "transaction";
-        TransactionEntity transactionEntity = TransactionEntity.builder()
-                .transactionDataAttribute(
-                        EntityAttribute.<TransactionDataAttribute>builder()
-                                .type(PROPERTY_TYPE)
-                                .value(TransactionDataAttribute.builder()
-                                        .transactionId("123")
-                                        .accessToken("ey1234")
-                                        .deferredEndpoint("https://example.com/deferred")
-                                        .build()).build()
-                ).build();
+        String userId = UUID.randomUUID().toString();
+        String credentialId = UUID.randomUUID().toString();
+        UUID credentialUuid = UUID.fromString(credentialId);
+        UUID transactionUuid = UUID.randomUUID();
+        String accessToken = "access123";
+        String deferredEndpoint = "https://example.com/callback";
 
-        CredentialResponse credentialResponse = CredentialResponse.builder().credential("credential").format(JWT_VC).build();
-        List<TransactionEntity> transactions = List.of(transactionEntity);
+        DeferredCredentialMetadata deferredCredentialMetadata = DeferredCredentialMetadata.builder()
+                .credentialId(credentialUuid)
+                .transactionId(transactionUuid)
+                .accessToken(accessToken)
+                .deferredEndpoint(deferredEndpoint)
+                .build();
 
-        when(brokerService.getTransactionThatIsLinkedToACredential(processId, credentialId))
-                .thenReturn(Mono.just(transactionJson));
-        when(objectMapper.readValue(eq(transactionJson), any(TypeReference.class)))
-                .thenReturn(transactions);
-        when(credentialService.getCredentialDomeDeferredCase(
-                transactionEntity.transactionDataAttribute().value().transactionId(),
-                transactionEntity.transactionDataAttribute().value().accessToken(),
-                transactionEntity.transactionDataAttribute().value().deferredEndpoint()
-                ))
-                .thenReturn(Mono.just(credentialResponse));
+        CredentialResponse credentialResponse = CredentialResponse.builder()
+                .credential("ey134...")
+                .format(JWT_VC)
+                .build();
 
-        when(brokerService.getCredentialByIdAndUserId(processId,credentialId, userId))
-                .thenReturn(Mono.just(credentialJson));
+        CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder()
+                .credentialResponse(credentialResponse)
+                .build();
 
-        when(dataService.updateVCEntityWithSignedFormat(credentialJson,credentialResponse))
-                .thenReturn(Mono.just("UpdatedCredentialEntity"));
+        when(deferredCredentialMetadataService.getDeferredCredentialMetadataByCredentialId(processId, credentialId))
+                .thenReturn(Mono.just(deferredCredentialMetadata));
 
-        when(brokerService.updateEntity(processId, credentialId, "UpdatedCredentialEntity"))
+        when(oid4vciCredentialService.getCredentialDomeDeferredCase(transactionUuid.toString(),accessToken,deferredEndpoint)).thenReturn(Mono.just(credentialResponseWithStatus));
+
+        when(credentialService.saveDeferredCredential(processId, userId, credentialId, credentialResponse))
                 .thenReturn(Mono.empty());
-        when(brokerService.deleteTransactionByTransactionId(processId,transactionEntity.id()))
+
+        when(deferredCredentialMetadataService.deleteDeferredCredentialMetadataByCredentialId(processId, credentialId))
                 .thenReturn(Mono.empty());
 
         StepVerifier.create(service.requestDeferredCredential(processId, userId, credentialId))
@@ -94,72 +75,41 @@ class DeferredCredentialDomeProfileWorkflowImplTest {
     }
 
     @Test
-    void requestSignedLEARCredentialService_WithPendingTransaction() throws JsonProcessingException {
+    void requestDeferredCredential_withNewTransactionId_Success(){
         String processId = "processId";
-        String userId = "userId";
-        String credentialId = "credentialId";
-        String transactionJson = "transaction";
-        String updatedTransactionJson = "updatedTransaction";
+        String userId = UUID.randomUUID().toString();
+        String credentialId = UUID.randomUUID().toString();
+        UUID credentialUuid = UUID.fromString(credentialId);
+        UUID transactionUuid = UUID.randomUUID();
+        String newTransactionUuid = UUID.randomUUID().toString();
+        String accessToken = "access123";
+        String deferredEndpoint = "https://example.com/callback";
 
-        TransactionEntity transactionEntity = TransactionEntity.builder()
-                .id("trans123")
-                .transactionDataAttribute(
-                        EntityAttribute.<TransactionDataAttribute>builder()
-                                .type(PROPERTY_TYPE)
-                                .value(TransactionDataAttribute.builder()
-                                        .transactionId("trans456")
-                                        .accessToken("access789")
-                                        .deferredEndpoint("https://example.com/callback")
-                                        .build())
-                                .build())
+        DeferredCredentialMetadata deferredCredentialMetadata = DeferredCredentialMetadata.builder()
+                .credentialId(credentialUuid)
+                .transactionId(transactionUuid)
+                .accessToken(accessToken)
+                .deferredEndpoint(deferredEndpoint)
                 .build();
 
         CredentialResponse credentialResponse = CredentialResponse.builder()
-                .transactionId("newTransId")
+                .transactionId(newTransactionUuid)
                 .build();
 
-        List<TransactionEntity> transactions = List.of(transactionEntity);
+        CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder()
+                .credentialResponse(credentialResponse)
+                .build();
 
-        when(brokerService.getTransactionThatIsLinkedToACredential(processId, credentialId))
-                .thenReturn(Mono.just(transactionJson));
-        when(objectMapper.readValue(eq(transactionJson), any(TypeReference.class)))
-                .thenReturn(transactions);
-        ObjectWriter mockWriter = mock(ObjectWriter.class);
-        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(mockWriter);
-        when(mockWriter.writeValueAsString(transactionEntity)).thenReturn("transaction entity");
-        when(credentialService.getCredentialDomeDeferredCase(
-                transactionEntity.transactionDataAttribute().value().transactionId(),
-                transactionEntity.transactionDataAttribute().value().accessToken(),
-                transactionEntity.transactionDataAttribute().value().deferredEndpoint()
-        ))
-                .thenReturn(Mono.just(credentialResponse));
+        when(deferredCredentialMetadataService.getDeferredCredentialMetadataByCredentialId(processId, credentialId))
+                .thenReturn(Mono.just(deferredCredentialMetadata));
 
-        when(dataService.updateTransactionWithNewTransactionId("transaction entity", "newTransId"))
-                .thenReturn(Mono.just(updatedTransactionJson));
-        when(brokerService.updateEntity(processId, transactionEntity.id(), updatedTransactionJson))
+        when(oid4vciCredentialService.getCredentialDomeDeferredCase(transactionUuid.toString(),accessToken,deferredEndpoint)).thenReturn(Mono.just(credentialResponseWithStatus));
+
+        when(deferredCredentialMetadataService.updateDeferredCredentialMetadataTransactionIdByCredentialId(processId, credentialId, newTransactionUuid))
                 .thenReturn(Mono.empty());
 
         StepVerifier.create(service.requestDeferredCredential(processId, userId, credentialId))
-                .expectError(CredentialNotAvailableException.class)
-                .verify();
+                .verifyComplete();
     }
-
-    @Test
-    void requestSignedLEARCredentialService_Failure_DueToErrorInDeserialization() throws JsonProcessingException {
-        String processId = "processId";
-        String userId = "userId";
-        String credentialId = "credentialId";
-        String transactionJson = "[{\"id\":\"trans123\", \"transactionDataAttribute\": {\"value\": {\"transactionId\": \"trans456\", \"accessToken\": \"token789\", \"deferredEndpoint\": \"https://callback.example.com\"}}}]";
-
-        when(brokerService.getTransactionThatIsLinkedToACredential(processId, credentialId))
-                .thenReturn(Mono.just(transactionJson));
-        when(objectMapper.readValue(eq(transactionJson), any(TypeReference.class)))
-                .thenThrow(new JsonProcessingException("Deserialization error") {});
-
-        StepVerifier.create(service.requestDeferredCredential(processId, userId, credentialId))
-                .expectError(FailedDeserializingException.class)
-                .verify();
-    }
-
 }
 

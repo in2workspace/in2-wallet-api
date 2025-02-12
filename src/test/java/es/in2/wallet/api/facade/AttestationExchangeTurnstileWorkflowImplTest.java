@@ -1,11 +1,10 @@
 package es.in2.wallet.api.facade;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import es.in2.wallet.application.workflow.presentation.impl.AttestationExchangeTurnstileWorkflowImpl;
-import es.in2.wallet.domain.exception.ParseErrorException;
-import es.in2.wallet.domain.model.CredentialsBasicInfo;
-import es.in2.wallet.domain.service.CborGenerationService;
-import es.in2.wallet.domain.service.PresentationService;
+import es.in2.wallet.application.workflows.presentation.impl.AttestationExchangeTurnstileWorkflowImpl;
+import es.in2.wallet.domain.exceptions.ParseErrorException;
+import es.in2.wallet.application.dto.CredentialsBasicInfo;
+import es.in2.wallet.domain.services.CborGenerationService;
+import es.in2.wallet.domain.services.PresentationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -13,8 +12,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-
-import java.text.ParseException;
 
 import static org.mockito.Mockito.when;
 
@@ -34,7 +31,7 @@ class AttestationExchangeTurnstileWorkflowImplTest {
         String expectedVp = "vp";
         String expectedCBOR = "vp_cbor";
         CredentialsBasicInfo credentialsBasicInfo = CredentialsBasicInfo.builder().id("id").build();
-        when(presentationService.createSignedVerifiablePresentation(processId, authorizationToken, credentialsBasicInfo, credentialsBasicInfo.id(), audience)).thenReturn(Mono.just("vp"));
+        when(presentationService.createSignedTurnstileVerifiablePresentation(processId, authorizationToken, credentialsBasicInfo, credentialsBasicInfo.id(), audience)).thenReturn(Mono.just("vp"));
         when(cborGenerationService.generateCbor(processId, expectedVp)).thenReturn(Mono.just("vp_cbor"));
 
         StepVerifier.create(credentialPresentationForTurnstileServiceFacade.createVerifiablePresentationForTurnstile(processId, authorizationToken, credentialsBasicInfo))
@@ -49,7 +46,7 @@ class AttestationExchangeTurnstileWorkflowImplTest {
         String audience = "vpTurnstile";
         String expectedVp = "vp";
         CredentialsBasicInfo credentialsBasicInfo = CredentialsBasicInfo.builder().id("id").build();
-        when(presentationService.createSignedVerifiablePresentation(processId, authorizationToken, credentialsBasicInfo, credentialsBasicInfo.id(), audience)).thenReturn(Mono.just("vp"));
+        when(presentationService.createSignedTurnstileVerifiablePresentation(processId, authorizationToken, credentialsBasicInfo, credentialsBasicInfo.id(), audience)).thenReturn(Mono.just("vp"));
         when(cborGenerationService.generateCbor(processId, expectedVp)).thenThrow(new ParseErrorException("Failed to parse token payload"));
 
         StepVerifier.create(credentialPresentationForTurnstileServiceFacade.createVerifiablePresentationForTurnstile(processId, authorizationToken, credentialsBasicInfo))

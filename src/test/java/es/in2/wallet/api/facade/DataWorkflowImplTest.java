@@ -3,12 +3,11 @@ package es.in2.wallet.api.facade;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.wallet.application.port.BrokerService;
-import es.in2.wallet.application.port.VaultService;
-import es.in2.wallet.application.workflow.data.impl.DataWorkflowImpl;
-import es.in2.wallet.domain.model.CredentialStatus;
-import es.in2.wallet.domain.model.CredentialsBasicInfo;
-import es.in2.wallet.domain.service.DataService;
+import es.in2.wallet.application.dto.CredentialsBasicInfo;
+import es.in2.wallet.application.ports.VaultService;
+import es.in2.wallet.application.workflows.data.impl.DataWorkflowImpl;
+import es.in2.wallet.domain.enums.CredentialStatus;
+import es.in2.wallet.domain.services.CredentialService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,10 +26,7 @@ import static org.mockito.Mockito.when;
 class DataWorkflowImplTest {
 
     @Mock
-    private BrokerService brokerService;
-
-    @Mock
-    private DataService dataService;
+    private CredentialService credentialService;
 
     @Mock
     private VaultService vaultService;
@@ -42,30 +38,25 @@ class DataWorkflowImplTest {
     void getUserVCs_UserExists_ReturnsVCs() throws JsonProcessingException {
         String processId = "process1";
         String userId = "user1";
-        String credentials = "user credentials";
-
 
         String jsonSubject = """
-            {
-                "credentialSubject": {
-                    "id": "did:example:123"
-                }
-            }
-        """;
+                    {
+                        "credentialSubject": {
+                            "id": "did:example:123"
+                        }
+                    }
+                """;
         ObjectMapper objectMapper2 = new ObjectMapper();
         JsonNode credentialSubject = objectMapper2.readTree(jsonSubject);
 
-        List<CredentialsBasicInfo> expectedCredentials = List.of(new CredentialsBasicInfo("id1", List.of("type"), CredentialStatus.VALID,List.of("jwt_vc","cwt_vc"),credentialSubject, ZonedDateTime.now()));
+        List<CredentialsBasicInfo> expectedCredentials = List.of(new CredentialsBasicInfo("id1", List.of("type"), CredentialStatus.VALID, List.of("jwt_vc", "cwt_vc"), credentialSubject, ZonedDateTime.now()));
 
-        when(brokerService.getAllCredentialsByUserId(processId, userId)).thenReturn(Mono.just(credentials));
-        when(dataService.getUserVCsInJson(credentials)).thenReturn(Mono.just(expectedCredentials));
+        when(credentialService.getCredentialsByUserId(processId, userId)).thenReturn(Mono.just(expectedCredentials));
 
         StepVerifier.create(userDataFacadeService.getAllCredentialsByUserId(processId, userId))
                 .expectNext(expectedCredentials)
                 .verifyComplete();
-
-        verify(brokerService).getAllCredentialsByUserId(processId, userId);
-        verify(dataService).getUserVCsInJson(credentials);
+        verify(credentialService).getCredentialsByUserId(processId, userId);
     }
 
 
@@ -75,20 +66,17 @@ class DataWorkflowImplTest {
         String userId = "user1";
         String credentialId = "cred1";
         String did = "did:example:123";
-        String credentialEntity = "credential";
 
-        when(brokerService.getCredentialByIdAndUserId(processId, credentialId,userId)).thenReturn(Mono.just(credentialEntity));
-        when(dataService.extractDidFromVerifiableCredential(credentialEntity)).thenReturn(Mono.just(did));
+        when(credentialService.extractDidFromCredential(processId, credentialId, userId)).thenReturn(Mono.just(did));
         when(vaultService.deleteSecretByKey(did)).thenReturn(Mono.empty());
-        when(brokerService.deleteCredentialByIdAndUserId(processId, credentialId, userId)).thenReturn(Mono.empty());
+        when(credentialService.deleteCredential(processId, credentialId, userId)).thenReturn(Mono.empty());
 
         StepVerifier.create(userDataFacadeService.deleteCredentialByIdAndUserId(processId, credentialId, userId))
                 .verifyComplete();
 
-        verify(brokerService).getCredentialByIdAndUserId(processId, credentialId,userId);
-        verify(dataService).extractDidFromVerifiableCredential(credentialEntity);
+        verify(credentialService).extractDidFromCredential(processId, credentialId, userId);
         verify(vaultService).deleteSecretByKey(did);
-        verify(brokerService).deleteCredentialByIdAndUserId(processId, credentialId, userId);
+        verify(credentialService).deleteCredential(processId, credentialId, userId);
     }
 
 }

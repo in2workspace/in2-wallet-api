@@ -1,8 +1,8 @@
 package es.in2.wallet.infrastructure.ebsi.controller;
 
-import es.in2.wallet.application.workflow.issuance.CredentialIssuanceCommonWorkflow;
+import es.in2.wallet.application.workflows.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
-import es.in2.wallet.application.workflow.issuance.CredentialIssuanceEbsiWorkflow;
+import es.in2.wallet.application.workflows.issuance.CredentialIssuanceEbsiWorkflow;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
-import static es.in2.wallet.domain.util.ApplicationUtils.getCleanBearerToken;
+import static es.in2.wallet.domain.utils.ApplicationUtils.getCleanBearerToken;
 
 
 @Slf4j
