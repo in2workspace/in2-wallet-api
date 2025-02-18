@@ -3,6 +3,9 @@ package es.in2.wallet.infrastructure.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.application.dto.CredentialResponse;
@@ -25,6 +28,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -64,7 +68,23 @@ class CredentialServiceImplTest {
         when(credentialRepository.save(captor.capture()))
                 .thenReturn(Mono.just(savedEntity));
 
-        when(objectMapper.readTree(credential)).thenReturn(getJsonNodeCredentialLearCredentialEmployee());
+        // Create a mock JSON structure with 'vc' field and required type array
+        ObjectNode credentialJson = JsonNodeFactory.instance.objectNode();
+        ObjectNode vcContent = JsonNodeFactory.instance.objectNode();
+
+        // Add the required type array
+        ArrayNode typesArray = JsonNodeFactory.instance.arrayNode();
+        typesArray.add("VerifiableCredential");
+        typesArray.add("EmployeeCredential");
+        vcContent.set("type", typesArray);
+        vcContent.set("id", JsonNodeFactory.instance.textNode(credentialId));
+
+        // Add other required VC fields
+        vcContent.put("some", "data");
+        credentialJson.set("vc", vcContent);
+
+        // Mock the objectMapper to return our JSON structure
+        when(objectMapper.readTree(credential)).thenReturn(credentialJson);
 
         // WHEN
         Mono<UUID> result = credentialRepositoryService.saveCredential(processId, userId, response, format);
@@ -82,7 +102,6 @@ class CredentialServiceImplTest {
         assertEquals(userId, passedToSave.getUserId());
         assertEquals(CredentialStatus.ISSUED.toString(), passedToSave.getCredentialStatus());
         assertNull(passedToSave.getCredentialData());
-        // plus any other checks you wish to make
     }
 
     @Test
