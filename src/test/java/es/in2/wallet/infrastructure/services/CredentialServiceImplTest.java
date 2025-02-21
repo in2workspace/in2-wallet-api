@@ -100,7 +100,7 @@ class CredentialServiceImplTest {
         // Check the captured entity's fields
         Credential passedToSave = captor.getValue();
         assertEquals(userId, passedToSave.getUserId());
-        assertEquals(CredentialStatus.ISSUED.toString(), passedToSave.getCredentialStatus());
+        assertEquals(CredentialStatus.PEND_SIGNATURE.toString(), passedToSave.getCredentialStatus());
         assertNull(passedToSave.getCredentialData());
     }
 
@@ -208,7 +208,7 @@ class CredentialServiceImplTest {
         Credential existing = Credential.builder()
                 .id(credId)
                 .userId(userId)
-                .credentialStatus(CredentialStatus.ISSUED.toString())
+                .credentialStatus(CredentialStatus.PEND_SIGNATURE.toString())
                 .build();
 
         when(credentialRepository.findByCredentialId(credId)).thenReturn(Mono.just(existing));
@@ -327,7 +327,7 @@ class CredentialServiceImplTest {
                 .credentialId(credentialId2)
                 .userId(userUuid)
                 .credentialType(List.of("VerifiableCredential", "AnotherType"))
-                .credentialStatus(CredentialStatus.ISSUED.toString())
+                .credentialStatus(CredentialStatus.PEND_SIGNATURE.toString())
                 .jsonVc(credential2)
                 .build();
 
