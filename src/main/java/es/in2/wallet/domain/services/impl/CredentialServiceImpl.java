@@ -68,7 +68,7 @@ public class CredentialServiceImpl implements CredentialService {
                                                             .credentialFormat(credentialFormat)
                                                             .credentialData(null)
                                                             .vcJson(vcJson)
-                                                            .credentialStatus(CredentialStatus.PEND_SIGNATURE)
+                                                            .credentialStatus(CredentialStatus.ISSUED)  // Deferred => ISSUED
                                                             .currentTime(currentTime)
                                                             .build()
                                             )
@@ -323,9 +323,9 @@ public class CredentialServiceImpl implements CredentialService {
     private Mono<Credential> fetchCredentialOrErrorInIssuedStatus(UUID credId, UUID userId) {
         return fetchCredentialOrError(credId, userId)
                 .flatMap(credential -> {
-                    if (!Objects.equals(credential.getCredentialStatus(), CredentialStatus.PEND_SIGNATURE.toString())) {
+                    if (!Objects.equals(credential.getCredentialStatus(), CredentialStatus.ISSUED.toString())) {
                         return Mono.error(new IllegalStateException(
-                                "Credential is not in PEND_SIGNATURE status (found " + credential.getCredentialStatus() + ")"
+                                "Credential is not in ISSUED status (found " + credential.getCredentialStatus() + ")"
                         ));
                     }
                     return Mono.just(credential);
