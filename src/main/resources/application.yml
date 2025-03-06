@@ -73,7 +73,7 @@ hashicorp:
     host: localhost
     port: 8201
     scheme: http
-    token: 0000-0000-0000
+    token:
 
 azure:
   app:
