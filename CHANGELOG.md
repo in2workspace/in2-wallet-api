@@ -4,11 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.4.1](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.4.0)
+### Added
+- compose.yaml to test the application locally.
+### Fixed
+- Add the `default-schema` property within the application config file to avoid creating flyway_schema_history table in the public schema.
+
 ## [v1.4.0](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.4.0)
 ### Changed
 - Removed support for Context Broker.
 - Now the application is using database connection for data storage.
-
 
 ## [v1.3.10](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.3.10)
 ### Changed

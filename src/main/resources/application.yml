@@ -12,6 +12,7 @@ spring:
     locations: classpath:db/migration
     user: "postgres"
     password: "postgres"
+    default-schema: wallet
 
 logging:
   pattern:
@@ -72,7 +73,7 @@ hashicorp:
     host: localhost
     port: 8201
     scheme: http
-    token:
+    token: 0000-0000-0000
 
 azure:
   app:
