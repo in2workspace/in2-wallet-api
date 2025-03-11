@@ -220,19 +220,8 @@ public class AuthorizationResponseServiceImpl implements AuthorizationResponseSe
                         log.info("ProcessID: {} - Redirection to: {}", processId, response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION));
                         return Mono.just(Objects.requireNonNull(response.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION)));
                     } else {
-                    //    log.info("ProcessID: {} - Authorization Response: {}", processId, response);
-                     //   return response.bodyToMono(String.class);
-                        log.info("ProcessID: {} - Authorization Response status OK: {}", processId, response.statusCode());
-                        return response.bodyToMono(String.class)
-                                .flatMap(body -> {
-                                    log.info("ProcessID: {} - Authorization Response body: {}", processId, body);
-                                    if (body.contains("LOGIN_ERROR") || body.contains("invalid_user_credentials")) {
-                                        log.warn("ProcessID: {} - Detected error in response body: {}", processId, body);
-                                        return Mono.error(new AttestationClientErrorException("Keycloak returned error: " + body));
-                                    }
-                                    return Mono.just(body);
-                                });
-
+                        log.info("ProcessID: {} - Authorization Response: {}", processId, response);
+                       return response.bodyToMono(String.class);
                     }
                 });
     }
