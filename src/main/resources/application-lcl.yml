@@ -12,7 +12,7 @@ spring:
     locations: classpath:db/migration
     user: "postgres"
     password: "postgres"
-    default-schema: wallet
+    default-schema: public
 
 logging:
   pattern:

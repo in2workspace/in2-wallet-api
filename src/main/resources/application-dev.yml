@@ -8,12 +8,11 @@ spring:
     username: "postgres"
     password: "postgres"
   flyway:
-    url: "jdbc:postgresql://localhost:5434/wallet?schema=wallet"
+    url: "jdbc:postgresql://localhost:5434/wallet"
     locations: classpath:db/migration
     user: "postgres"
     password: "postgres"
-    default-schema: wallet
-
+    default-schema: public
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
