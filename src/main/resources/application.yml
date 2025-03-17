@@ -78,8 +78,7 @@ server:
 
 #Els que venen a partir d'aquí, agrupar com a "wallet"
 
-#this app level can be removed when everything is under wallet
-app:
+wallet:
   config-source:
     #currently can be yaml or azure
     name: yaml
@@ -94,11 +93,11 @@ hashicorp:
     # constant? Not in Helm
     path: /kv
     # REQUIRED
-    host: localhost
+    host:
     # REQUIRED
-    port: 8201
+    port:
     # REQUIRED
-    scheme: http
+    scheme:
     # REQUIRED
     token:
 
@@ -117,11 +116,11 @@ auth-server:
 #    CONSTANT
 #    scheme: "http"
 #    REQUIRED, CONFIGMAP
-    domain: "localhost"
+    domain:
 #    CONSTANT
 #    port: "7002"
 #    REQUIRED
-    path: "/realms/wallet"
+    path:
   internal-url:
     #    CONSTANT
 #    scheme: "http"
@@ -129,7 +128,7 @@ auth-server:
 #    domain: "localhost"
     #    CONSTANT
 #    port: "7002"
-    path: "/realms/wallet"
+    path:
 # NOT IN HELM: CONSTANTS?
   token-url:
     scheme: "http"
@@ -148,15 +147,15 @@ auth-server:
 ebsi:
   test:
     # (REQUIRED - CONFIGMAP)
-    url: "http://localhost:9099/realms/wallet/protocol/openid-connect/token"
+    url:
     # (REQUIRED - SECRET)
-    client-secret: "fV51P8jFBo8VnFKMMuP3imw3H3i5mNck"
+    client-secret:
     # (REQUIRED)
-    client-id: user-registry-client
+    client-id:
     # (REQUIRED)
-    username: admin
+    username:
     # (REQUIRED - SECRET)
-    password: adminPass
+    password:
 
 # used to be configured in each application-*.yaml, now will come from Helm
 # (OPTIONAL)

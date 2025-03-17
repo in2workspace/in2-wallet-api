@@ -13,7 +13,7 @@ public class ConfigSourceNameCondition implements Condition {
     @Override
     public boolean matches(ConditionContext context, @Nullable AnnotatedTypeMetadata metadata) {
 
-        String expectedImplementation = context.getEnvironment().getProperty("app.config-source.name");
+        String expectedImplementation = context.getEnvironment().getProperty("wallet.config-source.name");
 
         if (expectedImplementation == null) {
             return false;
