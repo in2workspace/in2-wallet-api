@@ -1,0 +1,121 @@
+#todo adapt according to changes applied to application.yaml
+
+spring:
+  application:
+    name: "wallet-server"
+  main:
+    web-application-type: reactive
+  r2dbc:
+    url: "r2dbc:postgresql://localhost:5434/wallet?schema=wallet"
+    username: "postgres"
+    password: "postgres"
+  flyway:
+    url: "jdbc:postgresql://localhost:5434/wallet?schema=wallet"
+    locations: classpath:db/migration #no és a Helm
+    user: "postgres"
+    password: "postgres"
+    default-schema: wallet
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  level:
+    es.in2.wallet: DEBUG
+
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        include: health, info, loggers, metrics, prometheus
+      base-path: /
+      path-mapping:
+        health: health
+        info: info
+        loggers: loggers
+        metrics: metrics
+        prometheus: prometheus
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+      vault:
+        enabled: false
+    loggers:
+      enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+    tracing:
+      enabled: false
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+
+server:
+  port: 8082
+
+app:
+  config-source:
+    name: yaml
+
+vault:
+  provider:
+    name: hashicorp
+
+hashicorp:
+  vault:
+    path: /kv #no hi és a helm
+    host: localhost
+    port: 8201
+    scheme: http
+    token:
+
+azure:
+  app:
+    endpoint: ${APP_CONFIG_ENDPOINT}
+    label:
+      global: service-discovery
+  key-vault:
+    endpoint: "your-endpoint"
+
+# These properties will be removed in the future
+auth-server:
+  external-url:
+    scheme: "http"
+    domain: "localhost"
+    port: "7002"
+    path: "/realms/wallet"
+  internal-url:
+    scheme: "http"
+    domain: "localhost"
+    port: "7002"
+    path: "/realms/wallet"
+  token-url:
+    scheme: "http"
+    domain: "localhost"
+    port: "8080"
+    path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
+  jwt-decoder-path: "/protocol/openid-connect/certs"
+
+verifiable-presentation: #no hi és a Helm
+  expiration-time: 3
+  expiration-unit: MINUTES #DAYS HOURS MINUTES SECONDS
+
+# These properties are used to pass the EBSI Holder Wallet Test
+ebsi:
+  test:
+    url: "http://localhost:9099/realms/wallet/protocol/openid-connect/token"
+    client-secret: "fV51P8jFBo8VnFKMMuP3imw3H3i5mNck"
+    client-id: user-registry-client
+    username: admin
+    password: adminPass
+
+cors: #no hi és a Helm
+  allowedOrigins:
