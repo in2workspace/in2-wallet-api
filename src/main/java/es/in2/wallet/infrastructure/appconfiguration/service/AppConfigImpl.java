@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 import static es.in2.wallet.domain.utils.ApplicationUtils.formatUrl;
 
 @Configuration
@@ -76,9 +77,9 @@ public class AppConfigImpl implements AppConfig {
 
 
     private String initAuthServerInternalUrl() {
-        return formatUrl(authServerProperties.internalUrl().scheme(),
+        return formatUrl(AUTH_SERVER_INTERNAL_URL_SCHEME,
                 genericConfigAdapter.getConfiguration(authServerProperties.internalUrl().domain()),
-                authServerProperties.internalUrl().port(),
+                AUTH_SERVER_INTERNAL_URL_PORT,
                 authServerProperties.internalUrl().path());
     }
 
@@ -88,9 +89,9 @@ public class AppConfigImpl implements AppConfig {
     }
 
     private String initAuthServerExternalUrl() {
-        return formatUrl(authServerProperties.externalUrl().scheme(),
+        return formatUrl(AUTH_SERVER_EXTERNAL_URL_SCHEME,
                 genericConfigAdapter.getConfiguration(authServerProperties.externalUrl().domain()),
-                authServerProperties.externalUrl().port(),
+                AUTH_SERVER_EXTERNAL_URL_PORT,
                 authServerProperties.externalUrl().path());
     }
 

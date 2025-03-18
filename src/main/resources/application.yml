@@ -115,20 +115,20 @@ azure:
 auth-server:
   external-url:
 #    CONSTANT
-#    scheme: "http"
+#    scheme: "https"
 #    REQUIRED, CONFIGMAP
-    domain: "localhost"
+    domain: "localhost" # a in2-dome-gitops es passa keycloak-dev.ssihub.org
 #    CONSTANT
-#    port: "7002"
+#    port: "443"
 #    REQUIRED
-    path: "/realms/wallet"
+    path: "/realms/wallet" # a in2-dome-gitops es passa /realms/[tenant]-wallet
   internal-url:
     #    CONSTANT
 #    scheme: "http"
     #    CONSTANT
-#    domain: "localhost"
-    #    CONSTANT
-#    port: "7002"
+    #    port: "80"
+    #    --de moment es deixa hardcoded a Helm; és un ExternalService que redirigeix a service de Keycloak en namespace identity-security
+    domain: "keycloak-proxy"
     # REQUIRED
     path: "/realms/wallet"
 # ALL CONSTANTS? not in Helm
@@ -140,6 +140,7 @@ auth-server:
 #    CONSTANT
 #  jwt-decoder-path: "/protocol/openid-connect/certs"
 
+# DONE
 # CONSTANT - NO HI ÉS A HELM
 #verifiable-presentation:
 #  expiration-time: 3
