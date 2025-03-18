@@ -48,4 +48,5 @@ public class ApplicationConstants {
     public static final Integer AUTH_SERVER_EXTERNAL_URL_PORT = 443;
     public static final String AUTH_SERVER_INTERNAL_URL_SCHEME = "http";
     public static final Integer AUTH_SERVER_INTERNAL_URL_PORT = 80;
+    public static final String AUTH_SERVER_JWT_DECODER_PATH = "/protocol/openid-connect/certs";
 }

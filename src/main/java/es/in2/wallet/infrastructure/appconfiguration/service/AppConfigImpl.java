@@ -16,6 +16,7 @@ import java.util.List;
 
 import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 import static es.in2.wallet.domain.utils.ApplicationUtils.formatUrl;
+import static es.in2.wallet.domain.utils.ApplicationConstants.AUTH_SERVER_JWT_DECODER_PATH;
 
 @Configuration
 @Slf4j
@@ -132,12 +133,9 @@ public class AppConfigImpl implements AppConfig {
         return ebsiProperties.clientSecret();
     }
 
-    private String getAuthServerJwtDecoderPath() {
-        return authServerProperties.jwtDecoderPath();
-    }
     @Override
     public String getJwtDecoder() {
-        return getAuthServerInternalUrl() + getAuthServerJwtDecoderPath();
+        return getAuthServerInternalUrl() + AUTH_SERVER_JWT_DECODER_PATH;
     }
 
 }

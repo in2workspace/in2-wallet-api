@@ -114,18 +114,18 @@ azure:
 # These properties will be removed in the future
 auth-server:
   external-url:
-#    CONSTANT
+#    DONE CONSTANT
 #    scheme: "https"
 #    REQUIRED, CONFIGMAP
     domain: "localhost" # a in2-dome-gitops es passa keycloak-dev.ssihub.org
-#    CONSTANT
+#    DONE CONSTANT
 #    port: "443"
 #    REQUIRED
     path: "/realms/wallet" # a in2-dome-gitops es passa /realms/[tenant]-wallet
   internal-url:
-    #    CONSTANT
+    #    DONE CONSTANT
 #    scheme: "http"
-    #    CONSTANT
+    #    DONE CONSTANT
     #    port: "80"
     #    --de moment es deixa hardcoded a Helm; és un ExternalService que redirigeix a service de Keycloak en namespace identity-security
     domain: "keycloak-proxy"
@@ -137,7 +137,7 @@ auth-server:
 #    domain: "localhost"
 #    port: "8080"
 #    path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
-#    CONSTANT
+#    DONE CONSTANT
 #  jwt-decoder-path: "/protocol/openid-connect/certs"
 
 # DONE
