@@ -13,15 +13,15 @@ spring:
     # The database password for R2DBC connections (REQUIRED - SECRET)
     password: "postgres"
   flyway:
-    # The JDBC URL used by Flyway for database schema migrations (REQUIRED - CONFIGMAP)
+    # The JDBC URL used by Flyway for database schema migrations (REQUIRED)
     url: "jdbc:postgresql://localhost:5434/wallet?schema=wallet"
     # Defines the path where Flyway should look for SQL migration scripts (LEAVE HERE? not in Helm)
     locations: classpath:db/migration
-    # The database username used by Flyway to execute migrations (REQUIRED - SECRET)
+    # The database username used by Flyway to execute migrations (REQUIRED)
     user: "postgres"
-    # The database password used by Flyway to execute migrations (REQUIRED - SECRET)
+    # The database password used by Flyway to execute migrations (REQUIRED)
     password: "postgres"
-    # Specifies the default schema in which Flyway should apply migrations ( ES DEIXA AQUÍ, NO A HELM NI CONSTANT)
+    # Specifies the default schema in which Flyway should apply migrations (USER CAN'T CHANGE THIS)
     default-schema: wallet
 
 
@@ -71,13 +71,12 @@ springdoc:
     # Sorts API operations by HTTP method (GET, POST, etc.)
     operations-sorter: method
 
-
+# used to be configured in each application-*.yaml, should be added to Helm
 server:
   # Defines the port on which the application will run
   port: 8082
 
-#Els que venen a partir d'aquí, agrupar com a "wallet"
-
+#Els que venen a partir d'aquí, agrupar com a "wallet"? No perquè pot ser redundant si en el futur a Helm s'afegeix prefix WALLET a variables de wallet
 wallet:
   config-source:
     #currently can be yaml or azure
@@ -90,14 +89,14 @@ vault:
 
 hashicorp:
   vault:
-    # constant? Not in Helm
+    # CONSTANT? Not in Helm
     path: /kv
     # REQUIRED
-    host:
+    host: localhost
     # REQUIRED
-    port:
+    port: 8201
     # REQUIRED
-    scheme:
+    scheme: http
     # REQUIRED
     token:
 
@@ -116,11 +115,11 @@ auth-server:
 #    CONSTANT
 #    scheme: "http"
 #    REQUIRED, CONFIGMAP
-    domain:
+    domain: "localhost"
 #    CONSTANT
 #    port: "7002"
 #    REQUIRED
-    path:
+    path: "/realms/wallet"
   internal-url:
     #    CONSTANT
 #    scheme: "http"
@@ -128,13 +127,14 @@ auth-server:
 #    domain: "localhost"
     #    CONSTANT
 #    port: "7002"
-    path:
-# NOT IN HELM: CONSTANTS?
-  token-url:
-    scheme: "http"
-    domain: "localhost"
-    port: "8080"
-    path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
+    # REQUIRED
+    path: "/realms/wallet"
+# ALL CONSTANTS? not in Helm
+#  token-url:
+#    scheme: "http"
+#    domain: "localhost"
+#    port: "8080"
+#    path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
 #    CONSTANT
 #  jwt-decoder-path: "/protocol/openid-connect/certs"
 
@@ -146,18 +146,18 @@ auth-server:
 # These properties are used to pass the EBSI Holder Wallet Test
 ebsi:
   test:
-    # (REQUIRED - CONFIGMAP)
-    url:
-    # (REQUIRED - SECRET)
-    client-secret:
     # (REQUIRED)
-    client-id:
+    url: "http://localhost:9099/realms/wallet/protocol/openid-connect/token"
     # (REQUIRED)
-    username:
-    # (REQUIRED - SECRET)
-    password:
+    client-secret: "fV51P8jFBo8VnFKMMuP3imw3H3i5mNck"
+    # (REQUIRED)
+    client-id: user-registry-client
+    # (REQUIRED)
+    username: admin
+    # (REQUIRED)
+    password: admiPass
 
-# used to be configured in each application-*.yaml, now will come from Helm
+# used to be configured in each application-*.yaml, should be added to Helm
 # (OPTIONAL)
 cors:
   allowedOrigins:
