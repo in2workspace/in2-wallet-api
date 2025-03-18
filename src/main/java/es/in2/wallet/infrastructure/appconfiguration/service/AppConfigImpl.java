@@ -102,10 +102,10 @@ public class AppConfigImpl implements AppConfig {
     }
 
     private String initAuthServerTokenEndpoint() {
-        return formatUrl(authServerProperties.tokenUrl().scheme(),
-                genericConfigAdapter.getConfiguration(authServerProperties.tokenUrl().domain()),
-                authServerProperties.tokenUrl().port(),
-                authServerProperties.tokenUrl().path());
+        return formatUrl(AUTH_SERVER_TOKEN_URL_SCHEME,
+                genericConfigAdapter.getConfiguration(AUTH_SERVER_TOKEN_URL_DOMAIN),
+                AUTH_SERVER_TOKEN_URL_PORT,
+                AUTH_SERVER_TOKEN_URL_PATH);
     }
 
     @Override

@@ -49,4 +49,8 @@ public class ApplicationConstants {
     public static final String AUTH_SERVER_INTERNAL_URL_SCHEME = "http";
     public static final Integer AUTH_SERVER_INTERNAL_URL_PORT = 80;
     public static final String AUTH_SERVER_JWT_DECODER_PATH = "/protocol/openid-connect/certs";
+    public static final String AUTH_SERVER_TOKEN_URL_SCHEME = "http";
+    public static final String AUTH_SERVER_TOKEN_URL_DOMAIN = "localhost";
+    public static final Integer AUTH_SERVER_TOKEN_URL_PORT = 8080;
+    public static final String AUTH_SERVER_TOKEN_URL_PATH = "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token";
 }
