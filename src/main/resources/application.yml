@@ -6,22 +6,22 @@ spring:
     # Specifies that this is a reactive application (Spring WebFlux)
     web-application-type: reactive
   r2dbc:
-    # The database connection URL for R2DBC (REQUIRED - CONFIGMAP)
+    # The database connection URL for R2DBC (REQUIRED)
     url: "r2dbc:postgresql://localhost:5434/wallet?schema=wallet"
     # The database username for R2DBC connections (REQUIRED)
     username: "postgres"
-    # The database password for R2DBC connections (REQUIRED - SECRET)
+    # The database password for R2DBC connections (REQUIRED)
     password: "postgres"
   flyway:
     # The JDBC URL used by Flyway for database schema migrations (REQUIRED)
     url: "jdbc:postgresql://localhost:5434/wallet?schema=wallet"
-    # Defines the path where Flyway should look for SQL migration scripts (LEAVE HERE? not in Helm)
+    # Defines the path where Flyway should look for SQL migration scripts (USER CAN'T CHANGE THIS = Not in Helm)
     locations: classpath:db/migration
     # The database username used by Flyway to execute migrations (REQUIRED)
     user: "postgres"
     # The database password used by Flyway to execute migrations (REQUIRED)
     password: "postgres"
-    # Specifies the default schema in which Flyway should apply migrations (USER CAN'T CHANGE THIS)
+    # Specifies the default schema in which Flyway should apply migrations (USER CAN'T CHANGE THIS = Not in Helm)
     default-schema: wallet
 
 
@@ -33,6 +33,7 @@ logging:
     es.in2.wallet: INFO
 
 # health, info, tracing have been removed
+# USER CAN't CHANGE THIS = Not in Helm
 management:
   endpoints:
     # Disables all management endpoints by default
@@ -59,6 +60,7 @@ management:
     prometheus:
       enabled: true
 
+# USER CAN't CHANGE THIS = Not in Helm
 springdoc:
   api-docs:
     # Defines the endpoint for OpenAPI documentation
@@ -77,7 +79,7 @@ server:
   port: 8082
 
 #Els que venen a partir d'aquí, agrupar com a "wallet"? No perquè pot ser redundant si en el futur a Helm s'afegeix prefix WALLET a variables de wallet
-wallet:
+app:
   config-source:
     #currently can be yaml or azure
     name: yaml
@@ -155,7 +157,7 @@ ebsi:
     # (REQUIRED)
     username: admin
     # (REQUIRED)
-    password: admiPass
+    password: adminPass
 
 # used to be configured in each application-*.yaml, should be added to Helm
 # (OPTIONAL)
