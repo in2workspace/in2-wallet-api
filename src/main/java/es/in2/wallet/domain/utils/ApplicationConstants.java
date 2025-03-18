@@ -42,4 +42,11 @@ public class ApplicationConstants {
     public static final String GLOBAL_ENDPOINTS_API = "/api/v1/**";
     public static final String ISO_8601_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ssX";
     public static final String LEAR_CREDENTIAL_EMPLOYEE_SCOPE = "dome.credentials.presentation.LEARCredentialEmployee";
+    public static final Integer VERIFIABLE_PRESENTATION_EXPIRATION_TIME = 180;
+    public static final String VERIFIABLE_PRESENTATION_EXPIRATION_UNIT = "SECONDS";
+//    public static final String AUTH_SERVER_EXTERNAL_URL_SCHEME = "http";
+//    public static final String AUTH_SERVER_EXTERNAL_URL_PORT = "7002";
+//    public static final String AUTH_SERVER_INTERNAL_URL_SCHEME = "http";
+//    public static final String AUTH_SERVER_INTERNAL_URL_DOMAIN = "localhost";
+//    public static final String AUTH_SERVER_INTERNAL_URL_PORT = "7002";
 }

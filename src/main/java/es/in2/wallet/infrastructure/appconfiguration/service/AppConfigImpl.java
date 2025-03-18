@@ -4,7 +4,6 @@ package es.in2.wallet.infrastructure.appconfiguration.service;
 import es.in2.wallet.application.ports.AppConfig;
 import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import es.in2.wallet.infrastructure.core.config.properties.AuthServerProperties;
-import es.in2.wallet.infrastructure.core.config.properties.VerifiablePresentationProperties;
 import es.in2.wallet.infrastructure.core.config.properties.CorsProperties;
 import es.in2.wallet.infrastructure.ebsi.config.properties.EbsiProperties;
 import jakarta.annotation.PostConstruct;
@@ -26,8 +25,6 @@ public class AppConfigImpl implements AppConfig {
     private final CorsProperties corsProperties;
     private final EbsiProperties ebsiProperties;
 
-    private final VerifiablePresentationProperties verifiablePresentationProperties;
-
     private String authServerInternalUrl;
     private String authServerExternalUrl;
     private String authServerTokenEndpoint;
@@ -44,14 +41,12 @@ public class AppConfigImpl implements AppConfig {
     public AppConfigImpl(ConfigAdapterFactory configAdapterFactory,
                          AuthServerProperties authServerProperties,
                          CorsProperties corsProperties,
-                         EbsiProperties ebsiProperties,
-                         VerifiablePresentationProperties verifiablePresentationProperties) {
+                         EbsiProperties ebsiProperties) {
         this.genericConfigAdapter = configAdapterFactory.getAdapter();
         this.authServerProperties = authServerProperties;
         this.corsProperties = corsProperties;
         this.ebsiProperties = ebsiProperties;
         log.debug(ebsiProperties.url());
-        this.verifiablePresentationProperties = verifiablePresentationProperties;
     }
 
 
@@ -134,16 +129,6 @@ public class AppConfigImpl implements AppConfig {
     @Override
     public String getIdentityProviderClientSecret() {
         return ebsiProperties.clientSecret();
-    }
-
-    @Override
-    public Long getCredentialPresentationExpirationTime() {
-        return verifiablePresentationProperties.expirationTime();
-    }
-
-    @Override
-    public String getCredentialPresentationExpirationUnit() {
-        return verifiablePresentationProperties.expirationUnit();
     }
 
     private String getAuthServerJwtDecoderPath() {

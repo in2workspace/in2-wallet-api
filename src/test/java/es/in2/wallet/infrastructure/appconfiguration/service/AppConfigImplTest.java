@@ -3,7 +3,6 @@ package es.in2.wallet.infrastructure.appconfiguration.service;
 import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import es.in2.wallet.infrastructure.core.config.properties.AuthServerProperties;
 import es.in2.wallet.infrastructure.core.config.properties.UrlProperties;
-import es.in2.wallet.infrastructure.core.config.properties.VerifiablePresentationProperties;
 import es.in2.wallet.infrastructure.core.config.properties.CorsProperties;
 import es.in2.wallet.infrastructure.ebsi.config.properties.EbsiProperties;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,8 +34,6 @@ class AppConfigImplTest {
     private CorsProperties corsProperties;
     @Mock
     private EbsiProperties ebsiProperties;
-    @Mock
-    private VerifiablePresentationProperties verifiablePresentationProperties;
 
     @InjectMocks
     private AppConfigImpl appConfig;
@@ -55,7 +52,7 @@ class AppConfigImplTest {
 
 
         // Initialize AppConfigImpl
-        appConfig = new AppConfigImpl(configAdapterFactory, authServerProperties, corsProperties, ebsiProperties, verifiablePresentationProperties);
+        appConfig = new AppConfigImpl(configAdapterFactory, authServerProperties, corsProperties, ebsiProperties);
         appConfig.init();
     }
 
@@ -158,17 +155,4 @@ class AppConfigImplTest {
         assertEquals(expectedClientSecret, appConfig.getIdentityProviderClientSecret());
     }
 
-    @Test
-    void testGetCredentialPresentationExpirationTime() {
-        when(verifiablePresentationProperties.expirationTime()).thenReturn(3600L);
-        long expectedExpirationTime = 3600L;
-        assertEquals(expectedExpirationTime, appConfig.getCredentialPresentationExpirationTime());
-    }
-
-    @Test
-    void testGetCredentialPresentationExpirationUnit() {
-        when(verifiablePresentationProperties.expirationUnit()).thenReturn("seconds");
-        String expectedExpirationUnit = "seconds";
-        assertEquals(expectedExpirationUnit, appConfig.getCredentialPresentationExpirationUnit());
-    }
 }

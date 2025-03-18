@@ -24,8 +24,4 @@ public interface AppConfig {
 
     String getIdentityProviderClientSecret();
 
-    Long getCredentialPresentationExpirationTime();
-
-    String getCredentialPresentationExpirationUnit();
-
 }

@@ -21,8 +21,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-import static es.in2.wallet.domain.utils.ApplicationConstants.JSONLD_CONTEXT_W3C_2018_CREDENTIALS_V1;
-import static es.in2.wallet.domain.utils.ApplicationConstants.VERIFIABLE_PRESENTATION;
+import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 
 @Slf4j
@@ -178,7 +177,7 @@ public class PresentationServiceImpl implements PresentationService {
                     .build();
 
             Instant issueTime = Instant.now();
-            Instant expirationTime = issueTime.plus(appConfig.getCredentialPresentationExpirationTime(), ChronoUnit.valueOf(appConfig.getCredentialPresentationExpirationUnit().toUpperCase()));
+            Instant expirationTime = issueTime.plus(VERIFIABLE_PRESENTATION_EXPIRATION_TIME, ChronoUnit.valueOf(VERIFIABLE_PRESENTATION_EXPIRATION_UNIT));
             Map<String, Object> vpParsed = JWTClaimsSet.parse(objectMapper.writeValueAsString(vpBuilder)).getClaims();
             JWTClaimsSet.Builder payloadBuilder = new JWTClaimsSet.Builder()
                     .issuer(holderDid)
