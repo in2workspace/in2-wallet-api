@@ -125,14 +125,14 @@ azure:
 # These properties are used to pass the EBSI Holder Wallet Test
 ebsi:
   test:
-    # (REQUIRED)
-    url:
-    # (REQUIRED)
-    client-secret:
-    # (REQUIRED)
-    client-id:
-    # (REQUIRED)
-    username:
-    # (REQUIRED)
-    password:
+    # (not in Helm)
+    url: "http://dome-wallet-keycloak:8080/keycloak/realms/wallet/protocol/openid-connect/token"
+    # (not in Helm)
+    client-secret: "defaultSecret"
+    # (not in Helm)
+    client-id: "user-registry-client"
+    # (not in Helm)
+    username: "admin"
+    # (not in Helm)
+    password: "defaultPassword"
 
