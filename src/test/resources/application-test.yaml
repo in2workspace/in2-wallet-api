@@ -1,121 +1,140 @@
-#todo adapt according to changes applied to application.yaml
-
 spring:
   application:
+    # Defines the name of the application
     name: "wallet-server"
   main:
+    # Specifies that this is a reactive application (Spring WebFlux)
     web-application-type: reactive
   r2dbc:
+    # The database connection URL for R2DBC (REQUIRED)
     url: "r2dbc:postgresql://localhost:5434/wallet?schema=wallet"
+    # The database username for R2DBC connections (REQUIRED)
     username: "postgres"
+    # The database password for R2DBC connections (REQUIRED)
     password: "postgres"
   flyway:
+    # The JDBC URL used by Flyway for database schema migrations (REQUIRED)
     url: "jdbc:postgresql://localhost:5434/wallet?schema=wallet"
-    locations: classpath:db/migration #no és a Helm
+    # Defines the path where Flyway should look for SQL migration scripts (NON-CONFIGURABLE = Not in Helm)
+    locations: classpath:db/migration
+    # The database username used by Flyway to execute migrations (REQUIRED)
     user: "postgres"
+    # The database password used by Flyway to execute migrations (REQUIRED)
     password: "postgres"
+    # Specifies the default schema in which Flyway should apply migrations (NON-CONFIGURABLE = Not in Helm)
     default-schema: wallet
+
 
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
-    es.in2.wallet: DEBUG
+    # Sets logging level for the custom package "es.in2.wallet"
+    es.in2.wallet: INFO
 
+# he tret health, info, tracing com vam fer a verifier
+# NON-CONFIGURABLE = Not in Helm
 management:
   endpoints:
+    # Disables all management endpoints by default
     enabled-by-default: false
     web:
       exposure:
-        include: health, info, loggers, metrics, prometheus
+        # Specifies the enabled management endpoints
+        include: health, prometheus
+      # Sets the base path for management endpoints
       base-path: /
       path-mapping:
+        # Maps the health endpoint to /health
         health: health
-        info: info
-        loggers: loggers
-        metrics: metrics
+        # Maps the Prometheus metrics endpoint to /prometheus
         prometheus: prometheus
   endpoint:
     health:
+      # Enables the health endpoint
       enabled: true
+      # Always show detailed health information
       show-details: always
       vault:
         enabled: false
-    loggers:
-      enabled: true
-    metrics:
-      enabled: true
     prometheus:
       enabled: true
-    tracing:
-      enabled: false
 
+# NON-CONFIGURABLE = Not in Helm
 springdoc:
   api-docs:
+    # Defines the endpoint for OpenAPI documentation
     path: /api-docs
   swagger-ui:
+    # Defines the path to access Swagger UI
     path: /swagger-ui.html
+    # Sorts tags alphabetically in the Swagger UI
     tags-sorter: alpha
+    # Sorts API operations by HTTP method (GET, POST, etc.)
     operations-sorter: method
 
+# used to be configured in each application-*.yaml, SHOULD BE ADDED TO HELM
 server:
-  port: 8082
+  # Defines the port on which the application will run
+  port: 8080
 
 app:
   config-source:
+    # currently can be yaml or azure (NON-CONFIGURABLE = not in Helm)
     name: yaml
 
-vault:
-  provider:
-    name: hashicorp
-
-hashicorp:
-  vault:
-    path: /kv #no hi és a helm
-    host: localhost
-    port: 8201
-    scheme: http
-    token:
-
+# Not configured in Helm
 azure:
   app:
     endpoint: ${APP_CONFIG_ENDPOINT}
     label:
       global: service-discovery
-  key-vault:
-    endpoint: "your-endpoint"
 
-# These properties will be removed in the future
-auth-server:
-  external-url:
-    scheme: "http"
-    domain: "localhost"
-    port: "7002"
-    path: "/realms/wallet"
-  internal-url:
-    scheme: "http"
-    domain: "localhost"
-    port: "7002"
-    path: "/realms/wallet"
-  token-url:
-    scheme: "http"
-    domain: "localhost"
-    port: "8080"
-    path: "/realms/EAAProvider/verifiable-credential/did:key:z6MkqmaCT2JqdUtLeKah7tEVfNXtDXtQyj4yxEgV11Y5CqUa/token"
-  jwt-decoder-path: "/protocol/openid-connect/certs"
+security:
+  # These properties will be removed in the future
+  auth-server:
+    external-url:
+      # REQUIRED
+      domain: "external.example.com" # a in2-dome-gitops es passa keycloak-dev.ssihub.org
+      # REQUIRED
+      path: "/external" # a in2-dome-gitops es passa /realms/[tenant]-wallet
+    internal-url:
+      # REQUIRED --de moment es deixa hardcoded a Helm
+      domain: "internal.example.com"
+      # REQUIRED
+      path: "/internal"
+  cors:
+    # used to be configured in each application-*.yaml, should be added to Helm (OPTIONAL)
+    allowedOrigins:
+  vault:
+    provider:
+    # currently can be hashicorp or azure (NON-CONFIGURABLE = not in Helm)
+      name: hashicorp
+    hashicorp:
+      # REQUIRED
+      host: localhost
+      # REQUIRED
+      port: 8201
+      # REQUIRED
+      scheme: http
+      # REQUIRED
+      token: your-token
+    # (NON-CONFIGURABLE = not in Helm)
+    azure:
+      endpoint: "your-endpoint"
 
-verifiable-presentation: #no hi és a Helm
-  expiration-time: 3
-  expiration-unit: MINUTES #DAYS HOURS MINUTES SECONDS
 
 # These properties are used to pass the EBSI Holder Wallet Test
 ebsi:
   test:
-    url: "http://localhost:9099/realms/wallet/protocol/openid-connect/token"
+    # (REQUIRED)
+    url: "http://dome-wallet-keycloak:8080/keycloak/realms/wallet/protocol/openid-connect/token"
+    # todo take from secret (REQUIRED)
     client-secret: "fV51P8jFBo8VnFKMMuP3imw3H3i5mNck"
+    # (REQUIRED)
     client-id: user-registry-client
-    username: admin
+    # (REQUIRED)
+    username: wallet-secret
+    # todo take from secret (REQUIRED)
     password: adminPass
 
-cors: #no hi és a Helm
-  allowedOrigins:
