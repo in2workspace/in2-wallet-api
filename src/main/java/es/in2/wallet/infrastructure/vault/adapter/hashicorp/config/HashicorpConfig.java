@@ -7,6 +7,8 @@ import es.in2.wallet.infrastructure.vault.model.VaultProviderEnum;
 import es.in2.wallet.infrastructure.vault.util.VaultProviderAnnotation;
 import org.springframework.stereotype.Component;
 
+import static es.in2.wallet.domain.utils.ApplicationConstants.VAULT_HASHICORP_PATH;
+
 import java.util.Base64;
 
 @Component
@@ -22,7 +24,7 @@ public class HashicorpConfig {
 
 
     public String getSecretPath() {
-        return genericConfigAdapter.getConfiguration(hashicorpProperties.path());
+        return genericConfigAdapter.getConfiguration(VAULT_HASHICORP_PATH);
     }
 
     public String getVaultHost() {

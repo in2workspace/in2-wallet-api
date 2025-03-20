@@ -29,13 +29,11 @@ public class AppConfigImpl implements AppConfig {
 
     private String authServerInternalUrl;
     private String authServerExternalUrl;
-    private String authServerTokenEndpoint;
 
     @PostConstruct
     public void init() {
         authServerInternalUrl = initAuthServerInternalUrl();
         authServerExternalUrl = initAuthServerExternalUrl();
-        authServerTokenEndpoint = initAuthServerTokenEndpoint();
         log.debug(authServerExternalUrl);
         log.debug(authServerInternalUrl);
     }
@@ -94,18 +92,6 @@ public class AppConfigImpl implements AppConfig {
                 genericConfigAdapter.getConfiguration(authServerProperties.externalUrl().domain()),
                 AUTH_SERVER_EXTERNAL_URL_PORT,
                 authServerProperties.externalUrl().path());
-    }
-
-    @Override
-    public String getAuthServerTokenEndpoint() {
-        return authServerTokenEndpoint;
-    }
-
-    private String initAuthServerTokenEndpoint() {
-        return formatUrl(AUTH_SERVER_TOKEN_URL_SCHEME,
-                genericConfigAdapter.getConfiguration(AUTH_SERVER_TOKEN_URL_DOMAIN),
-                AUTH_SERVER_TOKEN_URL_PORT,
-                AUTH_SERVER_TOKEN_URL_PATH);
     }
 
     @Override

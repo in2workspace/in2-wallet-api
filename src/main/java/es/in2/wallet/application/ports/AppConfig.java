@@ -12,8 +12,6 @@ public interface AppConfig {
 
     String getAuthServerExternalUrl();
 
-    String getAuthServerTokenEndpoint();
-
     String getIdentityProviderUrl();
 
     String getIdentityProviderUsername();
