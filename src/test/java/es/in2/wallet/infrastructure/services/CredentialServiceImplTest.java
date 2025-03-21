@@ -68,23 +68,7 @@ class CredentialServiceImplTest {
         when(credentialRepository.save(captor.capture()))
                 .thenReturn(Mono.just(savedEntity));
 
-        // Create a mock JSON structure with 'vc' field and required type array
-        ObjectNode credentialJson = JsonNodeFactory.instance.objectNode();
-        ObjectNode vcContent = JsonNodeFactory.instance.objectNode();
-
-        // Add the required type array
-        ArrayNode typesArray = JsonNodeFactory.instance.arrayNode();
-        typesArray.add("VerifiableCredential");
-        typesArray.add("EmployeeCredential");
-        vcContent.set("type", typesArray);
-        vcContent.set("id", JsonNodeFactory.instance.textNode(credentialId));
-
-        // Add other required VC fields
-        vcContent.put("some", "data");
-        credentialJson.set("vc", vcContent);
-
-        // Mock the objectMapper to return our JSON structure
-        when(objectMapper.readTree(credential)).thenReturn(credentialJson);
+        when(objectMapper.readTree(credential)).thenReturn(getJsonNodeCredentialLearCredentialEmployee());
 
         // WHEN
         Mono<UUID> result = credentialRepositoryService.saveCredential(processId, userId, response, format);

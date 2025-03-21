@@ -372,8 +372,7 @@ public class CredentialServiceImpl implements CredentialService {
             if (rawJson == null || rawJson.isBlank()) {
                 throw new ParseErrorException("Credential data is empty or null");
             }
-            JsonNode credentialPayload = objectMapper.readTree(rawJson);
-            return credentialPayload.get("vc");
+            return objectMapper.readTree(rawJson);
         }).onErrorMap(e -> new ParseErrorException("Error parsing plain JSON credential: " + e.getMessage()));
     }
 
