@@ -3,9 +3,6 @@ package es.in2.wallet.infrastructure.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.application.dto.CredentialResponse;
@@ -28,7 +25,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -86,6 +82,7 @@ class CredentialServiceImplTest {
         assertEquals(userId, passedToSave.getUserId());
         assertEquals(CredentialStatus.ISSUED.toString(), passedToSave.getCredentialStatus());
         assertNull(passedToSave.getCredentialData());
+        // plus any other checks you wish to make
     }
 
     @Test
