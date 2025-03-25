@@ -15,7 +15,7 @@ public class VaultProviderCondition implements Condition {
     @Override
     public boolean matches(ConditionContext context, @Nullable AnnotatedTypeMetadata metadata) {
         Environment env = context.getEnvironment();
-        String expectedImplementation = env.getProperty("vault.provider.name");
+        String expectedImplementation = env.getProperty("security.vault.provider.name");
 
         if (expectedImplementation == null) {
             return false;
