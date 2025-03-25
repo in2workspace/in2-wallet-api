@@ -126,7 +126,8 @@ azure:
 ebsi:
   test:
     # (not in Helm)
-    url: "http://dome-wallet-keycloak:8080/keycloak/realms/wallet/protocol/openid-connect/token"
+    #  todo configure in helm?
+    url: "https://keycloak-dev.ssihub.org/realms/in2-wallet/protocol/openid-connect/token"
     # (not in Helm)
     client-secret: "defaultSecret"
     # (not in Helm)
