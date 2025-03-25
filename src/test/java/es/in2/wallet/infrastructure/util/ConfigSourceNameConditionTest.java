@@ -37,7 +37,7 @@ class ConfigSourceNameConditionTest {
 
     @Test
     void shouldReturnFalseWhenPropertyIsNotSet() {
-        when(environment.getProperty("wallet.config-source.name")).thenReturn(null);
+        when(environment.getProperty("app.config-source.name")).thenReturn(null);
 
         boolean result = condition.matches(context, metadata);
 
@@ -46,7 +46,7 @@ class ConfigSourceNameConditionTest {
 
     @Test
     void shouldReturnFalseWhenAnnotationAttributesAreNull() {
-        when(environment.getProperty("wallet.config-source.name")).thenReturn("expectedValue");
+        when(environment.getProperty("app.config-source.name")).thenReturn("expectedValue");
         when(metadata.getAnnotationAttributes(ConfigSourceNameAnnotation.class.getName())).thenReturn(null);
 
         boolean result = condition.matches(context, metadata);
@@ -56,7 +56,7 @@ class ConfigSourceNameConditionTest {
 
     @Test
     void shouldReturnFalseWhenAnnotationNameAttributeIsMissing() {
-        when(environment.getProperty("wallet.config-source.name")).thenReturn("expectedValue");
+        when(environment.getProperty("app.config-source.name")).thenReturn("expectedValue");
         when(metadata.getAnnotationAttributes(ConfigSourceNameAnnotation.class.getName()))
                 .thenReturn(Collections.emptyMap());
 
@@ -67,7 +67,7 @@ class ConfigSourceNameConditionTest {
 
     @Test
     void shouldReturnFalseWhenValuesDoNotMatch() {
-        when(environment.getProperty("wallet.config-source.name")).thenReturn("expectedValue");
+        when(environment.getProperty("app.config-source.name")).thenReturn("expectedValue");
         when(metadata.getAnnotationAttributes(ConfigSourceNameAnnotation.class.getName()))
                 .thenReturn(Map.of("name", "differentValue"));
 
@@ -78,7 +78,7 @@ class ConfigSourceNameConditionTest {
 
     @Test
     void shouldReturnTrueWhenValuesMatch() {
-        when(environment.getProperty("wallet.config-source.name")).thenReturn("expectedValue");
+        when(environment.getProperty("app.config-source.name")).thenReturn("expectedValue");
         when(metadata.getAnnotationAttributes(ConfigSourceNameAnnotation.class.getName()))
                 .thenReturn(Map.of("name", "expectedValue"));
 
