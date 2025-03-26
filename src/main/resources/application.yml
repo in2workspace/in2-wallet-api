@@ -37,6 +37,9 @@ logging:
 # he tret health, info, tracing tal com vam fer a verifier
 # (Not in Helm)
 management:
+#  todo
+  tracing:
+    enabled: false
   endpoints:
     # Disables all management endpoints by default
     enabled-by-default: false
