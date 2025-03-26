@@ -23,6 +23,8 @@ spring:
     password: "postgres"
     # Specifies the default schema in which Flyway should apply migrations (Not in Helm)
     default-schema: wallet
+  zipkin:
+    enabled: false
 
 logging:
   pattern:
