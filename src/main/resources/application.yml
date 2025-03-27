@@ -131,16 +131,15 @@ azure:
 ebsi:
   test:
     # (not in Helm)
-    #  todo
     url: "https://keycloak-dev.ssihub.org/realms/in2-wallet/protocol/openid-connect/token"
-    # (not in Helm)
+    # (REQUIRED)
     # todo
-    client-secret: "EbPcmBG16U8SGQ82UeL0weQOVGKYCToa"
+    client-secret:
     # (not in Helm)
     client-id: "user-registry-client"
     # (not in Helm)
-    username: "defaultusser"
-    # (not in Helm)
+    username: "defaultuser"
+    # (REQUIRED)
     # todo
-    password: "defaultPassword"
+    password: "defaultpassword"
 
