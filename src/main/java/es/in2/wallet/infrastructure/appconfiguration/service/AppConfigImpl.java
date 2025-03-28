@@ -14,7 +14,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 import static es.in2.wallet.domain.utils.ApplicationUtils.formatUrl;
 import static es.in2.wallet.domain.utils.ApplicationConstants.AUTH_SERVER_JWT_DECODER_PATH;
 
@@ -32,10 +31,10 @@ public class AppConfigImpl implements AppConfig {
 
     @PostConstruct
     public void init() {
-        authServerInternalUrl = initAuthServerInternalUrl();
-        authServerExternalUrl = initAuthServerExternalUrl();
-        log.debug(authServerExternalUrl);
-        log.debug(authServerInternalUrl);
+        authServerInternalUrl = authServerProperties.internalUrl();
+        authServerExternalUrl = authServerProperties.externalUrl();
+        log.debug("Auth server internal URL", authServerInternalUrl);
+        log.debug("Auth server external URL",authServerExternalUrl);
     }
 
     public AppConfigImpl(ConfigAdapterFactory configAdapterFactory,
@@ -74,24 +73,9 @@ public class AppConfigImpl implements AppConfig {
         return authServerInternalUrl;
     }
 
-
-    private String initAuthServerInternalUrl() {
-        return formatUrl(AUTH_SERVER_INTERNAL_URL_SCHEME,
-                genericConfigAdapter.getConfiguration(authServerProperties.internalUrl().domain()),
-                AUTH_SERVER_INTERNAL_URL_PORT,
-                authServerProperties.internalUrl().path());
-    }
-
     @Override
     public String getAuthServerExternalUrl() {
         return authServerExternalUrl;
-    }
-
-    private String initAuthServerExternalUrl() {
-        return formatUrl(AUTH_SERVER_EXTERNAL_URL_SCHEME,
-                genericConfigAdapter.getConfiguration(authServerProperties.externalUrl().domain()),
-                AUTH_SERVER_EXTERNAL_URL_PORT,
-                authServerProperties.externalUrl().path());
     }
 
     @Override

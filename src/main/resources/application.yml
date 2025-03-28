@@ -94,16 +94,10 @@ azure:
 
 security:
   auth-server:
+    # (REQUIRED)
     external-url:
-      #  (REQUIRED)
-      domain:
-      #  (REQUIRED)
-      path:
+    # (REQUIRED)
     internal-url:
-      #  (REQUIRED)
-      domain:
-      #  (REQUIRED)
-      path:
   cors:
     # (OPTIONAL)
     allowedOrigins:

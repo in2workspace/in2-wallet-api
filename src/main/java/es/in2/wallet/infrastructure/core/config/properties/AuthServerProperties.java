@@ -1,7 +1,7 @@
 package es.in2.wallet.infrastructure.core.config.properties;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.URL;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -14,6 +14,6 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "security.auth-server")
 public record AuthServerProperties(
-        @NotNull @Valid UrlProperties externalUrl,
-        @NotNull @Valid UrlProperties internalUrl) {
+        @URL String externalUrl,
+        @URL String internalUrl) {
 }

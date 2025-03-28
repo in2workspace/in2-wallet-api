@@ -44,10 +44,6 @@ public class ApplicationConstants {
     public static final String LEAR_CREDENTIAL_EMPLOYEE_SCOPE = "dome.credentials.presentation.LEARCredentialEmployee";
     public static final Integer VERIFIABLE_PRESENTATION_EXPIRATION_TIME = 180;
     public static final String VERIFIABLE_PRESENTATION_EXPIRATION_UNIT = "SECONDS";
-    public static final String AUTH_SERVER_EXTERNAL_URL_SCHEME = "https";
-    public static final Integer AUTH_SERVER_EXTERNAL_URL_PORT = 443;
-    public static final String AUTH_SERVER_INTERNAL_URL_SCHEME = "http";
-    public static final Integer AUTH_SERVER_INTERNAL_URL_PORT = 80;
     public static final String AUTH_SERVER_JWT_DECODER_PATH = "/protocol/openid-connect/certs";
     public static final String VAULT_HASHICORP_PATH = "kv/wallet";
 }
