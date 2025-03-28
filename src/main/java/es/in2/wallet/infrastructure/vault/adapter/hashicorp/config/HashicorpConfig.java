@@ -28,19 +28,9 @@ public class HashicorpConfig {
         return secretPath;
     }
 
-    public String getVaultHost() {
-        String host = genericConfigAdapter.getConfiguration(hashicorpProperties.host());
-        return host;
-    }
-
-    public int getVaultPort() {
-        String portStr = genericConfigAdapter.getConfiguration(hashicorpProperties.port());
-        return Integer.parseInt(portStr);
-    }
-
-    public String getVaultScheme() {
-        String scheme = genericConfigAdapter.getConfiguration(hashicorpProperties.scheme());
-        return scheme;
+    public String getVaultUrl() {
+        String vaultUrl = genericConfigAdapter.getConfiguration(hashicorpProperties.url());
+        return vaultUrl;
     }
 
     public String getVaultToken() {

@@ -41,33 +41,13 @@ class HashicorpConfigTest {
     }
 
     @Test
-    void getVaultHost_shouldReturnValueFromGenericAdapter() {
-        when(hashicorpProperties.host()).thenReturn("host.key");
-        when(genericConfigAdapter.getConfiguration("host.key")).thenReturn("localhost");
+    void getVaultUrl_shouldReturnValueFromGenericAdapter() {
+        when(hashicorpProperties.url()).thenReturn("vault.url.key");
+        when(genericConfigAdapter.getConfiguration("vault.url.key")).thenReturn("https://vault.example.com");
 
-        String result = hashicorpConfig.getVaultHost();
+        String result = hashicorpConfig.getVaultUrl();
 
-        assertEquals("localhost", result);
-    }
-
-    @Test
-    void getVaultPort_shouldReturnParsedIntegerFromGenericAdapter() {
-        when(hashicorpProperties.port()).thenReturn("port.key");
-        when(genericConfigAdapter.getConfiguration("port.key")).thenReturn("8200");
-
-        int result = hashicorpConfig.getVaultPort();
-
-        assertEquals(8200, result);
-    }
-
-    @Test
-    void getVaultScheme_shouldReturnValueFromGenericAdapter() {
-        when(hashicorpProperties.scheme()).thenReturn("scheme.key");
-        when(genericConfigAdapter.getConfiguration("scheme.key")).thenReturn("https");
-
-        String result = hashicorpConfig.getVaultScheme();
-
-        assertEquals("https", result);
+        assertEquals("https://vault.example.com", result);
     }
 
     @Test

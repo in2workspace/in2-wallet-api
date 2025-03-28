@@ -10,6 +10,9 @@ import org.springframework.vault.authentication.TokenAuthentication;
 import org.springframework.vault.client.VaultEndpoint;
 import org.springframework.vault.config.AbstractReactiveVaultConfiguration;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 @Component
 @RequiredArgsConstructor
 @VaultProviderAnnotation(provider = VaultProviderEnum.HASHICORP)
@@ -20,16 +23,25 @@ public class HashicorpKeyVaultConfig extends AbstractReactiveVaultConfiguration 
     @Override
     @NonNull
     public VaultEndpoint vaultEndpoint() {
-        String host = hashicorpConfig.getVaultHost();
-        int port = hashicorpConfig.getVaultPort();
-        String scheme = hashicorpConfig.getVaultScheme();
+        String urlStr = hashicorpConfig.getVaultUrl();
+        try {
+            URL url = new URL(urlStr);
 
-        VaultEndpoint vaultEndpoint = new VaultEndpoint();
-        vaultEndpoint.setHost(host);
-        vaultEndpoint.setPort(port);
-        vaultEndpoint.setScheme(scheme);
+            VaultEndpoint vaultEndpoint = new VaultEndpoint();
+            vaultEndpoint.setHost(url.getHost());
 
-        return vaultEndpoint;
+            int port = url.getPort();
+            if (port == -1) {
+                port = url.getProtocol().equals("https") ? 443 : 80;
+            }
+            vaultEndpoint.setPort(port);
+
+            vaultEndpoint.setScheme(url.getProtocol());
+
+            return vaultEndpoint;
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Invalid Vault URL: " + urlStr, e);
+        }
     }
 
     @Override

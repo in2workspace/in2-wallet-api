@@ -106,12 +106,8 @@ security:
       name: hashicorp
     hashicorp:
       # (REQUIRED)
-      host:
-      # (REQUIRED)
-      port:
-      # (REQUIRED)
-      scheme:
-      # (REQUIRED)
+      url:
+#      # (REQUIRED)
       token:
     azure:
       # (Not in Helm)

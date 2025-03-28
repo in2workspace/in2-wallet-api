@@ -1,12 +1,14 @@
-package es.in2.wallet.infrastructure.vault.adapter.hashicorp.config;
+package es.in2.wallet.vault.adapter.hashicorp.config;
 
+import es.in2.wallet.infrastructure.vault.adapter.hashicorp.config.HashicorpConfig;
+import es.in2.wallet.infrastructure.vault.adapter.hashicorp.config.HashicorpKeyVaultConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.vault.authentication.ClientAuthentication;
 import org.springframework.vault.authentication.TokenAuthentication;
 import org.springframework.vault.client.VaultEndpoint;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class HashicorpKeyVaultConfigTest {
@@ -21,31 +23,45 @@ class HashicorpKeyVaultConfigTest {
     }
 
     @Test
-    void testVaultEndpoint() {
-        // Given
-        when(hashicorpConfig.getVaultHost()).thenReturn("localhost");
-        when(hashicorpConfig.getVaultPort()).thenReturn(8200);
-        when(hashicorpConfig.getVaultScheme()).thenReturn("https");
+    void vaultEndpoint_shouldReturnProperlyParsedVaultEndpoint() {
+        // Given a complete Vault URL
+        when(hashicorpConfig.getVaultUrl()).thenReturn("https://vault.example.com:8200");
 
-        // When
         VaultEndpoint endpoint = hashicorpKeyVaultConfig.vaultEndpoint();
 
-        // Then
-        assertEquals("localhost", endpoint.getHost());
+        assertEquals("vault.example.com", endpoint.getHost());
         assertEquals(8200, endpoint.getPort());
         assertEquals("https", endpoint.getScheme());
     }
 
     @Test
-    void testClientAuthentication() {
-        // Given
+    void vaultEndpoint_shouldFallbackToDefaultPortIfNotSpecified() {
+        // URL without explicit port → should fallback to 443 (https)
+        when(hashicorpConfig.getVaultUrl()).thenReturn("https://vault.example.com");
+
+        VaultEndpoint endpoint = hashicorpKeyVaultConfig.vaultEndpoint();
+
+        assertEquals("vault.example.com", endpoint.getHost());
+        assertEquals(443, endpoint.getPort()); // default for https
+        assertEquals("https", endpoint.getScheme());
+    }
+
+    @Test
+    void vaultEndpoint_shouldThrowExceptionOnInvalidUrl() {
+        when(hashicorpConfig.getVaultUrl()).thenReturn("not-a-valid-url");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                hashicorpKeyVaultConfig.vaultEndpoint());
+
+        assertTrue(exception.getMessage().startsWith("Invalid Vault URL: not-a-valid-url"));
+    }
+
+    @Test
+    void clientAuthentication_shouldReturnTokenAuthentication() {
         when(hashicorpConfig.getVaultToken()).thenReturn("my-token");
 
-        // When
-        ClientAuthentication auth = hashicorpKeyVaultConfig.clientAuthentication();
+        ClientAuthentication authentication = hashicorpKeyVaultConfig.clientAuthentication();
 
-        // Then
-        assertEquals(TokenAuthentication.class, auth.getClass());
-
+        assertEquals(TokenAuthentication.class, authentication.getClass());
     }
 }

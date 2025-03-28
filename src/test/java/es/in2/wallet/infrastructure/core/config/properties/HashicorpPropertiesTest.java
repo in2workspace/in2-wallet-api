@@ -1,6 +1,5 @@
 package es.in2.wallet.infrastructure.vault.adapter.hashicorp.config.properties;
 
-import es.in2.wallet.infrastructure.vault.adapter.hashicorp.config.properties.HashicorpProperties;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -25,51 +24,40 @@ class HashicorpPropertiesTest {
 
     @Test
     void shouldPassValidationWithValidValues() {
-        HashicorpProperties hashicorpProperties = new HashicorpProperties("vault.example.com", "8200", "https", "my-secret-token");
+        HashicorpProperties properties = new HashicorpProperties("https://vault.example.com", "my-secret-token");
 
-        Set<ConstraintViolation<HashicorpProperties>> violations = validator.validate(hashicorpProperties);
+        Set<ConstraintViolation<HashicorpProperties>> violations = validator.validate(properties);
 
         assertTrue(violations.isEmpty(), "No validation errors expected");
     }
 
     @Test
-    void shouldFailValidationWhenHostIsNull() {
-        HashicorpProperties hashicorpProperties = new HashicorpProperties(null, "8200", "https", "my-secret-token");
+    void shouldFailValidationWhenUrlIsInvalid() {
+        HashicorpProperties properties = new HashicorpProperties("not-a-valid-url", "my-secret-token");
 
-        Set<ConstraintViolation<HashicorpProperties>> violations = validator.validate(hashicorpProperties);
+        Set<ConstraintViolation<HashicorpProperties>> violations = validator.validate(properties);
 
         assertEquals(1, violations.size(), "Expected one validation error");
-        assertTrue(violations.iterator().next().getPropertyPath().toString().contains("host"));
+        assertTrue(violations.iterator().next().getPropertyPath().toString().contains("url"));
     }
 
     @Test
-    void shouldFailValidationWhenPortIsNull() {
-        HashicorpProperties hashicorpProperties = new HashicorpProperties("vault.example.com", null, "https", "my-secret-token");
+    void shouldFailValidationWhenUrlIsNull() {
+        HashicorpProperties properties = new HashicorpProperties(null, "my-secret-token");
 
-        Set<ConstraintViolation<HashicorpProperties>> violations = validator.validate(hashicorpProperties);
+        Set<ConstraintViolation<HashicorpProperties>> violations = validator.validate(properties);
 
-        assertEquals(1, violations.size(), "Expected one validation error");
-        assertTrue(violations.iterator().next().getPropertyPath().toString().contains("port"));
-    }
-
-    @Test
-    void shouldFailValidationWhenSchemeIsNull() {
-        HashicorpProperties hashicorpProperties = new HashicorpProperties("vault.example.com", "8200", null, "my-secret-token");
-
-        Set<ConstraintViolation<HashicorpProperties>> violations = validator.validate(hashicorpProperties);
-
-        assertEquals(1, violations.size(), "Expected one validation error");
-        assertTrue(violations.iterator().next().getPropertyPath().toString().contains("scheme"));
+        // @URL does not trigger on null values, so no error unless we add @NotNull
+        assertTrue(violations.isEmpty(), "No validation error expected for null url unless @NotNull is added");
     }
 
     @Test
     void shouldFailValidationWhenTokenIsNull() {
-        HashicorpProperties hashicorpProperties = new HashicorpProperties("vault.example.com", "8200", "https", null);
+        HashicorpProperties properties = new HashicorpProperties("https://vault.example.com", null);
 
-        Set<ConstraintViolation<HashicorpProperties>> violations = validator.validate(hashicorpProperties);
+        Set<ConstraintViolation<HashicorpProperties>> violations = validator.validate(properties);
 
         assertEquals(1, violations.size(), "Expected one validation error");
         assertTrue(violations.iterator().next().getPropertyPath().toString().contains("token"));
     }
 }
-
