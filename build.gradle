@@ -106,9 +106,9 @@ dependencies {
     // Logging
     implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
     // Monitoring
-    //    implementation 'io.micrometer:micrometer-tracing-bridge-brave:1.3.4'
-    //    implementation 'io.zipkin.reporter2:zipkin-reporter-brave:3.4.2'
-    //    runtimeOnly 'io.micrometer:micrometer-registry-prometheus:1.13.4'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave:1.3.4'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave:3.4.2'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus:1.13.4'
     // Metrics
     implementation 'org.springframework.boot:spring-boot-starter-actuator:3.3.4'
     // Unit Testing
