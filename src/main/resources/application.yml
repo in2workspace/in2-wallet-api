@@ -1,10 +1,11 @@
 spring:
   application:
-    # Defines the name of the application (Not in Helm)
+    # Defines the name of the application
     name: "wallet-server"
   main:
-    # Specifies that this is a reactive application (Spring WebFlux) (Not in Helm)
+    # Specifies that this is a reactive application (Spring WebFlux)
     web-application-type: reactive
+  # Sets a common base path prefix for all WebFlux routes
   webflux:
     base-path: /api
   r2dbc:
@@ -25,8 +26,7 @@ spring:
     password: "postgres"
     # Specifies the default schema in which Flyway should apply migrations (Not in Helm)
     default-schema: wallet
-#  zipkin:
-#    enabled: false
+
 
 logging:
   pattern:
@@ -36,12 +36,8 @@ logging:
     # Sets logging level for the custom package "es.in2.wallet" (OPTIONAL)
     es.in2.wallet: INFO
 
-# he tret health, info, tracing tal com vam fer a verifier
 # (Not in Helm)
 management:
-#  todo
-#  tracing:
-#    enabled: false
   endpoints:
     # Disables all management endpoints by default
     enabled-by-default: false
@@ -70,17 +66,16 @@ management:
 # Not in Helm
 springdoc:
   api-docs:
-    # Defines the endpoint for OpenAPI documentation
+    # Configures the endpoint where the OpenAPI JSON documentation is available
     path: /api-docs
   swagger-ui:
-    # Defines the path to access Swagger UI
+    # Configures the path to access the Swagger UI web interface
     path: /swagger-ui.html
-    # Sorts tags alphabetically in the Swagger UI
+    # Specifies how tags are sorted in the UI
     tags-sorter: alpha
-    # Sorts API operations by HTTP method (GET, POST, etc.)
+    # Specifies how operations are sorted within each tag in the UI
     operations-sorter: method
 
-# SHOULD BE ADDED TO HELM: used to be configured in each application-*.yaml
 server:
   # Defines the port on which the application will run
   port: 8080
@@ -90,7 +85,13 @@ app:
     #currently can be yaml or azure (Not in Helm)
     name: yaml
 
-# nou agrupament, SHOULD BE CHANGED IN HELM
+# Not in Helm
+azure:
+  app:
+    endpoint: ${APP_CONFIG_ENDPOINT}
+    label:
+      global: service-discovery
+
 security:
   auth-server:
     external-url:
@@ -99,12 +100,12 @@ security:
       #  (REQUIRED)
       path:
     internal-url:
-      #  (REQUIRED)  --de moment es deixa hardcoded a Helm "keycloak-proxy"
+      #  (REQUIRED)
       domain:
       #  (REQUIRED)
       path:
   cors:
-    # used to be configured in each application-*.yaml, SHOULD BE ADDED TO HELM (OPTIONAL)
+    # (OPTIONAL)
     allowedOrigins:
   vault:
     provider:
@@ -122,26 +123,17 @@ security:
       # (Not in Helm)
       endpoint: "your-endpoint"
 
-# Not in Helm
-azure:
-  app:
-    endpoint: ${APP_CONFIG_ENDPOINT}
-    label:
-      global: service-discovery
-
 # These properties are used to pass the EBSI Holder Wallet Test
 ebsi:
   test:
-    # (not in Helm)
+    # (REQUIRED)
     url: "https://keycloak-dev.ssihub.org/realms/in2-wallet/protocol/openid-connect/token"
     # (REQUIRED)
-    # todo
     client-secret:
     # (not in Helm)
     client-id: "user-registry-client"
     # (not in Helm)
     username: "defaultuser"
     # (REQUIRED)
-    # todo
     password: "defaultpassword"
 
