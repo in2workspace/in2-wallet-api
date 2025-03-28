@@ -12,8 +12,6 @@ public interface AppConfig {
 
     String getAuthServerExternalUrl();
 
-    String getAuthServerTokenEndpoint();
-
     String getIdentityProviderUrl();
 
     String getIdentityProviderUsername();
@@ -23,9 +21,5 @@ public interface AppConfig {
     String getIdentityProviderClientId();
 
     String getIdentityProviderClientSecret();
-
-    Long getCredentialPresentationExpirationTime();
-
-    String getCredentialPresentationExpirationUnit();
 
 }

@@ -11,7 +11,7 @@ import java.util.Optional;
  *
  * @param allowedOrigins - list of wallet driving application url
  */
-@ConfigurationProperties(prefix = "cors")
+@ConfigurationProperties(prefix = "security.cors")
 public record CorsProperties(List<String> allowedOrigins) {
 
     @ConstructorBinding

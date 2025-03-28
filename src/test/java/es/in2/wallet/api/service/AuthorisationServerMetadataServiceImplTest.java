@@ -39,16 +39,13 @@ class AuthorisationServerMetadataServiceImplTest {
     @InjectMocks
     private AuthorisationServerMetadataServiceImpl authorisationServerMetadataService;
 
+    //todo test
     @Test
     void getAuthorizationServerMetadataFromCredentialIssuerMetadataWithTokenEndpointHardcodedTest() throws JsonProcessingException {
             String processId = "123";
             CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().authorizationServer("example").build();
-            AuthorisationServerMetadata authorizationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("https://example.com/token").build();
+            AuthorisationServerMetadata authorizationServerMetadata = AuthorisationServerMetadata.builder().tokenEndpoint("https://example.com/example/token").build();
             AuthorisationServerMetadata expectedAuthorizationServerMetadataWithTokenEndpointHardcodedTest = AuthorisationServerMetadata.builder().tokenEndpoint("https://example.com/example/token").build();
-
-
-            when(appConfig.getAuthServerExternalUrl()).thenReturn("https://example.com");
-            when(appConfig.getAuthServerTokenEndpoint()).thenReturn("https://example.com/example/token");
 
 
             ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);

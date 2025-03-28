@@ -70,9 +70,9 @@ class PresentationServiceImplTest {
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just(userId));
 
             Long expirationTime = 10L;
-            when(appConfig.getCredentialPresentationExpirationTime()).thenReturn(expirationTime);
+//           todo with constant when(appConfig.getCredentialPresentationExpirationTime()).thenReturn(expirationTime);
 
-            when(appConfig.getCredentialPresentationExpirationUnit()).thenReturn("minutes");
+//         todo with constant   when(appConfig.getCredentialPresentationExpirationUnit()).thenReturn("minutes");
 
             // Simulate the user data service returning a list of verifiable credential JWTs
             when(credentialService.getCredentialDataByIdAndUserId(processId,userId,credentialsBasicInfo.id())).thenReturn(Mono.just(vcJwt));
