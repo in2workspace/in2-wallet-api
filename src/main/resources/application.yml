@@ -5,6 +5,8 @@ spring:
   main:
     # Specifies that this is a reactive application (Spring WebFlux) (Not in Helm)
     web-application-type: reactive
+  webflux:
+    base-path: /api
   r2dbc:
     # The database connection URL for R2DBC (REQUIRED)
     url: "r2dbc:postgresql://localhost:5434/wallet?schema=wallet"
@@ -23,8 +25,8 @@ spring:
     password: "postgres"
     # Specifies the default schema in which Flyway should apply migrations (Not in Helm)
     default-schema: wallet
-  zipkin:
-    enabled: false
+#  zipkin:
+#    enabled: false
 
 logging:
   pattern:
@@ -38,8 +40,8 @@ logging:
 # (Not in Helm)
 management:
 #  todo
-  tracing:
-    enabled: false
+#  tracing:
+#    enabled: false
   endpoints:
     # Disables all management endpoints by default
     enabled-by-default: false
@@ -48,7 +50,7 @@ management:
         # Specifies the enabled management endpoints
         include: health, prometheus
       # Sets the base path for management endpoints
-      base-path: /api
+      base-path: /
       path-mapping:
         # Maps the health endpoint to /health
         health: health
