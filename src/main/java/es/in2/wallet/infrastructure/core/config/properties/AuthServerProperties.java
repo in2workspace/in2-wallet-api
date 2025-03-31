@@ -1,6 +1,5 @@
 package es.in2.wallet.infrastructure.core.config.properties;
 
-import jakarta.validation.Valid;
 import org.hibernate.validator.constraints.URL;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;

@@ -39,7 +39,6 @@ class AuthorisationServerMetadataServiceImplTest {
     @InjectMocks
     private AuthorisationServerMetadataServiceImpl authorisationServerMetadataService;
 
-    //todo test
     @Test
     void getAuthorizationServerMetadataFromCredentialIssuerMetadataWithTokenEndpointHardcodedTest() throws JsonProcessingException {
             String processId = "123";

@@ -24,19 +24,16 @@ public class HashicorpConfig {
 
 
     public String getSecretPath() {
-        String secretPath = genericConfigAdapter.getConfiguration(VAULT_HASHICORP_PATH);
-        return secretPath;
+        return genericConfigAdapter.getConfiguration(VAULT_HASHICORP_PATH);
     }
 
     public String getVaultUrl() {
-        String vaultUrl = genericConfigAdapter.getConfiguration(hashicorpProperties.url());
-        return vaultUrl;
+        return genericConfigAdapter.getConfiguration(hashicorpProperties.url());
     }
 
     public String getVaultToken() {
         String rawToken = hashicorpProperties.token();
-        String decodedToken = decodeIfBase64(rawToken);
-        return decodedToken;
+        return decodeIfBase64(rawToken);
     }
 
     private String decodeIfBase64(String token) {
