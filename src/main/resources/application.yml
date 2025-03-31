@@ -35,6 +35,7 @@ logging:
   level:
     # Sets logging level for the custom package "es.in2.wallet" (OPTIONAL)
     es.in2.wallet: DEBUG
+    org.springframework.boot.context.config: DEBUG
 
 # (Not in Helm)
 management:
