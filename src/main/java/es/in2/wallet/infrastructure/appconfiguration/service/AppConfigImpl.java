@@ -33,8 +33,8 @@ public class AppConfigImpl implements AppConfig {
     public void init() {
         authServerInternalUrl = authServerProperties.internalUrl();
         authServerExternalUrl = authServerProperties.externalUrl();
-        log.debug("Auth server internal URL", authServerInternalUrl);
-        log.debug("Auth server external URL",authServerExternalUrl);
+        log.debug("Auth server internal URL: {}", authServerInternalUrl);
+        log.debug("Auth server external URL: {}",authServerExternalUrl);
     }
 
     public AppConfigImpl(ConfigAdapterFactory configAdapterFactory,
