@@ -34,7 +34,7 @@ logging:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
     # Sets logging level for the custom package "es.in2.wallet" (OPTIONAL)
-    es.in2.wallet: INFO
+    es.in2.wallet: DEBUG
 
 # (Not in Helm)
 management:
