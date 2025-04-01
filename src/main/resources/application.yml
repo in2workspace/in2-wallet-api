@@ -35,7 +35,6 @@ logging:
   level:
     # Sets logging level for the custom package "es.in2.wallet" (OPTIONAL)
     es.in2.wallet: DEBUG
-    org.springframework.boot.context.config: DEBUG
 
 # (Not in Helm)
 management:
@@ -95,24 +94,28 @@ azure:
 
 security:
   auth-server:
-    # (REQUIRED)
+    # (REQUIRED) External URL of the authentication server, accessible by clients (e.g. frontend apps, browser).
     external-url:
-    # (REQUIRED)
+    # (REQUIRED) Internal URL of the authentication server, used by services within the cluster or private network.
     internal-url:
   cors:
-    # (OPTIONAL)
+    # Defines (OPTIONAL) a list of allowed origins for Cross-Origin Resource Sharing (CORS) requests.
+    # Useful to restrict access to specific frontend domains.
     allowedOrigins:
+  # Configures vault providers to store user secret keys
   vault:
     provider:
+      # Name of the vault provider to use (e.g. 'hashicorp' or 'azure').
       name: hashicorp
     hashicorp:
-      # (REQUIRED)
+      # (REQUIRED) URL of the HashiCorp Vault server (e.g. http://vault:8200).
       url:
-#      # (REQUIRED)
+      # (REQUIRED) Token used to authenticate with HashiCorp Vault.
       token:
     azure:
-      # (Not in Helm)
+      # (Not in Helm) Endpoint of the Azure Key Vault to store secrets.
       endpoint: "your-endpoint"
+
 
 # These properties are used to pass the EBSI Holder Wallet Test
 ebsi:

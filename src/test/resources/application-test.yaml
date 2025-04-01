@@ -5,6 +5,9 @@ spring:
   main:
     # Specifies that this is a reactive application (Spring WebFlux)
     web-application-type: reactive
+  # Sets a common base path prefix for all WebFlux routes
+  webflux:
+    base-path: /api
   r2dbc:
     # The database connection URL for R2DBC (REQUIRED)
     url: "r2dbc:postgresql://localhost:5434/wallet?schema=wallet"
@@ -15,75 +18,25 @@ spring:
   flyway:
     # The JDBC URL used by Flyway for database schema migrations (REQUIRED)
     url: "jdbc:postgresql://localhost:5434/wallet?schema=wallet"
-    # Defines the path where Flyway should look for SQL migration scripts (NON-CONFIGURABLE = Not in Helm)
+    # Defines the path where Flyway should look for SQL migration scripts (Not in Helm)
     locations: classpath:db/migration
     # The database username used by Flyway to execute migrations (REQUIRED)
     user: "postgres"
     # The database password used by Flyway to execute migrations (REQUIRED)
     password: "postgres"
-    # Specifies the default schema in which Flyway should apply migrations (NON-CONFIGURABLE = Not in Helm)
+    # Specifies the default schema in which Flyway should apply migrations (Not in Helm)
     default-schema: wallet
 
-
-logging:
-  pattern:
-    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
-  level:
-    # Sets logging level for the custom package "es.in2.wallet"
-    es.in2.wallet: INFO
-
-# he tret health, info, tracing com vam fer a verifier
-# NON-CONFIGURABLE = Not in Helm
-management:
-  endpoints:
-    # Disables all management endpoints by default
-    enabled-by-default: false
-    web:
-      exposure:
-        # Specifies the enabled management endpoints
-        include: health, prometheus
-      # Sets the base path for management endpoints
-      base-path: /
-      path-mapping:
-        # Maps the health endpoint to /health
-        health: health
-        # Maps the Prometheus metrics endpoint to /prometheus
-        prometheus: prometheus
-  endpoint:
-    health:
-      # Enables the health endpoint
-      enabled: true
-      # Always show detailed health information
-      show-details: always
-      vault:
-        enabled: false
-    prometheus:
-      enabled: true
-
-# NON-CONFIGURABLE = Not in Helm
-springdoc:
-  api-docs:
-    # Defines the endpoint for OpenAPI documentation
-    path: /api-docs
-  swagger-ui:
-    # Defines the path to access Swagger UI
-    path: /swagger-ui.html
-    # Sorts tags alphabetically in the Swagger UI
-    tags-sorter: alpha
-    # Sorts API operations by HTTP method (GET, POST, etc.)
-    operations-sorter: method
-
-# used to be configured in each application-*.yaml, SHOULD BE ADDED TO HELM
 server:
   # Defines the port on which the application will run
   port: 8080
 
 app:
   config-source:
-    # currently can be yaml or azure (NON-CONFIGURABLE = not in Helm)
+    #currently can be yaml or azure (Not in Helm)
     name: yaml
 
-# Not configured in Helm
+# Not in Helm
 azure:
   app:
     endpoint: ${APP_CONFIG_ENDPOINT}
@@ -91,36 +44,27 @@ azure:
       global: service-discovery
 
 security:
-  # These properties will be removed in the future
   auth-server:
+    # (REQUIRED) External URL of the authentication server, accessible by clients (e.g. frontend apps, browser).
     external-url:
-      # REQUIRED
-      domain: "external.example.com" # a in2-dome-gitops es passa keycloak-dev.ssihub.org
-      # REQUIRED
-      path: "/external" # a in2-dome-gitops es passa /realms/[tenant]-wallet
+    # (REQUIRED) Internal URL of the authentication server, used by services within the cluster or private network.
     internal-url:
-      # REQUIRED --de moment es deixa hardcoded a Helm
-      domain: "internal.example.com"
-      # REQUIRED
-      path: "/internal"
   cors:
-    # used to be configured in each application-*.yaml, should be added to Helm (OPTIONAL)
+    # Defines (OPTIONAL) a list of allowed origins for Cross-Origin Resource Sharing (CORS) requests.
+    # Useful to restrict access to specific frontend domains.
     allowedOrigins:
+  # Configures vault providers to store user secret keys
   vault:
     provider:
-    # currently can be hashicorp or azure (NON-CONFIGURABLE = not in Helm)
+      # Name of the vault provider to use (e.g. 'hashicorp' or 'azure').
       name: hashicorp
     hashicorp:
-      # REQUIRED
-      host: localhost
-      # REQUIRED
-      port: 8201
-      # REQUIRED
-      scheme: http
-      # REQUIRED
-      token: your-token
-    # (NON-CONFIGURABLE = not in Helm)
+      # (REQUIRED) URL of the HashiCorp Vault server (e.g. http://vault:8200).
+      url:
+      # (REQUIRED) Token used to authenticate with HashiCorp Vault.
+      token:
     azure:
+      # (Not in Helm) Endpoint of the Azure Key Vault to store secrets.
       endpoint: "your-endpoint"
 
 
@@ -128,13 +72,13 @@ security:
 ebsi:
   test:
     # (REQUIRED)
-    url: "http://dome-wallet-keycloak:8080/keycloak/realms/wallet/protocol/openid-connect/token"
-    # todo take from secret (REQUIRED)
-    client-secret: "fV51P8jFBo8VnFKMMuP3imw3H3i5mNck"
+    url: "https://keycloak-dev.ssihub.org/realms/in2-wallet/protocol/openid-connect/token"
     # (REQUIRED)
-    client-id: user-registry-client
+    client-secret:
+    # (not in Helm)
+    client-id: "user-registry-client"
+    # (not in Helm)
+    username: "defaultuser"
     # (REQUIRED)
-    username: wallet-secret
-    # todo take from secret (REQUIRED)
-    password: adminPass
+    password: "defaultpassword"
 
