@@ -45,5 +45,5 @@ public class ApplicationConstants {
     public static final Integer VERIFIABLE_PRESENTATION_EXPIRATION_TIME = 180;
     public static final String VERIFIABLE_PRESENTATION_EXPIRATION_UNIT = "SECONDS";
     public static final String AUTH_SERVER_JWT_DECODER_PATH = "/protocol/openid-connect/certs";
-    public static final String VAULT_HASHICORP_PATH = "kv/wallet";
+    public static final String VAULT_HASHICORP_PATH = "/kv";
 }
