@@ -69,11 +69,6 @@ class PresentationServiceImplTest {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just(userId));
 
-            Long expirationTime = 10L;
-            when(appConfig.getCredentialPresentationExpirationTime()).thenReturn(expirationTime);
-
-            when(appConfig.getCredentialPresentationExpirationUnit()).thenReturn("minutes");
-
             // Simulate the user data service returning a list of verifiable credential JWTs
             when(credentialService.getCredentialDataByIdAndUserId(processId,userId,credentialsBasicInfo.id())).thenReturn(Mono.just(vcJwt));
 

@@ -10,6 +10,9 @@ import org.springframework.vault.authentication.TokenAuthentication;
 import org.springframework.vault.client.VaultEndpoint;
 import org.springframework.vault.config.AbstractReactiveVaultConfiguration;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 @Component
 @RequiredArgsConstructor
 @VaultProviderAnnotation(provider = VaultProviderEnum.HASHICORP)
@@ -17,22 +20,35 @@ public class HashicorpKeyVaultConfig extends AbstractReactiveVaultConfiguration 
 
     private final HashicorpConfig hashicorpConfig;
 
+
     @Override
     @NonNull
     public VaultEndpoint vaultEndpoint() {
-        VaultEndpoint vaultEndpoint = new VaultEndpoint();
+        String urlStr = hashicorpConfig.getVaultUrl();
+        try {
+            URL url = new URL(urlStr);
 
-        vaultEndpoint.setHost(hashicorpConfig.getVaultHost());
-        vaultEndpoint.setPort(hashicorpConfig.getVaultPort());
-        vaultEndpoint.setScheme(hashicorpConfig.getVaultScheme());
+            VaultEndpoint vaultEndpoint = new VaultEndpoint();
+            vaultEndpoint.setHost(url.getHost());
 
-        return vaultEndpoint;
+            int port = url.getPort();
+            if (port == -1) {
+                port = url.getProtocol().equals("https") ? 443 : 80;
+            }
+            vaultEndpoint.setPort(port);
+
+            vaultEndpoint.setScheme(url.getProtocol());
+            return vaultEndpoint;
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Invalid Vault URL: " + urlStr, e);
+        }
     }
 
     @Override
     @NonNull
     public ClientAuthentication clientAuthentication() {
-        return new TokenAuthentication(hashicorpConfig.getVaultToken());
+        String token = hashicorpConfig.getVaultToken();
+        return new TokenAuthentication(token);
     }
 
 }

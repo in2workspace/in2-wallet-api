@@ -67,20 +67,10 @@ public class AuthorisationServerMetadataServiceImpl implements AuthorisationServ
      *
      * @param response The response String to be parsed.
      * @return An instance of Mono<AuthorisationServerMetadata>.
-     * @deprecated (since = " 1.0.0 ", forRemoval = true) This implementation is temporary and should be replaced in future versions.
      */
-    @Deprecated(since = ".0.0", forRemoval = true)
     private Mono<AuthorisationServerMetadata> parseCredentialIssuerMetadataResponse(String response) {
         try {
             AuthorisationServerMetadata authorisationServerMetadata = objectMapper.readValue(response, AuthorisationServerMetadata.class);
-            if (authorisationServerMetadata.tokenEndpoint().startsWith(appConfig.getAuthServerExternalUrl())) {
-                AuthorisationServerMetadata authorisationServerMetadataWithTokenEndpointHardcoded = AuthorisationServerMetadata.builder()
-                        .issuer(authorisationServerMetadata.issuer())
-                        .authorizationEndpoint(authorisationServerMetadata.authorizationEndpoint())
-                        .tokenEndpoint(appConfig.getAuthServerTokenEndpoint())
-                        .build();
-                return Mono.just(authorisationServerMetadataWithTokenEndpointHardcoded);
-            }
 
             // deserialize Credential Issuer Metadata
             return Mono.just(authorisationServerMetadata);

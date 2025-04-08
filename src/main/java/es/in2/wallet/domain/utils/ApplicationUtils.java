@@ -114,6 +114,7 @@ public class ApplicationUtils {
             return signedJwt.getJWTClaimsSet().getClaim("response_type").toString();
         });
     }
+
     public static String formatUrl(String scheme, String domain, Integer port, String path) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance()
                 .scheme(scheme)
