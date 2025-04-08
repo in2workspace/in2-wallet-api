@@ -17,9 +17,22 @@ public record AuthorizationRequestOIDC4VP(
         @JsonProperty("state") String state,
         @JsonProperty("nonce") String nonce,
         @JsonProperty("response_uri") String responseUri,
+        @JsonProperty("dcql_query") DcqlQuery dcqlQuery
+        /*TODO Aquí tambien le agrego un @JsonProperty con el format ??
+        TODO Ya no se utilizan :
         @JsonProperty("presentation_definition") String presentationDefinition,
         @JsonProperty("presentation_definition_uri") String presentationDefinitionUri,
-        @JsonProperty("client_metadata") String clientMetadata
+        @JsonProperty("client_metadata") String clientMetadata*/
 
 ) {
+    @Builder
+    public record DcqlQuery(
+            @JsonProperty("credentials") List<DcqlCredential> credentials
+    ) {}
+
+    @Builder
+    public record DcqlCredential(
+            @JsonProperty("id") String id,
+            @JsonProperty("format") String format
+    ) {}
 }

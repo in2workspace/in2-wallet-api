@@ -51,17 +51,16 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
     }
 
     private Mono<SignedJWT> checkJwtClaims(String processId, SignedJWT signedJWTAuthorizationRequest) {
-        Map<String, Object> claims = signedJWTAuthorizationRequest.getPayload().toJSONObject();
-        boolean hasDcql = claims.containsKey("dcql_query");
-        if (!hasDcql ) {
-            log.warn("ProcessID: {} - Missing both dcql_query and presentation_definition", processId);
-            return Mono.error(new IllegalArgumentException("Authorization Request must include either 'dcql_query'"));
-        }
-        String type = (String) claims.get("type");
-        if (!"oauth-authz-req+jwt".equals(type)) {
+        Map<String, Object> claimsHeader  = signedJWTAuthorizationRequest.getHeader().toJSONObject();
+        if (!"oauth-authz-req+jwt".equals(claimsHeader.get("type").toString())) {
             String errorMessage = "Invalid or missing 'type' claim in Authorization Request. Expected: oauth-authz-req+jwt";
             log.warn("ProcessID: {} - {}", processId, errorMessage);
             return Mono.error(new IllegalArgumentException(errorMessage));
+        }
+        Map<String, Object> claimsPayload = signedJWTAuthorizationRequest.getPayload().toJSONObject();
+        if (!claimsPayload.containsKey("dcql_query")) {
+            log.warn("ProcessID: {} - Missing both dcql_query and presentation_definition", processId);
+            return Mono.error(new IllegalArgumentException("Authorization Request must include either 'dcql_query'"));
         }
         return Mono.just(signedJWTAuthorizationRequest);
     }

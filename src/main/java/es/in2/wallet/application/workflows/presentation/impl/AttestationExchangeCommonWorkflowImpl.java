@@ -35,15 +35,19 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
         return authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent)
                 .flatMap(jwtAuthorizationRequest -> verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
                 .flatMap(jwtAuthorizationRequest -> authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
-                .flatMap(authorizationRequest -> getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, authorizationRequest.scope())
-                .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
+                .flatMap(authorizationRequest ->{
+                    //TODO como lo ves para no tener que modificar la Interfaz o mejor genero un metodo nuevo como privado para esta clase ?
+                    List<String> credentialIds = authorizationRequest.dcqlQuery().credentials().stream()
+                            .map(AuthorizationRequestOIDC4VP.DcqlCredential::id).toList();
+                    return getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken,credentialIds)
+                        .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials));
+                });
     }
 
-
     @Override
-    public Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> scope) {
+    public Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> credentialIds) {
         return getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> Flux.fromIterable(scope)
+                .flatMap(userId -> Flux.fromIterable(credentialIds)
                         .flatMap(element -> {
                             // Verificar si el elemento es igual a LEAR_CREDENTIAL_EMPLOYEE_SCOPE
                             String credentialType = element.equals(LEAR_CREDENTIAL_EMPLOYEE_SCOPE)
