@@ -59,7 +59,7 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
         }
         Map<String, Object> claimsPayload = signedJWTAuthorizationRequest.getPayload().toJSONObject();
         if (!claimsPayload.containsKey("dcql_query")) {
-            log.warn("ProcessID: {} - Missing both dcql_query and presentation_definition", processId);
+            log.warn("ProcessID: {} - Missing both dcql_query", processId);
             return Mono.error(new IllegalArgumentException("Authorization Request must include either 'dcql_query'"));
         }
         return Mono.just(signedJWTAuthorizationRequest);
