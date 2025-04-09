@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
+import es.in2.wallet.infrastructure.appconfiguration.exception.AccessDeniedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -74,7 +75,7 @@ public class ApplicationUtils {
                         JsonNode jsonObject = new ObjectMapper().readTree(parsedVcJwt.getPayload().toString());
                         return Mono.just(jsonObject.get("sub").asText());
                     } catch (ParseException | JsonProcessingException e) {
-                        return Mono.error(e);
+                        return Mono.error(new AccessDeniedException("Access denied: Unable to parse the token or retrieve the 'sub' claim."));
                     }
                 })
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Invalid")));
