@@ -3,9 +3,9 @@ package es.in2.wallet.application.workflows.processor.impl;
 import es.in2.wallet.application.workflows.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.application.workflows.issuance.CredentialIssuanceEbsiWorkflow;
 import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
-import es.in2.wallet.domain.exceptions.NoSuchQrContentException;
 import es.in2.wallet.application.dto.QrType;
 import es.in2.wallet.application.workflows.processor.QrCodeProcessorWorkflow;
+import es.in2.wallet.infrastructure.appconfiguration.exception.WalletUnavailableException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,9 +48,9 @@ public class QrCodeProcessorWorkflowImpl implements QrCodeProcessorWorkflow {
 
                         }
                         case UNKNOWN: {
-                            String errorMessage = "The received QR content cannot be processed";
-                            log.warn(errorMessage);
-                            return Mono.error(new NoSuchQrContentException(errorMessage));
+                            String errorMessage = "Wallet unavailable: unsupported or unrecognized QR content";
+                            log.warn("ProcessID: {} - {}", processId, errorMessage);
+                            return Mono.error(new WalletUnavailableException(errorMessage));
                         }
                         default: {
                             return Mono.empty();

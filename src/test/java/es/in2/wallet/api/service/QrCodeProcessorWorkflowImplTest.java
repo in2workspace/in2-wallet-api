@@ -3,9 +3,9 @@ package es.in2.wallet.api.service;
 import es.in2.wallet.application.workflows.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.application.workflows.issuance.CredentialIssuanceEbsiWorkflow;
 import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
-import es.in2.wallet.domain.exceptions.NoSuchQrContentException;
 import es.in2.wallet.application.dto.VcSelectorRequest;
 import es.in2.wallet.application.workflows.processor.impl.QrCodeProcessorWorkflowImpl;
+import es.in2.wallet.infrastructure.appconfiguration.exception.WalletUnavailableException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -131,7 +131,7 @@ class QrCodeProcessorWorkflowImplTest {
         String authorizationToken = "authToken";
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
-                .expectError(NoSuchQrContentException.class)
+                .expectError(WalletUnavailableException.class)
                 .verify();
     }
 
@@ -140,11 +140,12 @@ class QrCodeProcessorWorkflowImplTest {
         String qrContent = "unknownContent";
         String processId = "processId";
         String authorizationToken = "authToken";
-        String expectedErrorMessage = "The received QR content cannot be processed";
+        String expectedErrorMessage = "Wallet unavailable: unsupported or unrecognized QR content";
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
-                .expectErrorMatches(throwable -> throwable instanceof NoSuchQrContentException &&
-                        expectedErrorMessage.equals(throwable.getMessage()))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof WalletUnavailableException &&
+                                expectedErrorMessage.equals(throwable.getMessage()))
                 .verify();
     }
 }
