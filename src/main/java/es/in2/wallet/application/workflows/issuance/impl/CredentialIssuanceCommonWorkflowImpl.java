@@ -3,7 +3,6 @@ package es.in2.wallet.application.workflows.issuance.impl;
 import es.in2.wallet.application.dto.*;
 import es.in2.wallet.application.workflows.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.domain.services.*;
-import es.in2.wallet.infrastructure.appconfiguration.exception.VpFormatsNotSupportedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -143,7 +142,7 @@ public class CredentialIssuanceCommonWorkflowImpl implements CredentialIssuanceC
                                                 authorisationServerMetadata,
                                                 tuple.getT1());
                                     } else {
-                                        return Mono.error(new VpFormatsNotSupportedException("Not known response_type."));
+                                        return Mono.error(new RuntimeException("Not known response_type."));
                                     }
                                 })
                                 .flatMap(params -> ebsiAuthorisationService.sendTokenRequest(

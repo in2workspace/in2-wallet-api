@@ -6,6 +6,7 @@ import es.in2.wallet.application.dto.VcSelectorRequest;
 import es.in2.wallet.application.dto.VcSelectorResponse;
 import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
 import es.in2.wallet.domain.services.*;
+import es.in2.wallet.infrastructure.appconfiguration.exception.VpFormatsNotSupportedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,13 +36,8 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
         return authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent)
                 .flatMap(jwtAuthorizationRequest -> verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
                 .flatMap(jwtAuthorizationRequest -> authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
-                .flatMap(authorizationRequest ->{
-                    //TODO como lo ves para no tener que modificar la Interfaz o mejor genero un metodo nuevo como privado para esta clase ?
-                    List<String> credentialIds = authorizationRequest.dcqlQuery().credentials().stream()
-                            .map(AuthorizationRequestOIDC4VP.DcqlCredential::id).toList();
-                    return getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken,credentialIds)
-                        .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials));
-                });
+                .flatMap(authorizationRequest -> getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken,getCredentialIdsWithSupportedFormats(authorizationRequest))
+                        .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
     }
 
     @Override
@@ -101,6 +97,20 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
 
     }
 
+    private List<String> getCredentialIdsWithSupportedFormats(AuthorizationRequestOIDC4VP authorizationRequest) {
+        List<String> supportedFormats = List.of("jwt_vc_json");
+        boolean allFormatsSupported = authorizationRequest.dcqlQuery().credentials()
+                .stream()
+                .map(AuthorizationRequestOIDC4VP.DcqlCredential::format)
+                .allMatch(supportedFormats::contains);
+        if (!allFormatsSupported) {
+            throw new VpFormatsNotSupportedException("At least one credential format is not supported by the wallet");
+        }
+        return authorizationRequest.dcqlQuery().credentials()
+                .stream()
+                .map(AuthorizationRequestOIDC4VP.DcqlCredential::id)
+                .toList();
+    }
 
     private static Mono<String> generateAudience() {
         return Mono.just("https://self-issued.me/v2");

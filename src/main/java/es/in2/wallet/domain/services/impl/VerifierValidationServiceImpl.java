@@ -7,6 +7,7 @@ import es.in2.wallet.domain.exceptions.JwtInvalidFormatException;
 import es.in2.wallet.domain.exceptions.ParseErrorException;
 import es.in2.wallet.application.dto.UVarInt;
 import es.in2.wallet.domain.services.VerifierValidationService;
+import es.in2.wallet.infrastructure.appconfiguration.exception.ClientIdMismatchException;
 import es.in2.wallet.infrastructure.appconfiguration.exception.InvalidClientException;
 import es.in2.wallet.infrastructure.appconfiguration.exception.InvalidRequestException;
 import io.ipfs.multibase.Base58;
@@ -54,14 +55,15 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
 
     private Mono<SignedJWT> checkJwtClaims(String processId, SignedJWT signedJWTAuthorizationRequest) {
         Map<String, Object> claimsHeader  = signedJWTAuthorizationRequest.getHeader().toJSONObject();
-        if (!"oauth-authz-req+jwt".equals(claimsHeader.get("type").toString())) {
+        Object typeClaim = claimsHeader.get("type");
+        if (typeClaim == null || !"oauth-authz-req+jwt".equals(typeClaim.toString())) {
             String errorMessage = "Invalid or missing 'type' claim in Authorization Request. Expected: oauth-authz-req+jwt";
             log.warn("ProcessID: {} - {}", processId, errorMessage);
             return Mono.error(new IllegalArgumentException(errorMessage));
         }
         Map<String, Object> claimsPayload = signedJWTAuthorizationRequest.getPayload().toJSONObject();
         if (!claimsPayload.containsKey("dcql_query")) {
-            log.warn("ProcessID: {} - Missing both dcql_query", processId);
+            log.warn("ProcessID: {} - Missing dcql_query parameter", processId);
             return Mono.error(new InvalidRequestException("Authorization Request must include either 'dcql_query'"));
         }
         return Mono.just(signedJWTAuthorizationRequest);
@@ -80,15 +82,14 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
         String clientId = (String) jsonPayload.get("client_id");
         return Mono.fromCallable(() -> {
                     if (clientId == null || clientId.isEmpty()) {
-                        return Mono.error(new InvalidClientException("client_id not found in the auth_request"));
+                        throw new InvalidClientException("client_id not found in the auth_request");
                     }
                     return clientId;
                 })
                 .doOnSuccess(id -> log.info("ProcessID: {} - client_id retrieved successfully: {}", processId, id))
                 .flatMap(id -> {
                     if (!id.equals(iss)) {
-                        return Mono.error(new InvalidClientException("iss and sub MUST be the DID of the RP and must " +
-                                "correspond to the client_id parameter in the Authorization Request"));
+                        return Mono.error(new ClientIdMismatchException("iss and sub MUST be the DID of the RP and must correspond to the client_id parameter in the Authorization Request"));
                     } else {
                         return Mono.just(signedJWTAuthorizationRequest);
                     }

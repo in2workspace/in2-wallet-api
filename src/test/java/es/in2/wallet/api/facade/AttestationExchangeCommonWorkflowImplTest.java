@@ -44,9 +44,13 @@ class AttestationExchangeCommonWorkflowImplTest {
             String authorizationToken = "authToken";
             String qrContent = "qrContent";
             String jwtAuthorizationRequest = "authRequest";
-            AuthorizationRequestOIDC4VP authorizationRequestOIDC4VP = AuthorizationRequestOIDC4VP.builder().scope(List.of("scope1")).responseUri("responseUri").state("state").build();
+
+            AuthorizationRequestOIDC4VP.DcqlCredential credential = AuthorizationRequestOIDC4VP.DcqlCredential.builder().id("scope1").format("jwt_vc_json").build();
+            AuthorizationRequestOIDC4VP.DcqlQuery dcqlQuery = AuthorizationRequestOIDC4VP.DcqlQuery.builder().credentials(List.of(credential)).build();
+            AuthorizationRequestOIDC4VP authorizationRequestOIDC4VP = AuthorizationRequestOIDC4VP.builder().scope(List.of("scope1")).responseUri("responseUri").state("state").dcqlQuery(dcqlQuery).build();
             CredentialsBasicInfo credentialsBasicInfo = CredentialsBasicInfo.builder().build();
-            VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder().redirectUri("responseUri").state("state").selectableVcList(List.of(credentialsBasicInfo)).build();
+            VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder().redirectUri("responseUri").state("state").nonce(null).selectableVcList(List.of(credentialsBasicInfo)).build();
+
             when(authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent)).thenReturn(Mono.just(jwtAuthorizationRequest));
             when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(jwtAuthorizationRequest));
             when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(authorizationRequestOIDC4VP));

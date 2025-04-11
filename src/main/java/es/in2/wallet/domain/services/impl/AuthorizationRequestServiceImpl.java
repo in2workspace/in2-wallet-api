@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JWSObject;
 import es.in2.wallet.application.dto.AuthorizationRequestOIDC4VP;
 import es.in2.wallet.domain.services.AuthorizationRequestService;
-import es.in2.wallet.infrastructure.appconfiguration.exception.InvalidRequestUriMethodException;
+import es.in2.wallet.infrastructure.appconfiguration.exception.MissingAuthorizationRequestParameterException;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +56,7 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
         } else if (params.get("request") != null) {
             return Mono.just(params.get("request"));
         } else {
-            return Mono.error(new InvalidRequestUriMethodException("theres any request found in parameters"));
+            return Mono.error(new MissingAuthorizationRequestParameterException("Expected 'request' or 'request_uri' in parameters"));
         }
     }
 
