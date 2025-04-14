@@ -1,6 +1,7 @@
 package es.in2.wallet.api.service;
 
 import es.in2.wallet.domain.exceptions.JwtInvalidFormatException;
+import es.in2.wallet.domain.exceptions.ParseErrorException;
 import es.in2.wallet.domain.services.impl.VerifierValidationServiceImpl;
 import es.in2.wallet.infrastructure.appconfiguration.exception.InvalidRequestException;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.test.StepVerifier;
 
 import java.util.Base64;
+
 
 @ExtendWith(MockitoExtension.class)
 class VerifierValidationServiceImplTest {
@@ -85,4 +87,71 @@ class VerifierValidationServiceImplTest {
                                 throwable.getMessage().contains("dcql_query"))
                 .verify();
     }
+    @Test
+    void testVerifyIssuerOfTheAuthorizationRequest_shouldReturnJwt_whenDcqlQueryIsPresent() {
+        String processId = "123";
+
+        // Header con claim 'type' correcto y un 'kid' válido
+        String header = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                "{\"alg\":\"HS256\",\"typ\":\"JWT\",\"type\":\"oauth-authz-req+jwt\",\"kid\":\"did:key:zXYZ\"}".getBytes()
+        );
+
+        // Payload CON el parámetro 'dcql_query' y 'client_id'
+        String payload = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                "{\"sub\":\"did:key:xyz\",\"iss\":\"did:key:xyz\",\"client_id\":\"did:key:xyz\",\"aud\":\"http://localhost:8080\",\"dcql_query\":{}}".getBytes()
+        );
+
+        // Firma dummy
+        String signature = "dummySignature";
+
+        String tokenWithDcqlQuery = String.format("%s.%s.%s", header, payload, signature);
+
+        StepVerifier.create(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, tokenWithDcqlQuery))
+                .expectError(ParseErrorException.class)
+                .verify();
+    }
+
+    @Test
+    void testValidateVerifierClaims_shouldThrowInvalidClientException_whenClientIdIsMissing() {
+        String processId = "123";
+
+        String header = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                "{\"alg\":\"HS256\",\"typ\":\"JWT\",\"type\":\"oauth-authz-req+jwt\",\"kid\":\"did:key:xyz\"}".getBytes());
+
+        String payload = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                "{\"iss\":\"did:key:xyz\",\"sub\":\"did:key:xyz\",\"aud\":\"http://localhost:8080\",\"dcql_query\":{}}".getBytes());
+
+        String signature = "dummySignature";
+
+        String token = String.format("%s.%s.%s", header, payload, signature);
+
+        StepVerifier.create(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, token))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof ParseErrorException &&
+                                throwable.getMessage().contains("client_id not found"))
+                .verify();
+    }
+
+    @Test
+    void testValidateVerifierClaims_shouldThrowClientIdMismatchException_whenClientIdDiffersFromIss() {
+        String processId = "123";
+
+        String header = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                "{\"alg\":\"HS256\",\"typ\":\"JWT\",\"type\":\"oauth-authz-req+jwt\",\"kid\":\"did:key:xyz\"}".getBytes());
+
+        // client_id distinto del iss → debería lanzar ClientIdMismatchException envuelto en ParseErrorException
+        String payload = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                "{\"iss\":\"did:key:xyz\",\"sub\":\"did:key:xyz\",\"client_id\":\"did:key:diferente\",\"aud\":\"http://localhost:8080\",\"dcql_query\":{}}".getBytes());
+
+        String signature = "dummySignature";
+        String token = String.format("%s.%s.%s", header, payload, signature);
+
+        StepVerifier.create(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, token))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof ParseErrorException &&
+                                throwable.getMessage().contains("MUST be the DID of the RP"))
+                .verify();
+    }
+
+
 }

@@ -7,6 +7,7 @@ import es.in2.wallet.application.dto.VcSelectorResponse;
 import es.in2.wallet.application.workflows.presentation.impl.AttestationExchangeCommonWorkflowImpl;
 import es.in2.wallet.domain.services.*;
 import es.in2.wallet.domain.utils.ApplicationUtils;
+import es.in2.wallet.infrastructure.appconfiguration.exception.VpFormatsNotSupportedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,7 +37,6 @@ class AttestationExchangeCommonWorkflowImplTest {
     private PresentationService presentationService;
     @InjectMocks
     private AttestationExchangeCommonWorkflowImpl attestationExchangeServiceFacade;
-
     @Test
     void getSelectableCredentialsRequiredToBuildThePresentationTest() {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
@@ -82,6 +82,48 @@ class AttestationExchangeCommonWorkflowImplTest {
 
         StepVerifier.create(attestationExchangeServiceFacade.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse))
                 .verifyComplete();
+    }
+    @Test
+    void processAuthorizationRequest_shouldThrowVpFormatsNotSupportedException_whenUnsupportedFormatIsPresent() {
+        // Arrange
+        String processId = "123";
+        String authorizationToken = "authToken";
+        String qrContent = "qrContent";
+        String jwtAuthorizationRequest = "jwtRequest";
+
+        // Credential con formato no soportado
+        AuthorizationRequestOIDC4VP.DcqlCredential unsupportedCredential =
+                AuthorizationRequestOIDC4VP.DcqlCredential.builder()
+                        .id("unsupported-scope")
+                        .format("ldp_vc") // Este formato no está soportado
+                        .build();
+
+        AuthorizationRequestOIDC4VP.DcqlQuery dcqlQuery =
+                AuthorizationRequestOIDC4VP.DcqlQuery.builder()
+                        .credentials(List.of(unsupportedCredential))
+                        .build();
+
+        AuthorizationRequestOIDC4VP authorizationRequest =
+                AuthorizationRequestOIDC4VP.builder()
+                        .dcqlQuery(dcqlQuery)
+                        .build();
+
+        when(authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent))
+                .thenReturn(Mono.just(jwtAuthorizationRequest));
+
+        when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
+                .thenReturn(Mono.just(jwtAuthorizationRequest));
+
+        when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
+                .thenReturn(Mono.just(authorizationRequest));
+
+        // Act & Assert
+        StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof VpFormatsNotSupportedException &&
+                                throwable.getMessage().equals("At least one credential format is not supported by the wallet")
+                )
+                .verify();
     }
 
 }
