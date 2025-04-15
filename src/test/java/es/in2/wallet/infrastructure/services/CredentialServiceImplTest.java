@@ -10,6 +10,7 @@ import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.domain.entities.Credential;
 import es.in2.wallet.domain.enums.CredentialFormats;
 import es.in2.wallet.domain.enums.CredentialStatus;
+import es.in2.wallet.domain.exceptions.NoSuchVerifiableCredentialException;
 import es.in2.wallet.domain.repositories.CredentialRepository;
 import es.in2.wallet.domain.services.impl.CredentialServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -425,6 +426,40 @@ class CredentialServiceImplTest {
                 .verifyComplete();
     }
 
+    @Test
+    void testGetCredentialsByUserIdTypeAndFormat_shouldThrowWhenNoMatchingCredentials() {
+        // GIVEN
+        String processId = "proc123";
+        UUID userUuid = UUID.randomUUID();
+        String userId = userUuid.toString();
+        String requiredType = "LEARCredentialEmployee";
+        String format = "jwt_vc_json";
+
+        Credential credential = Credential.builder()
+                .credentialId(UUID.randomUUID())
+                .userId(userUuid)
+                .credentialFormat("ldp_vc")
+                .credentialType(List.of("VerifiableCredential", "SomeOtherType"))
+                .credentialStatus(CredentialStatus.VALID.toString())
+                .jsonVc("{}")
+                .build();
+
+        when(credentialRepository.findAllByUserId(userUuid))
+                .thenReturn(Flux.just(credential));
+
+        // WHEN
+        Mono<List<CredentialsBasicInfo>> result = credentialRepositoryService
+                .getCredentialsByUserIdTypeAndFormat(processId, userId, requiredType, format);
+
+        // THEN
+        StepVerifier.create(result)
+                .expectErrorMatches(ex ->
+                        ex instanceof NoSuchVerifiableCredentialException &&
+                                ex.getMessage().equals("No credentials found for userId=" + userId +
+                                        " with type=" + requiredType +
+                                        " in " + format + " format."))
+                .verify();
+    }
 
     private JsonNode getJsonNodeCredentialLearCredentialEmployee() throws JsonProcessingException {
         String json = """
