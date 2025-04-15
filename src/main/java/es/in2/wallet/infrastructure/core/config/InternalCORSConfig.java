@@ -25,8 +25,8 @@ public class InternalCORSConfig {
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        GLOBAL_ENDPOINTS instead of /**?
-        source.registerCorsConfiguration("/**", configuration);
+
+        source.registerCorsConfiguration(GLOBAL_ENDPOINTS_API, configuration);
         return source;
     }
 }

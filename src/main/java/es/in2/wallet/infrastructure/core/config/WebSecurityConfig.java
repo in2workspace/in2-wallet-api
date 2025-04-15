@@ -72,7 +72,7 @@ public class WebSecurityConfig {
         ReactiveJwtDecoder decoder = jwtDecoder();
 
         http
-                .securityMatcher(ServerWebExchangeMatchers.anyExchange())
+                .securityMatcher(ServerWebExchangeMatchers.pathMatchers(GLOBAL_ENDPOINTS_API))
                 .cors(cors -> cors.configurationSource(internalCorsConfigSource))
                 .authorizeExchange(exchanges -> exchanges
                         .anyExchange().authenticated()
