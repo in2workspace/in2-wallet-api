@@ -55,8 +55,7 @@ class AttestationExchangeCommonWorkflowImplTest {
             when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(jwtAuthorizationRequest));
             when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(authorizationRequestOIDC4VP));
             when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialService.getCredentialsByUserIdAndType(processId, "userId", "scope1")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
-
+            when(credentialService.getCredentialsByUserIdTypeAndFormat(processId, "userId", "scope1", "jwt_vc_json")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
             StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))
                     .expectNext(expectedVcSelectorRequest)
                     .verifyComplete();
@@ -83,19 +82,19 @@ class AttestationExchangeCommonWorkflowImplTest {
         StepVerifier.create(attestationExchangeServiceFacade.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse))
                 .verifyComplete();
     }
+
     @Test
     void processAuthorizationRequest_shouldThrowVpFormatsNotSupportedException_whenUnsupportedFormatIsPresent() {
-        // Arrange
         String processId = "123";
-        String authorizationToken = "authToken";
+        String authorizationToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                + "eyJzdWIiOiJ1c2VySWQxMjMifQ."
+                + "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"; // sub = "userId123"
         String qrContent = "qrContent";
         String jwtAuthorizationRequest = "jwtRequest";
-
-        // Credential con formato no soportado
         AuthorizationRequestOIDC4VP.DcqlCredential unsupportedCredential =
                 AuthorizationRequestOIDC4VP.DcqlCredential.builder()
                         .id("unsupported-scope")
-                        .format("ldp_vc") // Este formato no está soportado
+                        .format("ldp_vc")
                         .build();
 
         AuthorizationRequestOIDC4VP.DcqlQuery dcqlQuery =
@@ -106,6 +105,7 @@ class AttestationExchangeCommonWorkflowImplTest {
         AuthorizationRequestOIDC4VP authorizationRequest =
                 AuthorizationRequestOIDC4VP.builder()
                         .dcqlQuery(dcqlQuery)
+                        .scope(List.of("unsupported-scope"))
                         .build();
 
         when(authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent))
@@ -117,6 +117,10 @@ class AttestationExchangeCommonWorkflowImplTest {
         when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
                 .thenReturn(Mono.just(authorizationRequest));
 
+        when(credentialService.getCredentialsByUserIdTypeAndFormat(
+                processId, "userId123", "unsupported-scope", "jwt_vc_json"))
+                .thenReturn(Mono.error(new VpFormatsNotSupportedException("At least one credential format is not supported by the wallet")));
+
         // Act & Assert
         StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))
                 .expectErrorMatches(throwable ->
@@ -125,5 +129,4 @@ class AttestationExchangeCommonWorkflowImplTest {
                 )
                 .verify();
     }
-
 }

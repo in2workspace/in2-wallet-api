@@ -6,7 +6,6 @@ import es.in2.wallet.application.dto.VcSelectorRequest;
 import es.in2.wallet.application.dto.VcSelectorResponse;
 import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
 import es.in2.wallet.domain.services.*;
-import es.in2.wallet.infrastructure.appconfiguration.exception.VpFormatsNotSupportedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,6 +15,7 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.List;
 
+import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_VC_JSON;
 import static es.in2.wallet.domain.utils.ApplicationConstants.LEAR_CREDENTIAL_EMPLOYEE_SCOPE;
 import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 
@@ -36,8 +36,8 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
         return authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent)
                 .flatMap(jwtAuthorizationRequest -> verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
                 .flatMap(jwtAuthorizationRequest -> authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
-                .flatMap(authorizationRequest -> getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken,getCredentialIdsWithSupportedFormats(authorizationRequest))
-                        .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
+                .flatMap(authorizationRequest -> getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken,authorizationRequest.scope())
+                    .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
     }
 
     @Override
@@ -50,7 +50,7 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                                     ? "LEARCredentialEmployee"
                                     : element;
 
-                            return  credentialService.getCredentialsByUserIdAndType(processId, userId, credentialType);
+                            return  credentialService.getCredentialsByUserIdTypeAndFormat(processId, userId, credentialType,JWT_VC_JSON);
                         })
                         .collectList()  // This will collect all lists into a single list
                         .flatMap(lists -> {
@@ -95,21 +95,6 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                        .then()
                        .doOnTerminate(() -> log.info("Completed processing Verifiable Presentation for processId: {}", processId));
 
-    }
-
-    private List<String> getCredentialIdsWithSupportedFormats(AuthorizationRequestOIDC4VP authorizationRequest) {
-        List<String> supportedFormats = List.of("jwt_vc_json");
-        boolean allFormatsSupported = authorizationRequest.dcqlQuery().credentials()
-                .stream()
-                .map(AuthorizationRequestOIDC4VP.DcqlCredential::format)
-                .allMatch(supportedFormats::contains);
-        if (!allFormatsSupported) {
-            throw new VpFormatsNotSupportedException("At least one credential format is not supported by the wallet");
-        }
-        return authorizationRequest.dcqlQuery().credentials()
-                .stream()
-                .map(AuthorizationRequestOIDC4VP.DcqlCredential::id)
-                .toList();
     }
 
     private static Mono<String> generateAudience() {

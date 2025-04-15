@@ -8,7 +8,6 @@ import es.in2.wallet.domain.exceptions.ParseErrorException;
 import es.in2.wallet.application.dto.UVarInt;
 import es.in2.wallet.domain.services.VerifierValidationService;
 import es.in2.wallet.infrastructure.appconfiguration.exception.ClientIdMismatchException;
-import es.in2.wallet.infrastructure.appconfiguration.exception.InvalidClientException;
 import es.in2.wallet.infrastructure.appconfiguration.exception.InvalidRequestException;
 import io.ipfs.multibase.Base58;
 import lombok.RequiredArgsConstructor;
@@ -82,7 +81,7 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
         String clientId = (String) jsonPayload.get("client_id");
         return Mono.fromCallable(() -> {
                     if (clientId == null || clientId.isEmpty()) {
-                        throw new InvalidClientException("client_id not found in the auth_request");
+                        throw new ClientIdMismatchException("client_id not found in the auth_request");
                     }
                     return clientId;
                 })
