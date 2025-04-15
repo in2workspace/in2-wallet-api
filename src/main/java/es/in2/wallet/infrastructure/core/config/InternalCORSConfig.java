@@ -15,7 +15,7 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.ALLOWED_METHODS;
 @Configuration
 public class InternalCORSConfig {
 
-    @Bean
+    @Bean("internalCorsSource")
     public UrlBasedCorsConfigurationSource defaultCorsConfigurationSource(AppConfig appConfig) {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(appConfig.getCorsAllowedOrigins());

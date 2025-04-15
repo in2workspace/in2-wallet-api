@@ -3,6 +3,7 @@ package es.in2.wallet.infrastructure.core.config;
 import es.in2.wallet.application.ports.AppConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -44,7 +45,9 @@ public class WebSecurityConfig {
     // Public filter chain for public endpoints
     @Bean
     @Order(1)
-    public SecurityWebFilterChain publicFilterChain(ServerHttpSecurity http, UrlBasedCorsConfigurationSource publicCorsConfigSource) {
+    public SecurityWebFilterChain publicFilterChain(
+            ServerHttpSecurity http,
+            @Qualifier("publicCorsSource") UrlBasedCorsConfigurationSource publicCorsConfigSource) {
         http
                 .securityMatcher(ServerWebExchangeMatchers.pathMatchers(
                         ENDPOINT_PIN,
@@ -63,7 +66,9 @@ public class WebSecurityConfig {
     // Internal security configuration for internal endpoints
     @Bean
     @Order(2)
-    public SecurityWebFilterChain internalFilterChain(ServerHttpSecurity http, UrlBasedCorsConfigurationSource internalCorsConfigSource) {
+    public SecurityWebFilterChain internalFilterChain(
+            ServerHttpSecurity http,
+            @Qualifier("internalCorsSource") UrlBasedCorsConfigurationSource internalCorsConfigSource) {
         ReactiveJwtDecoder decoder = jwtDecoder();
 
         http
