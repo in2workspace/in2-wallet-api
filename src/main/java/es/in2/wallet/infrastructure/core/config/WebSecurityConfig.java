@@ -64,10 +64,10 @@ public class WebSecurityConfig {
     // Internal security configuration for internal endpoints
     @Bean
     @Order(2)
-    public SecurityWebFilterChain internalFilterChain(ServerHttpSecurity http) {
+    public SecurityWebFilterChain internalFilterChain(ServerHttpSecurity http, UrlBasedCorsConfigurationSource internalCorsConfigSource) {
         http
                 .securityMatcher(ServerWebExchangeMatchers.anyExchange())
-                .cors(cors -> internalCORSConfig.defaultCorsConfigurationSource())
+                .cors(cors -> cors.configurationSource((CorsConfigurationSource) internalCorsConfigSource))
                 .authorizeExchange(exchanges -> exchanges
                         .anyExchange().authenticated()
                 )

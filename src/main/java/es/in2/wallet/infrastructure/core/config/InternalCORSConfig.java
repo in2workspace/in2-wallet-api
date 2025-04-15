@@ -13,13 +13,10 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.GLOBAL_ENDPOINTS_A
 import static es.in2.wallet.domain.utils.ApplicationConstants.ALLOWED_METHODS;
 
 @Configuration
-@RequiredArgsConstructor
 public class InternalCORSConfig {
 
-    private final AppConfig appConfig;
-
     @Bean
-    public UrlBasedCorsConfigurationSource defaultCorsConfigurationSource() {
+    public UrlBasedCorsConfigurationSource defaultCorsConfigurationSource(AppConfig appConfig) {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(appConfig.getCorsAllowedOrigins());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
