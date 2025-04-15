@@ -17,7 +17,7 @@ public class PublicCORSConfig {
      * Public CORS configuration source for restricted access within the cluster.
      */
     @Bean
-    public UrlBasedCorsConfigurationSource publicCorsConfigurationSource(AppConfig appConfig) {
+    public UrlBasedCorsConfigurationSource publicCorsConfigSource(AppConfig appConfig) {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(appConfig.getCorsAllowedOrigins());

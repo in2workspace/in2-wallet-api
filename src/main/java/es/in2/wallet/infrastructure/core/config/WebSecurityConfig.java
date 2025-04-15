@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 
 import static es.in2.wallet.domain.utils.ApplicationConstants.*;
@@ -51,7 +51,7 @@ public class WebSecurityConfig {
                         ENDPOINT_HEALTH,
                         ENDPOINT_PROMETHEUS
                 ))
-                .cors(cors -> cors.configurationSource((CorsConfigurationSource) publicCorsConfigSource))
+                .cors(cors -> cors.configurationSource(publicCorsConfigSource))
                 .authorizeExchange(exchanges -> exchanges
                         .anyExchange().permitAll()
                 )
@@ -68,7 +68,7 @@ public class WebSecurityConfig {
 
         http
                 .securityMatcher(ServerWebExchangeMatchers.anyExchange())
-                .cors(cors -> cors.configurationSource((CorsConfigurationSource) internalCorsConfigSource))
+                .cors(cors -> cors.configurationSource(internalCorsConfigSource))
                 .authorizeExchange(exchanges -> exchanges
                         .anyExchange().authenticated()
                 )
