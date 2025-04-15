@@ -26,7 +26,6 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 public class WebSecurityConfig {
 
     private final AppConfig appConfig;
-    private final ReactiveJwtDecoder internalJwtDecoder;
     private final InternalCORSConfig internalCORSConfig;
     private final PublicCORSConfig publicCORSConfig;
 
@@ -65,6 +64,8 @@ public class WebSecurityConfig {
     @Bean
     @Order(2)
     public SecurityWebFilterChain internalFilterChain(ServerHttpSecurity http, UrlBasedCorsConfigurationSource internalCorsConfigSource) {
+        ReactiveJwtDecoder decoder = jwtDecoder();
+
         http
                 .securityMatcher(ServerWebExchangeMatchers.anyExchange())
                 .cors(cors -> cors.configurationSource((CorsConfigurationSource) internalCorsConfigSource))
@@ -75,7 +76,7 @@ public class WebSecurityConfig {
                 .oauth2ResourceServer(oauth2ResourceServer ->
                         oauth2ResourceServer
                                 .jwt(jwtSpec -> jwtSpec
-                                        .jwtDecoder(internalJwtDecoder))
+                                        .jwtDecoder(decoder))
                 );
 
         return http.build();
