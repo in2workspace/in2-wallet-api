@@ -56,8 +56,9 @@ class WebSecurityConfigTest {
         ServerHttpSecurity http = ServerHttpSecurity.http();
         SecurityWebFilterChain chain = webSecurityConfig.publicFilterChain(http, publicCorsSource);
 
-        assertThat(chain).isNotNull();
-        assertThat(chain).isInstanceOf(SecurityWebFilterChain.class);
+        assertThat(chain)
+                .isNotNull()
+                .isInstanceOf(SecurityWebFilterChain.class);
     }
 
     @Test
@@ -65,7 +66,8 @@ class WebSecurityConfigTest {
         ServerHttpSecurity http = ServerHttpSecurity.http();
         SecurityWebFilterChain chain = webSecurityConfig.internalFilterChain(http, internalCorsSource);
 
-        assertThat(chain).isNotNull();
-        assertThat(chain).isInstanceOf(SecurityWebFilterChain.class);
+        assertThat(chain)
+                .isNotNull()
+                .isInstanceOf(SecurityWebFilterChain.class);
     }
 }

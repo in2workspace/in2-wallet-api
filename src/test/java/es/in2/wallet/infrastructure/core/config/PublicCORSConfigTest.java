@@ -14,7 +14,7 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-public class PublicCORSConfigTest {
+class PublicCORSConfigTest {
 
     private AppConfig appConfig;
     private PublicCORSConfig publicCORSConfig;

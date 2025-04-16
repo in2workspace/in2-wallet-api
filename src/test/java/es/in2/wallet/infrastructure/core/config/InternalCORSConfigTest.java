@@ -13,7 +13,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-public class InternalCORSConfigTest {
+class InternalCORSConfigTest {
 
     private AppConfig appConfig;
     private InternalCORSConfig internalCORSConfig;
