@@ -5,7 +5,7 @@ import es.in2.wallet.application.workflows.issuance.CredentialIssuanceEbsiWorkfl
 import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
 import es.in2.wallet.application.dto.VcSelectorRequest;
 import es.in2.wallet.application.workflows.processor.impl.QrCodeProcessorWorkflowImpl;
-import es.in2.wallet.infrastructure.appconfiguration.exception.WalletUnavailableException;
+import es.in2.wallet.domain.exceptions.NoSuchQrContentException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -131,7 +131,7 @@ class QrCodeProcessorWorkflowImplTest {
         String authorizationToken = "authToken";
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
-                .expectError(WalletUnavailableException.class)
+                .expectError(NoSuchQrContentException.class)
                 .verify();
     }
 
@@ -140,11 +140,11 @@ class QrCodeProcessorWorkflowImplTest {
         String qrContent = "unknownContent";
         String processId = "processId";
         String authorizationToken = "authToken";
-        String expectedErrorMessage = "Wallet unavailable: unsupported or unrecognized QR content";
+        String expectedErrorMessage = "The received QR content cannot be processed";
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
                 .expectErrorMatches(throwable ->
-                        throwable instanceof WalletUnavailableException &&
+                        throwable instanceof NoSuchQrContentException &&
                                 expectedErrorMessage.equals(throwable.getMessage()))
                 .verify();
     }
