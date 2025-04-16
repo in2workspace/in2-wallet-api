@@ -24,7 +24,7 @@ class VerifierValidationServiceImplTest {
         String invalidToken = "invalid_jwt";
 
         StepVerifier.create(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, invalidToken))
-                .expectErrorMatches(throwable -> throwable instanceof JwtInvalidFormatException)
+                .expectErrorMatches(JwtInvalidFormatException.class::isInstance)
                 .verify();
     }
 
@@ -34,7 +34,7 @@ class VerifierValidationServiceImplTest {
         String invalidToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaXNzIjoicyIsImF1dGhfcmVxdWVzdCI6Im5uIiwiaWF0IjoxNTE2MjM5MDIyfQ.CCos8azCLWoYMAsj9k7_ceIJ6JY3E0fzBn3imxwR4Dw";
 
         StepVerifier.create(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, invalidToken))
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException)
+                .expectErrorMatches(IllegalArgumentException.class::isInstance)
                 .verify();
     }
 
