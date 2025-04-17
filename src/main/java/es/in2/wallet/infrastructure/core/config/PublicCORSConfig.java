@@ -25,7 +25,6 @@ public class PublicCORSConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(appConfig.getCorsAllowedOrigins());
-        // todo remove POST?
         configuration.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
