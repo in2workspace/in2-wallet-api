@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.List;
 
+import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_VC_JSON;
 import static es.in2.wallet.domain.utils.ApplicationConstants.LEAR_CREDENTIAL_EMPLOYEE_SCOPE;
 import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 
@@ -35,22 +36,21 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
         return authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent)
                 .flatMap(jwtAuthorizationRequest -> verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
                 .flatMap(jwtAuthorizationRequest -> authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
-                .flatMap(authorizationRequest -> getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, authorizationRequest.scope())
-                .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
+                .flatMap(authorizationRequest -> getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken,authorizationRequest.scope())
+                    .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
     }
 
-
     @Override
-    public Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> scope) {
+    public Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> credentialIds) {
         return getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> Flux.fromIterable(scope)
+                .flatMap(userId -> Flux.fromIterable(credentialIds)
                         .flatMap(element -> {
                             // Verificar si el elemento es igual a LEAR_CREDENTIAL_EMPLOYEE_SCOPE
                             String credentialType = element.equals(LEAR_CREDENTIAL_EMPLOYEE_SCOPE)
                                     ? "LEARCredentialEmployee"
                                     : element;
 
-                            return  credentialService.getCredentialsByUserIdAndType(processId, userId, credentialType);
+                            return  credentialService.getCredentialsByUserIdTypeAndFormat(processId, userId, credentialType,JWT_VC_JSON);
                         })
                         .collectList()  // This will collect all lists into a single list
                         .flatMap(lists -> {
@@ -96,7 +96,6 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                        .doOnTerminate(() -> log.info("Completed processing Verifiable Presentation for processId: {}", processId));
 
     }
-
 
     private static Mono<String> generateAudience() {
         return Mono.just("https://self-issued.me/v2");
