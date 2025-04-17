@@ -48,9 +48,12 @@ public class WebSecurityConfig {
     public SecurityWebFilterChain publicFilterChain(ServerHttpSecurity http) {
         http
                 .securityMatcher(ServerWebExchangeMatchers.matchers(
-                        ServerWebExchangeMatchers.pathMatchers(HttpMethod.GET, ENDPOINT_PIN),
-                        ServerWebExchangeMatchers.pathMatchers(HttpMethod.GET, ENDPOINT_HEALTH),
-                        ServerWebExchangeMatchers.pathMatchers(HttpMethod.GET, ENDPOINT_PROMETHEUS)
+                        ServerWebExchangeMatchers.pathMatchers(
+                                HttpMethod.GET,
+                                ENDPOINT_PIN,
+                                ENDPOINT_HEALTH,
+                                ENDPOINT_PROMETHEUS
+                        )
                 ))
                 .cors(cors -> cors.configurationSource(publicCORSConfig.publicCorsConfigSource()))
                 .authorizeExchange(exchanges -> exchanges
@@ -60,6 +63,7 @@ public class WebSecurityConfig {
 
         return http.build();
     }
+
 
 
     // Internal security configuration for internal endpoints
