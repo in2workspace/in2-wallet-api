@@ -23,34 +23,34 @@ class PublicCORSConfigTest {
     void setUp() {
         appConfig = mock(AppConfig.class);
         when(appConfig.getCorsAllowedOrigins()).thenReturn(List.of("https://example.com"));
-//        publicCORSConfig = new PublicCORSConfig();
+        publicCORSConfig = new PublicCORSConfig(appConfig);
     }
-//
-//    @Test
-//    void shouldCreateCorsSourceWithExpectedConfigurationForAllEndpoints() throws Exception {
-//        UrlBasedCorsConfigurationSource source = publicCORSConfig.publicCorsConfigSource(appConfig);
-//
-//        Field field = UrlBasedCorsConfigurationSource.class.getDeclaredField("corsConfigurations");
-//        field.setAccessible(true);
-//
-//        @SuppressWarnings("unchecked")
-//        Map<?, CorsConfiguration> configMap = (Map<?, CorsConfiguration>) field.get(source);
-//
-//        List<String> expectedPaths = List.of(ENDPOINT_PIN, ENDPOINT_HEALTH, ENDPOINT_PROMETHEUS);
-//
-//        for (String expectedPath : expectedPaths) {
-//            Object matchedKey = configMap.keySet().stream()
-//                    .filter(k -> k.toString().contains(expectedPath))
-//                    .findFirst()
-//                    .orElseThrow(() -> new AssertionError("No s'ha trobat la clau per " + expectedPath));
-//
-//            CorsConfiguration config = configMap.get(matchedKey);
-//
-//            assertThat(config.getAllowedOrigins()).containsExactly("https://example.com");
-//            assertThat(config.getAllowedMethods()).containsExactly("GET", "POST", "OPTIONS");
-//            assertThat(config.getAllowedHeaders()).containsExactly("*");
-//            assertThat(config.getAllowCredentials()).isTrue();
-//            assertThat(config.getMaxAge()).isEqualTo(1800L);
-//        }
-//    }
+
+    @Test
+    void shouldCreateCorsSourceWithExpectedConfigurationForAllEndpoints() throws Exception {
+        UrlBasedCorsConfigurationSource source = publicCORSConfig.publicCorsConfigSource();
+
+        Field field = UrlBasedCorsConfigurationSource.class.getDeclaredField("corsConfigurations");
+        field.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        Map<?, CorsConfiguration> configMap = (Map<?, CorsConfiguration>) field.get(source);
+
+        List<String> expectedPaths = List.of(ENDPOINT_PIN, ENDPOINT_HEALTH, ENDPOINT_PROMETHEUS);
+
+        for (String expectedPath : expectedPaths) {
+            Object matchedKey = configMap.keySet().stream()
+                    .filter(k -> k.toString().contains(expectedPath))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("No s'ha trobat la clau per " + expectedPath));
+
+            CorsConfiguration config = configMap.get(matchedKey);
+
+            assertThat(config.getAllowedOrigins()).containsExactly("https://example.com");
+            assertThat(config.getAllowedMethods()).containsExactly("GET", "POST", "OPTIONS");
+            assertThat(config.getAllowedHeaders()).containsExactly("*");
+            assertThat(config.getAllowCredentials()).isTrue();
+            assertThat(config.getMaxAge()).isEqualTo(1800L);
+        }
+    }
 }

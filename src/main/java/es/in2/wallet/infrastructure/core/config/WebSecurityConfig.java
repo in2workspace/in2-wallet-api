@@ -42,7 +42,7 @@ public class WebSecurityConfig {
         return jwtDecoder;
     }
 
-    // Public filter chain for public endpoints
+    // Filter chain for public endpoints
     @Bean
     @Order(1)
     public SecurityWebFilterChain publicFilterChain(ServerHttpSecurity http) {
@@ -66,7 +66,7 @@ public class WebSecurityConfig {
 
 
 
-    // Internal security configuration for internal endpoints
+    // Filter chain used by default, requires authentication
     @Bean
     @Order(2)
     public SecurityWebFilterChain internalFilterChain(ServerHttpSecurity http) {
