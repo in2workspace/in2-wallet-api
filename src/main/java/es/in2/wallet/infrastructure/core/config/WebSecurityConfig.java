@@ -53,13 +53,19 @@ public class WebSecurityConfig {
                                 ENDPOINT_PIN,
                                 ENDPOINT_HEALTH,
                                 ENDPOINT_PROMETHEUS
-                        )
-                ))
-                .cors(cors -> cors.configurationSource(publicCORSConfig.publicCorsConfigSource()))
+                        )))
                 .authorizeExchange(exchanges -> exchanges
-                        .anyExchange().permitAll()
+                        .pathMatchers(
+                                HttpMethod.GET,
+                                ENDPOINT_PIN,
+                                ENDPOINT_HEALTH,
+                                ENDPOINT_PROMETHEUS
+                        ).permitAll()
+                        .anyExchange().authenticated()
                 )
+                .cors(cors -> cors.configurationSource(publicCORSConfig.publicCorsConfigSource()))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable);
+
 
         return http.build();
     }
