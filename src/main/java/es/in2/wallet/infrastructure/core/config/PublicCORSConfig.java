@@ -1,6 +1,7 @@
 package es.in2.wallet.infrastructure.core.config;
 
 import es.in2.wallet.application.ports.AppConfig;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -11,16 +12,20 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 import java.util.List;
 
 @Configuration
+@RequiredArgsConstructor
 public class PublicCORSConfig {
+
+    private final AppConfig appConfig;
 
     /**
      * Public CORS configuration source for restricted access within the cluster.
      */
     @Bean("publicCorsSource")
-    public UrlBasedCorsConfigurationSource publicCorsConfigSource(AppConfig appConfig) {
+    public UrlBasedCorsConfigurationSource publicCorsConfigSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(appConfig.getCorsAllowedOrigins());
+        // todo remove POST?
         configuration.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

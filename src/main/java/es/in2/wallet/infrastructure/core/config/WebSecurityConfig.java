@@ -26,8 +26,8 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 public class WebSecurityConfig {
 
     private final AppConfig appConfig;
-    private final InternalCORSConfig internalCORSConfig;
     private final PublicCORSConfig publicCORSConfig;
+    private final InternalCORSConfig internalCORSConfig;
 
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
@@ -44,16 +44,14 @@ public class WebSecurityConfig {
     // Public filter chain for public endpoints
     @Bean
     @Order(1)
-    public SecurityWebFilterChain publicFilterChain(
-            ServerHttpSecurity http,
-            @Qualifier("publicCorsSource") UrlBasedCorsConfigurationSource publicCorsConfigSource) {
+    public SecurityWebFilterChain publicFilterChain(ServerHttpSecurity http) {
         http
                 .securityMatcher(ServerWebExchangeMatchers.pathMatchers(
                         ENDPOINT_PIN,
                         ENDPOINT_HEALTH,
                         ENDPOINT_PROMETHEUS
                 ))
-                .cors(cors -> cors.configurationSource(publicCorsConfigSource))
+                .cors(cors -> cors.configurationSource(publicCORSConfig.publicCorsConfigSource()))
                 .authorizeExchange(exchanges -> exchanges
                         .anyExchange().permitAll()
                 )
@@ -65,14 +63,13 @@ public class WebSecurityConfig {
     // Internal security configuration for internal endpoints
     @Bean
     @Order(2)
-    public SecurityWebFilterChain internalFilterChain(
-            ServerHttpSecurity http,
-            @Qualifier("internalCorsSource") UrlBasedCorsConfigurationSource internalCorsConfigSource) {
+    public SecurityWebFilterChain internalFilterChain(ServerHttpSecurity http) {
+
         ReactiveJwtDecoder decoder = jwtDecoder();
 
         http
                 .securityMatcher(ServerWebExchangeMatchers.pathMatchers(GLOBAL_ENDPOINTS_API))
-                .cors(cors -> cors.configurationSource(internalCorsConfigSource))
+                .cors(cors -> cors.configurationSource(internalCORSConfig.internalCorsConfigurationSource()))
                 .authorizeExchange(exchanges -> exchanges
                         .anyExchange().authenticated()
                 )

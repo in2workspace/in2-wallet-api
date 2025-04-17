@@ -7,6 +7,8 @@ import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 
+import java.util.List;
+
 import static es.in2.wallet.domain.utils.ApplicationConstants.ALLOWED_METHODS;
 import static es.in2.wallet.domain.utils.ApplicationConstants.GLOBAL_ENDPOINTS_API;
 
@@ -20,9 +22,11 @@ public class CorsGlobalConfig implements WebFluxConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry corsRegistry) {
-        corsRegistry.addMapping(GLOBAL_ENDPOINTS_API)
+        corsRegistry.addMapping("/**")
                 .allowedOrigins(appConfig.getCorsAllowedOrigins().toArray(String[]::new))
-                .allowedMethods(ALLOWED_METHODS)
+                .allowedMethods("/*")
+                .allowedHeaders("*")
+                .allowCredentials(true)
                 .maxAge(3600);
     }
 

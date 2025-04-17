@@ -1,6 +1,7 @@
 package es.in2.wallet.infrastructure.core.config;
 
 import es.in2.wallet.application.ports.AppConfig;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -8,14 +9,16 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-import static es.in2.wallet.domain.utils.ApplicationConstants.GLOBAL_ENDPOINTS_API;
-
 @Configuration
+@RequiredArgsConstructor
 public class InternalCORSConfig {
 
+    private final AppConfig appConfig;
+
     @Bean("internalCorsSource")
-    public UrlBasedCorsConfigurationSource defaultCorsConfigurationSource(AppConfig appConfig) {
+    public UrlBasedCorsConfigurationSource internalCorsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
         configuration.setAllowedOrigins(appConfig.getCorsAllowedOrigins());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -24,7 +27,7 @@ public class InternalCORSConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration(GLOBAL_ENDPOINTS_API, configuration);
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }
