@@ -54,6 +54,7 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
 
     private Mono<SignedJWT> checkJwtClaims(String processId, SignedJWT signedJWTAuthorizationRequest) {
         Map<String, Object> claimsHeader  = signedJWTAuthorizationRequest.getHeader().toJSONObject();
+        log.info("ProcessID: {} - JWT Header content: {}", processId, claimsHeader);
         Object typeClaim = claimsHeader.get("type");
         if (typeClaim == null || !"oauth-authz-req+jwt".equals(typeClaim.toString())) {
             String errorMessage = "Invalid or missing 'type' claim in Authorization Request. Expected: oauth-authz-req+jwt";
