@@ -39,28 +39,48 @@ class AttestationExchangeCommonWorkflowImplTest {
     private AttestationExchangeCommonWorkflowImpl attestationExchangeServiceFacade;
     @Test
     void getSelectableCredentialsRequiredToBuildThePresentationTest() {
-        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             String authorizationToken = "authToken";
             String qrContent = "qrContent";
             String jwtAuthorizationRequest = "authRequest";
 
-            AuthorizationRequestOIDC4VP.DcqlCredential credential = AuthorizationRequestOIDC4VP.DcqlCredential.builder().id("scope1").format("jwt_vc_json").build();
-            AuthorizationRequestOIDC4VP.DcqlQuery dcqlQuery = AuthorizationRequestOIDC4VP.DcqlQuery.builder().credentials(List.of(credential)).build();
-            AuthorizationRequestOIDC4VP authorizationRequestOIDC4VP = AuthorizationRequestOIDC4VP.builder().scope(List.of("scope1")).responseUri("responseUri").state("state").dcqlQuery(dcqlQuery).build();
-            CredentialsBasicInfo credentialsBasicInfo = CredentialsBasicInfo.builder().build();
-            VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder().redirectUri("responseUri").state("state").nonce(null).selectableVcList(List.of(credentialsBasicInfo)).build();
+            AuthorizationRequestOIDC4VP authorizationRequestOIDC4VP = AuthorizationRequestOIDC4VP.builder()
+                    .scope(List.of("scope1"))
+                    .responseUri("responseUri")
+                    .state("state")
+                    .build();
 
-            when(authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent)).thenReturn(Mono.just(jwtAuthorizationRequest));
-            when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(jwtAuthorizationRequest));
-            when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(authorizationRequestOIDC4VP));
-            when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialService.getCredentialsByUserIdTypeAndFormat(processId, "userId", "scope1", "jwt_vc_json")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
+            CredentialsBasicInfo credentialsBasicInfo = CredentialsBasicInfo.builder().build();
+
+            VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder()
+                    .redirectUri("responseUri")
+                    .state("state")
+                    .nonce(null)
+                    .selectableVcList(List.of(credentialsBasicInfo))
+                    .build();
+
+            when(authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent))
+                    .thenReturn(Mono.just(jwtAuthorizationRequest));
+
+            when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
+                    .thenReturn(Mono.just(jwtAuthorizationRequest));
+
+            when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
+                    .thenReturn(Mono.just(authorizationRequestOIDC4VP));
+
+            when(getUserIdFromToken(authorizationToken))
+                    .thenReturn(Mono.just("userId"));
+
+            when(credentialService.getCredentialsByUserIdTypeAndFormat(processId, "userId", "scope1", "jwt_vc_json"))
+                    .thenReturn(Mono.just(List.of(credentialsBasicInfo)));
+
             StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))
                     .expectNext(expectedVcSelectorRequest)
                     .verifyComplete();
         }
     }
+
 
     @Test
     void buildVerifiablePresentationWithSelectedVCsTest() {
@@ -91,20 +111,9 @@ class AttestationExchangeCommonWorkflowImplTest {
                 + "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"; // sub = "userId123"
         String qrContent = "qrContent";
         String jwtAuthorizationRequest = "jwtRequest";
-        AuthorizationRequestOIDC4VP.DcqlCredential unsupportedCredential =
-                AuthorizationRequestOIDC4VP.DcqlCredential.builder()
-                        .id("unsupported-scope")
-                        .format("ldp_vc")
-                        .build();
-
-        AuthorizationRequestOIDC4VP.DcqlQuery dcqlQuery =
-                AuthorizationRequestOIDC4VP.DcqlQuery.builder()
-                        .credentials(List.of(unsupportedCredential))
-                        .build();
 
         AuthorizationRequestOIDC4VP authorizationRequest =
                 AuthorizationRequestOIDC4VP.builder()
-                        .dcqlQuery(dcqlQuery)
                         .scope(List.of("unsupported-scope"))
                         .build();
 

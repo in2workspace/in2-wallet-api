@@ -56,17 +56,18 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
         Map<String, Object> claimsHeader  = signedJWTAuthorizationRequest.getHeader().toJSONObject();
         log.info("ProcessID: {} - JWT Header content: {}", processId, claimsHeader);
         Object typClaim = claimsHeader.get("typ");
-        log.info("typClaim: {}", typClaim);
         if (typClaim == null || !"oauth-authz-req+jwt".equals(typClaim.toString())) {
             String errorMessage = "Invalid or missing 'typ' claim in Authorization Request. Expected: oauth-authz-req+jwt";
             log.warn("ProcessID: {} - {}", processId, errorMessage);
             return Mono.error(new IllegalArgumentException(errorMessage));
         }
+        /*
         Map<String, Object> claimsPayload = signedJWTAuthorizationRequest.getPayload().toJSONObject();
         if (!claimsPayload.containsKey("dcql_query")) {
             log.warn("ProcessID: {} - Missing dcql_query parameter", processId);
             return Mono.error(new InvalidRequestException("Authorization Request must include either 'dcql_query'"));
         }
+        */
         return Mono.just(signedJWTAuthorizationRequest);
     }
 

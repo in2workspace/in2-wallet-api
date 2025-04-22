@@ -3,7 +3,6 @@ package es.in2.wallet.api.service;
 import es.in2.wallet.domain.exceptions.JwtInvalidFormatException;
 import es.in2.wallet.domain.exceptions.ParseErrorException;
 import es.in2.wallet.domain.services.impl.VerifierValidationServiceImpl;
-import es.in2.wallet.infrastructure.appconfiguration.exception.InvalidRequestException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -65,47 +64,17 @@ class VerifierValidationServiceImplTest {
                 .verify();
     }
     @Test
-    void testMissingDcqlQueryParameterError() {
+    void testVerifyIssuerOfTheAuthorizationRequest_shouldReturnJwt() {
         String processId = "123";
 
-        // Header con claim 'type' correcto
         String header = Base64.getUrlEncoder().withoutPadding().encodeToString(
-                "{\"alg\":\"HS256\",\"typ\":\"JWT\",\"type\":\"oauth-authz-req+jwt\"}".getBytes());
-
-        // Payload sin el parámetro 'dcql_query'
-        String payload = Base64.getUrlEncoder().withoutPadding().encodeToString(
-                "{\"sub\":\"did:key:xyz\",\"iss\":\"did:key:xyz\",\"aud\":\"http://localhost:8080\"}".getBytes());
-
-        // Firma falsa (no importa en test de validación interna)
-        String signature = "dummySignature";
-
-        String tokenWithoutDcqlQuery = String.format("%s.%s.%s", header, payload, signature);
-
-        StepVerifier.create(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, tokenWithoutDcqlQuery))
-                .expectErrorMatches(throwable ->
-                        throwable instanceof InvalidRequestException &&
-                                throwable.getMessage().contains("dcql_query"))
-                .verify();
-    }
-    @Test
-    void testVerifyIssuerOfTheAuthorizationRequest_shouldReturnJwt_whenDcqlQueryIsPresent() {
-        String processId = "123";
-
-        // Header con claim 'type' correcto y un 'kid' válido
-        String header = Base64.getUrlEncoder().withoutPadding().encodeToString(
-                "{\"alg\":\"HS256\",\"typ\":\"JWT\",\"type\":\"oauth-authz-req+jwt\",\"kid\":\"did:key:zXYZ\"}".getBytes()
+                "{\"alg\":\"HS256\",\"typ\":\"oauth-authz-req+jwt\",\"kid\":\"did:key:zXYZ\"}".getBytes()
         );
-
-        // Payload CON el parámetro 'dcql_query' y 'client_id'
         String payload = Base64.getUrlEncoder().withoutPadding().encodeToString(
-                "{\"sub\":\"did:key:xyz\",\"iss\":\"did:key:xyz\",\"client_id\":\"did:key:xyz\",\"aud\":\"http://localhost:8080\",\"dcql_query\":{}}".getBytes()
+                "{\"sub\":\"did:key:xyz\",\"iss\":\"did:key:xyz\",\"client_id\":\"did:key:xyz\",\"aud\":\"http://localhost:8080\"}".getBytes()
         );
-
-        // Firma dummy
         String signature = "dummySignature";
-
         String tokenWithDcqlQuery = String.format("%s.%s.%s", header, payload, signature);
-
         StepVerifier.create(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, tokenWithDcqlQuery))
                 .expectError(ParseErrorException.class)
                 .verify();
@@ -114,17 +83,12 @@ class VerifierValidationServiceImplTest {
     @Test
     void testValidateVerifierClaims_shouldThrowInvalidClientException_whenClientIdIsMissing() {
         String processId = "123";
-
         String header = Base64.getUrlEncoder().withoutPadding().encodeToString(
-                "{\"alg\":\"HS256\",\"typ\":\"JWT\",\"type\":\"oauth-authz-req+jwt\",\"kid\":\"did:key:xyz\"}".getBytes());
-
+                "{\"alg\":\"HS256\",\"typ\":\"oauth-authz-req+jwt\",\"kid\":\"did:key:xyz\"}".getBytes());
         String payload = Base64.getUrlEncoder().withoutPadding().encodeToString(
-                "{\"iss\":\"did:key:xyz\",\"sub\":\"did:key:xyz\",\"aud\":\"http://localhost:8080\",\"dcql_query\":{}}".getBytes());
-
+                "{\"iss\":\"did:key:xyz\",\"sub\":\"did:key:xyz\",\"aud\":\"http://localhost:8080\"}".getBytes());
         String signature = "dummySignature";
-
         String token = String.format("%s.%s.%s", header, payload, signature);
-
         StepVerifier.create(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, token))
                 .expectErrorMatches(throwable ->
                         throwable instanceof ParseErrorException &&
@@ -137,15 +101,11 @@ class VerifierValidationServiceImplTest {
         String processId = "123";
 
         String header = Base64.getUrlEncoder().withoutPadding().encodeToString(
-                "{\"alg\":\"HS256\",\"typ\":\"JWT\",\"type\":\"oauth-authz-req+jwt\",\"kid\":\"did:key:xyz\"}".getBytes());
-
-        // client_id distinto del iss → debería lanzar ClientIdMismatchException envuelto en ParseErrorException
+                "{\"alg\":\"HS256\",\"typ\":\"oauth-authz-req+jwt\",\"kid\":\"did:key:xyz\"}".getBytes());
         String payload = Base64.getUrlEncoder().withoutPadding().encodeToString(
-                "{\"iss\":\"did:key:xyz\",\"sub\":\"did:key:xyz\",\"client_id\":\"did:key:diferente\",\"aud\":\"http://localhost:8080\",\"dcql_query\":{}}".getBytes());
-
+                "{\"iss\":\"did:key:xyz\",\"sub\":\"did:key:xyz\",\"client_id\":\"did:key:diferente\",\"aud\":\"http://localhost:8080\"}".getBytes());
         String signature = "dummySignature";
         String token = String.format("%s.%s.%s", header, payload, signature);
-
         StepVerifier.create(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, token))
                 .expectErrorMatches(throwable ->
                         throwable instanceof ParseErrorException &&

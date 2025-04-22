@@ -16,11 +16,11 @@ public record AuthorizationRequestOIDC4VP(
         @JsonProperty("client_id_schema") String clientIdSchema,
         @JsonProperty("state") String state,
         @JsonProperty("nonce") String nonce,
-        @JsonProperty("response_uri") String responseUri,
-        @JsonProperty("dcql_query") DcqlQuery dcqlQuery
+        @JsonProperty("response_uri") String responseUri
+        //@JsonProperty("dcql_query") DcqlQuery dcqlQuery
 
 ) {
-    @Builder
+   /* @Builder
     public record DcqlQuery(
             @JsonProperty("credentials") List<DcqlCredential> credentials
     ) {}
@@ -29,5 +29,5 @@ public record AuthorizationRequestOIDC4VP(
     public record DcqlCredential(
             @JsonProperty("id") String id,
             @JsonProperty("format") String format
-    ) {}
+    ) {}*/
 }
