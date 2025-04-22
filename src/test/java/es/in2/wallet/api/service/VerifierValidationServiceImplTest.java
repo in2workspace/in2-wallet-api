@@ -113,5 +113,27 @@ class VerifierValidationServiceImplTest {
                 .verify();
     }
 
+    @Test
+    void testCheckJwtClaims_shouldThrowIllegalArgumentException_whenTypIsInvalid() {
+        String processId = "123";
+
+        String header = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                "{\"alg\":\"HS256\",\"kid\":\"did:key:zXYZ\"}".getBytes()
+        );
+        String payload = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                "{\"sub\":\"did:key:xyz\",\"iss\":\"did:key:xyz\",\"client_id\":\"did:key:xyz\",\"aud\":\"http://localhost:8080\"}".getBytes()
+        );
+        String signature = "dummySignature";
+
+        String invalidToken = String.format("%s.%s.%s", header, payload, signature);
+
+        StepVerifier.create(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, invalidToken))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof IllegalArgumentException &&
+                                throwable.getMessage().contains("Invalid or missing 'typ' claim"))
+                .verify();
+    }
+
+
 
 }
