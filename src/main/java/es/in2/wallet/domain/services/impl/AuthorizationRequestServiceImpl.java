@@ -81,7 +81,7 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
 
     private static Map<String, Object> getAuthorizationRequestClaim(JWSObject jwsObject) {
         Map<String, Object> authorizationRequestClaim = jwsObject.getPayload().toJSONObject();
-
+        log.info("CLAIMS SCOPE {}",authorizationRequestClaim);
         // Step 2: Check if the "scope" claim exists and is a single string
         if (authorizationRequestClaim.containsKey(SCOPE_CLAIM) && authorizationRequestClaim.get(SCOPE_CLAIM) instanceof String scopeString) {
 
