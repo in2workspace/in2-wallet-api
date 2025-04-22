@@ -57,6 +57,11 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                         .flatMap(lists -> {
                             List<CredentialsBasicInfo> allCredentials = new ArrayList<>();
                             lists.forEach(allCredentials::addAll); // Combine all lists into one
+                            if (allCredentials.isEmpty()) {
+                                log.error("ProcessID: {} - No credentials found for userId={} with provided types: {}", processId, userId, credentialIds);
+                                return Mono.error(new RuntimeException("No credentials found"));
+                            }
+
                             return Mono.just(allCredentials);
                         })
                 );
