@@ -27,9 +27,12 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
 
     @Override
     public Mono<String> getJwtRequestObjectFromUri(String processId, String qrContent) {
-        log.info("Processing a auth request object");
+        //log.info("Processing a auth request object");
+        log.info("ProcessID: {} - Starting to process the Auth Request Object", processId);
+        log.info("ProcessID: {} - QR content received: {}", processId, qrContent);
         // Get Authorization Request executing the VC Login Request
         return extractAllQueryParams(qrContent)
+                .doOnSuccess(params -> log.info("ProcessID: {} - Extracted query params: {}", processId, params))
                 .flatMap(this::getJwtRequestObject)
                 .doOnSuccess(response -> log.info("ProcessID: {} - Request Response: {}", processId, response))
                 .onErrorResume(e -> {
@@ -39,23 +42,37 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
     }
 
     private Mono<String> getJwtRequestObject(Map<String, String> params) {
-        if (params.get("request_uri") != null) {
-            String requestUri = params.get("request_uri");
+        String requestUri = params.get("request_uri");
+        String requestInline = params.get("request");
+
+        if (requestUri != null) {
+            log.info("Trying to fetch JWT Authorization Request from request_uri: {}", requestUri);
             return webClient.centralizedWebClient()
                     .get()
                     .uri(requestUri)
                     .exchangeToMono(response -> {
+                        log.info("Received response with status: {}", response.statusCode());
                         if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
-                            return Mono.error(new RuntimeException("There was an error retrieving the authorisation request, error" + response));
+                            //return Mono.error(new RuntimeException("There was an error retrieving the authorisation request, error" + response));
+                            return response.bodyToMono(String.class)
+                                    .defaultIfEmpty("<empty body>")
+                                    .flatMap(errorBody -> {
+                                        log.error("Error response body: {}", errorBody);
+                                        return Mono.error(new RuntimeException("Error retrieving the authorization request. Status: " + response.statusCode()));
+                                    });
                         }
                         else {
-                            log.info("Authorization request: {}", response);
-                            return response.bodyToMono(String.class);
+//                            log.info("Authorization request: {}", response);
+//                            return response.bodyToMono(String.class);
+                            return response.bodyToMono(String.class)
+                                    .doOnNext(body -> log.info("Fetched JWT Authorization Request: {}", body));
                         }
                     });
-        } else if (params.get("request") != null) {
-            return Mono.just(params.get("request"));
+        } else if (requestInline != null) {
+            log.info("JWT Authorization Request is provided inline via 'request' parameter.");
+            return Mono.just(requestInline);
         } else {
+            log.info("No 'request' or 'request_uri' parameters were found in the QR content.");
             return Mono.error(new MissingAuthorizationRequestParameterException("Expected 'request' or 'request_uri' in parameters"));
         }
     }
