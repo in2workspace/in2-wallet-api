@@ -36,6 +36,7 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
                 .flatMap(this::getJwtRequestObject)
                 .doOnSuccess(response -> log.info("ProcessID: {} - Request Response: {}", processId, response))
                 .onErrorResume(e -> {
+                    System.out.println("Hola 6");
                     log.error("ProcessID: {} - Error while processing Request Object from the Issuer: {}", processId, e.getMessage());
                     return Mono.error(new RuntimeException("Error while processing Request Object from the Issuer"));
                 });
@@ -52,11 +53,13 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
                     .uri(requestUri)
                     .exchangeToMono(response -> {
                         log.info("Received response with status: {}", response.statusCode());
+                        System.out.println("Hola 1");
                         if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
                             //return Mono.error(new RuntimeException("There was an error retrieving the authorisation request, error" + response));
                             return response.bodyToMono(String.class)
                                     .defaultIfEmpty("<empty body>")
                                     .flatMap(errorBody -> {
+                                        System.out.println("Hola 2");
                                         log.error("Error response body: {}", errorBody);
                                         return Mono.error(new RuntimeException("Error retrieving the authorization request. Status: " + response.statusCode()));
                                     });
@@ -65,13 +68,18 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
 //                            log.info("Authorization request: {}", response);
 //                            return response.bodyToMono(String.class);
                             return response.bodyToMono(String.class)
-                                    .doOnNext(body -> log.info("Fetched JWT Authorization Request: {}", body));
+                                    .doOnNext(body -> {
+                                        System.out.println("Hola 3");
+                                        log.info("Fetched JWT Authorization Request: {}", body);
+                                    });
                         }
                     });
         } else if (requestInline != null) {
+            System.out.println("Hola 4");
             log.info("JWT Authorization Request is provided inline via 'request' parameter.");
             return Mono.just(requestInline);
         } else {
+            System.out.println("Hola 5");
             log.info("No 'request' or 'request_uri' parameters were found in the QR content.");
             return Mono.error(new MissingAuthorizationRequestParameterException("Expected 'request' or 'request_uri' in parameters"));
         }
