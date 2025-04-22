@@ -99,7 +99,6 @@ public class ApplicationUtils {
             } catch (Exception e) {
                 log.debug(e.getMessage());
             }
-            log.info(" extractAllQueryParams - PARAMAS: {}",params);
             return params;
         });
     }
