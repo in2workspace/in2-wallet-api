@@ -49,6 +49,7 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                             String credentialType = element.equals(LEAR_CREDENTIAL_EMPLOYEE_SCOPE)
                                     ? "LEARCredentialEmployee"
                                     : element;
+                            log.info("ProcessID: {} - Looking for credentials. userId={}, credentialType={}, format={}", processId, userId, credentialType, JWT_VC_JSON);
 
                             return  credentialService.getCredentialsByUserIdTypeAndFormat(processId, userId, credentialType,JWT_VC_JSON);
                         })
