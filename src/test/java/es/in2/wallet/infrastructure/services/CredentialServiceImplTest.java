@@ -385,7 +385,7 @@ class CredentialServiceImplTest {
         UUID userUuid = UUID.randomUUID();
         String userId = userUuid.toString();
         String requiredType = "LEARCredentialEmployee";
-        String format = "jwt_vc_json";
+        String format = "JWT_VC";
 
         UUID credentialId = UUID.randomUUID();
         String jsonVc = """
@@ -417,12 +417,10 @@ class CredentialServiceImplTest {
         when(objectMapper.readTree(jsonVc)).thenReturn(getJsonNodeCredentialLearCredentialEmployee());
 
         Mono<List<CredentialsBasicInfo>> result = credentialRepositoryService
-                .getCredentialsByUserIdTypeAndFormat(processId, userId, requiredType, format);
+                .getCredentialsByUserIdAndType(processId, userId, requiredType);
 
         StepVerifier.create(result)
-                .assertNext(list -> {
-                    assertEquals(1, list.size());
-                })
+                .assertNext(list -> assertEquals(1, list.size()))
                 .verifyComplete();
     }
 
@@ -433,7 +431,6 @@ class CredentialServiceImplTest {
         UUID userUuid = UUID.randomUUID();
         String userId = userUuid.toString();
         String requiredType = "LEARCredentialEmployee";
-        String format = "jwt_vc_json";
 
         Credential credential = Credential.builder()
                 .credentialId(UUID.randomUUID())
@@ -449,7 +446,7 @@ class CredentialServiceImplTest {
 
         // WHEN
         Mono<List<CredentialsBasicInfo>> result = credentialRepositoryService
-                .getCredentialsByUserIdTypeAndFormat(processId, userId, requiredType, format);
+                .getCredentialsByUserIdAndType(processId, userId, requiredType);
 
         // THEN
         StepVerifier.create(result)
@@ -457,7 +454,7 @@ class CredentialServiceImplTest {
                         ex instanceof NoSuchVerifiableCredentialException &&
                                 ex.getMessage().equals("No credentials found for userId=" + userId +
                                         " with type=" + requiredType +
-                                        " in " + format + " format."))
+                                        " in JWT_VC format."))
                 .verify();
     }
 
