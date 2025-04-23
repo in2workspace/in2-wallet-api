@@ -72,7 +72,7 @@ class AttestationExchangeCommonWorkflowImplTest {
             when(getUserIdFromToken(authorizationToken))
                     .thenReturn(Mono.just("userId"));
 
-            when(credentialService.getCredentialsByUserIdTypeAndFormat(processId, "userId", "scope1", "jwt_vc_json"))
+            when(credentialService.getCredentialsByUserIdAndType(processId, "userId", "scope1"))
                     .thenReturn(Mono.just(List.of(credentialsBasicInfo)));
 
             StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))
@@ -126,8 +126,8 @@ class AttestationExchangeCommonWorkflowImplTest {
         when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
                 .thenReturn(Mono.just(authorizationRequest));
 
-        when(credentialService.getCredentialsByUserIdTypeAndFormat(
-                processId, "userId123", "unsupported-scope", "jwt_vc_json"))
+        when(credentialService.getCredentialsByUserIdAndType(
+                processId, "userId123", "unsupported-scope"))
                 .thenReturn(Mono.error(new VpFormatsNotSupportedException("At least one credential format is not supported by the wallet")));
 
         // Act & Assert
