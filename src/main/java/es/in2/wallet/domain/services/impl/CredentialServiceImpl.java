@@ -300,37 +300,6 @@ public class CredentialServiceImpl implements CredentialService {
                 );
     }
 
-    // ---------------------------------------------------------------------
-    // Filter credentials by user ID, type and format
-    // ---------------------------------------------------------------------
-    @Override
-    public Mono<List<CredentialsBasicInfo>> getCredentialsByUserIdTypeAndFormat(
-            String processId,
-            String userId,
-            String requiredType,
-            String format
-    ) {
-        return parseStringToUuid(userId, USER_ID)
-                .flatMapMany(credentialRepository::findAllByUserId)
-                .filter(credential -> {
-                    boolean matchesType = credential.getCredentialType().contains(requiredType);
-                    boolean isMatchFormat = credential.getCredentialFormat() != null
-                            && credential.getCredentialFormat().equals(format);
-                    return matchesType && isMatchFormat;
-                })
-                .map(this::mapToCredentialsBasicInfo)
-                .collectList()
-                .flatMap(credentialsInfo -> {
-                    if (credentialsInfo.isEmpty()) {
-                        return Mono.error(new NoSuchVerifiableCredentialException(
-                                "No credentials found for userId=" + userId
-                                        + " with type=" + requiredType
-                                        + " in "+format+" format."
-                        ));
-                    }
-                    return Mono.just(credentialsInfo);
-                });
-    }
 
     // ---------------------------------------------------------------------
     // Private Helper to fetch credential from DB and check ownership

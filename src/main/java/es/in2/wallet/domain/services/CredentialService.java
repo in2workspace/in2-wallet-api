@@ -15,5 +15,4 @@ public interface CredentialService {
     Mono<Void> deleteCredential(String processId, String credentialId, String userId);
     Mono<List<CredentialsBasicInfo>> getCredentialsByUserIdAndType(String processId, String userId, String requiredType);
     Mono<String> getCredentialDataByIdAndUserId(String processId, String userId, String credentialId);
-    Mono<List<CredentialsBasicInfo>> getCredentialsByUserIdTypeAndFormat(String processId, String userId, String requiredType, String format);
 }
