@@ -15,7 +15,6 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.List;
 
-import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_VC_JSON;
 import static es.in2.wallet.domain.utils.ApplicationConstants.LEAR_CREDENTIAL_EMPLOYEE_SCOPE;
 import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 
@@ -49,7 +48,7 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                             String credentialType = element.equals(LEAR_CREDENTIAL_EMPLOYEE_SCOPE)
                                     ? "LEARCredentialEmployee"
                                     : element;
-                            log.info("ProcessID: {} - Looking for credentials. userId={}, credentialType={}, format={}", processId, userId, credentialType, JWT_VC_JSON);
+                            log.info("ProcessID: {} - Looking for credentials - getCredentialsByUserIdAndType . userId={}, credentialType={}",  processId, userId, credentialType);
                             return  credentialService.getCredentialsByUserIdAndType(processId, userId, credentialType);
                         })
                         .collectList()  // This will collect all lists into a single list
