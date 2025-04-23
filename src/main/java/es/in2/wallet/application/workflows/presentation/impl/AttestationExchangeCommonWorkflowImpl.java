@@ -40,28 +40,23 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
     }
 
     @Override
-    public Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> credentialIds) {
+    public Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> scope) {
         return getUserIdFromToken(authorizationToken)
-                .flatMap(userId -> Flux.fromIterable(credentialIds)
+                .flatMap(userId -> Flux.fromIterable(scope)
                         .flatMap(element -> {
                             // Verificar si el elemento es igual a LEAR_CREDENTIAL_EMPLOYEE_SCOPE
                             String credentialType = element.equals(LEAR_CREDENTIAL_EMPLOYEE_SCOPE)
                                     ? "LEARCredentialEmployee"
                                     : element;
+
                             log.info("ProcessID: {} - Looking for credentials - getCredentialsByUserIdAndType . userId={}, credentialType={}",  processId, userId, credentialType);
+
                             return  credentialService.getCredentialsByUserIdAndType(processId, userId, credentialType);
                         })
                         .collectList()  // This will collect all lists into a single list
                         .flatMap(lists -> {
                             List<CredentialsBasicInfo> allCredentials = new ArrayList<>();
                             lists.forEach(allCredentials::addAll); // Combine all lists into one
-                            log.error("lists: {} ",lists);
-                            log.error("allCredentials: {} ",allCredentials);
-                            if (allCredentials.isEmpty()) {
-                                log.error("ProcessID: {} - No credentials found for userId={} with provided types: {}", processId, userId, credentialIds);
-                                return Mono.error(new RuntimeException("No credentials found"));
-                            }
-
                             return Mono.just(allCredentials);
                         })
                 );
