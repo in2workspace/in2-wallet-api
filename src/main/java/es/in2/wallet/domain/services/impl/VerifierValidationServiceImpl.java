@@ -8,7 +8,6 @@ import es.in2.wallet.domain.exceptions.ParseErrorException;
 import es.in2.wallet.application.dto.UVarInt;
 import es.in2.wallet.domain.services.VerifierValidationService;
 import es.in2.wallet.infrastructure.appconfiguration.exception.ClientIdMismatchException;
-import es.in2.wallet.infrastructure.appconfiguration.exception.InvalidRequestException;
 import io.ipfs.multibase.Base58;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +30,6 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_ISS_CLAIM;
 @Service
 @RequiredArgsConstructor
 public class VerifierValidationServiceImpl implements VerifierValidationService {
-
     @Override
     public Mono<String> verifyIssuerOfTheAuthorizationRequest(String processId, String jwtAuthorizationRequest) {
         // Parse the Authorization Request in JWT format
@@ -58,7 +56,6 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
         Object typClaim = claimsHeader.get("typ");
         if (typClaim == null || !"oauth-authz-req+jwt".equals(typClaim.toString())) {
             String errorMessage = "Invalid or missing 'typ' claim in Authorization Request. Expected: oauth-authz-req+jwt";
-            log.warn("ProcessID: {} - {}", processId, errorMessage);
             return Mono.error(new IllegalArgumentException(errorMessage));
         }
         /*

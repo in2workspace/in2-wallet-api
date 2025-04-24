@@ -35,8 +35,8 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
         return authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent)
                 .flatMap(jwtAuthorizationRequest -> verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
                 .flatMap(jwtAuthorizationRequest -> authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
-                .flatMap(authorizationRequest -> getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken,authorizationRequest.scope())
-                    .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
+                .flatMap(authorizationRequest -> getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, authorizationRequest.scope())
+                        .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
     }
 
     @Override
@@ -49,7 +49,6 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                                     ? "LEARCredentialEmployee"
                                     : element;
 
-                            log.info("ProcessID: {} - Looking for credentials - getCredentialsByUserIdAndType . userId={}, credentialType={}",  processId, userId, credentialType);
 
                             return  credentialService.getCredentialsByUserIdAndType(processId, userId, credentialType);
                         })
@@ -97,6 +96,7 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                        .doOnTerminate(() -> log.info("Completed processing Verifiable Presentation for processId: {}", processId));
 
     }
+
 
     private static Mono<String> generateAudience() {
         return Mono.just("https://self-issued.me/v2");

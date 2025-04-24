@@ -300,7 +300,6 @@ public class CredentialServiceImpl implements CredentialService {
                 );
     }
 
-
     // ---------------------------------------------------------------------
     // Private Helper to fetch credential from DB and check ownership
     // (optionally can also check status)
