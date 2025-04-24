@@ -3,9 +3,9 @@ package es.in2.wallet.api.service;
 import es.in2.wallet.application.workflows.issuance.CredentialIssuanceCommonWorkflow;
 import es.in2.wallet.application.workflows.issuance.CredentialIssuanceEbsiWorkflow;
 import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
-import es.in2.wallet.domain.exceptions.NoSuchQrContentException;
 import es.in2.wallet.application.dto.VcSelectorRequest;
 import es.in2.wallet.application.workflows.processor.impl.QrCodeProcessorWorkflowImpl;
+import es.in2.wallet.domain.exceptions.NoSuchQrContentException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -143,8 +143,9 @@ class QrCodeProcessorWorkflowImplTest {
         String expectedErrorMessage = "The received QR content cannot be processed";
 
         StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
-                .expectErrorMatches(throwable -> throwable instanceof NoSuchQrContentException &&
-                        expectedErrorMessage.equals(throwable.getMessage()))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof NoSuchQrContentException &&
+                                expectedErrorMessage.equals(throwable.getMessage()))
                 .verify();
     }
 }

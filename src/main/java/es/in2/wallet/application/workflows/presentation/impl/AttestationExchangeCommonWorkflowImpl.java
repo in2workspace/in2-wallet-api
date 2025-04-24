@@ -36,9 +36,8 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                 .flatMap(jwtAuthorizationRequest -> verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
                 .flatMap(jwtAuthorizationRequest -> authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
                 .flatMap(authorizationRequest -> getSelectableCredentialsRequiredToBuildThePresentation(processId, authorizationToken, authorizationRequest.scope())
-                .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
+                        .flatMap(credentials -> buildSelectableVCsRequest(authorizationRequest,credentials)));
     }
-
 
     @Override
     public Mono<List<CredentialsBasicInfo>> getSelectableCredentialsRequiredToBuildThePresentation(String processId, String authorizationToken, List<String> scope) {
@@ -49,6 +48,7 @@ public class AttestationExchangeCommonWorkflowImpl implements AttestationExchang
                             String credentialType = element.equals(LEAR_CREDENTIAL_EMPLOYEE_SCOPE)
                                     ? "LEARCredentialEmployee"
                                     : element;
+
 
                             return  credentialService.getCredentialsByUserIdAndType(processId, userId, credentialType);
                         })

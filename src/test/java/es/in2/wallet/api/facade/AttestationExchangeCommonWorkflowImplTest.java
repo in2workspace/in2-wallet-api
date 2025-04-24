@@ -7,6 +7,7 @@ import es.in2.wallet.application.dto.VcSelectorResponse;
 import es.in2.wallet.application.workflows.presentation.impl.AttestationExchangeCommonWorkflowImpl;
 import es.in2.wallet.domain.services.*;
 import es.in2.wallet.domain.utils.ApplicationUtils;
+import es.in2.wallet.infrastructure.appconfiguration.exception.VpFormatsNotSupportedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,28 +37,50 @@ class AttestationExchangeCommonWorkflowImplTest {
     private PresentationService presentationService;
     @InjectMocks
     private AttestationExchangeCommonWorkflowImpl attestationExchangeServiceFacade;
-
     @Test
     void getSelectableCredentialsRequiredToBuildThePresentationTest() {
-        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)){
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
             String processId = "123";
             String authorizationToken = "authToken";
             String qrContent = "qrContent";
             String jwtAuthorizationRequest = "authRequest";
-            AuthorizationRequestOIDC4VP authorizationRequestOIDC4VP = AuthorizationRequestOIDC4VP.builder().scope(List.of("scope1")).responseUri("responseUri").state("state").build();
+
+            AuthorizationRequestOIDC4VP authorizationRequestOIDC4VP = AuthorizationRequestOIDC4VP.builder()
+                    .scope(List.of("scope1"))
+                    .responseUri("responseUri")
+                    .state("state")
+                    .build();
+
             CredentialsBasicInfo credentialsBasicInfo = CredentialsBasicInfo.builder().build();
-            VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder().redirectUri("responseUri").state("state").selectableVcList(List.of(credentialsBasicInfo)).build();
-            when(authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent)).thenReturn(Mono.just(jwtAuthorizationRequest));
-            when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(jwtAuthorizationRequest));
-            when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest)).thenReturn(Mono.just(authorizationRequestOIDC4VP));
-            when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just("userId"));
-            when(credentialService.getCredentialsByUserIdAndType(processId, "userId", "scope1")).thenReturn(Mono.just(List.of(credentialsBasicInfo)));
+
+            VcSelectorRequest expectedVcSelectorRequest = VcSelectorRequest.builder()
+                    .redirectUri("responseUri")
+                    .state("state")
+                    .nonce(null)
+                    .selectableVcList(List.of(credentialsBasicInfo))
+                    .build();
+
+            when(authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent))
+                    .thenReturn(Mono.just(jwtAuthorizationRequest));
+
+            when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
+                    .thenReturn(Mono.just(jwtAuthorizationRequest));
+
+            when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
+                    .thenReturn(Mono.just(authorizationRequestOIDC4VP));
+
+            when(getUserIdFromToken(authorizationToken))
+                    .thenReturn(Mono.just("userId"));
+
+            when(credentialService.getCredentialsByUserIdAndType(processId, "userId", "scope1"))
+                    .thenReturn(Mono.just(List.of(credentialsBasicInfo)));
 
             StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))
                     .expectNext(expectedVcSelectorRequest)
                     .verifyComplete();
         }
     }
+
 
     @Test
     void buildVerifiablePresentationWithSelectedVCsTest() {
@@ -80,4 +103,39 @@ class AttestationExchangeCommonWorkflowImplTest {
                 .verifyComplete();
     }
 
+    @Test
+    void processAuthorizationRequest_shouldThrowVpFormatsNotSupportedException_whenUnsupportedFormatIsPresent() {
+        String processId = "123";
+        String authorizationToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                + "eyJzdWIiOiJ1c2VySWQxMjMifQ."
+                + "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+        String qrContent = "qrContent";
+        String jwtAuthorizationRequest = "jwtRequest";
+
+        AuthorizationRequestOIDC4VP authorizationRequest =
+                AuthorizationRequestOIDC4VP.builder()
+                        .scope(List.of("unsupported-scope"))
+                        .build();
+
+        when(authorizationRequestService.getJwtRequestObjectFromUri(processId, qrContent))
+                .thenReturn(Mono.just(jwtAuthorizationRequest));
+
+        when(verifierValidationService.verifyIssuerOfTheAuthorizationRequest(processId, jwtAuthorizationRequest))
+                .thenReturn(Mono.just(jwtAuthorizationRequest));
+
+        when(authorizationRequestService.getAuthorizationRequestFromJwtAuthorizationRequestJWT(processId, jwtAuthorizationRequest))
+                .thenReturn(Mono.just(authorizationRequest));
+
+        when(credentialService.getCredentialsByUserIdAndType(
+                processId, "userId123", "unsupported-scope"))
+                .thenReturn(Mono.error(new VpFormatsNotSupportedException("At least one credential format is not supported by the wallet")));
+
+        // Act & Assert
+        StepVerifier.create(attestationExchangeServiceFacade.processAuthorizationRequest(processId, authorizationToken, qrContent))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof VpFormatsNotSupportedException &&
+                                throwable.getMessage().equals("At least one credential format is not supported by the wallet")
+                )
+                .verify();
+    }
 }

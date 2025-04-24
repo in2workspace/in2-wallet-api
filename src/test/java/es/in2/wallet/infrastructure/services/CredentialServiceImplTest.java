@@ -10,6 +10,7 @@ import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.domain.entities.Credential;
 import es.in2.wallet.domain.enums.CredentialFormats;
 import es.in2.wallet.domain.enums.CredentialStatus;
+import es.in2.wallet.domain.exceptions.NoSuchVerifiableCredentialException;
 import es.in2.wallet.domain.repositories.CredentialRepository;
 import es.in2.wallet.domain.services.impl.CredentialServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -376,6 +377,85 @@ class CredentialServiceImplTest {
         StepVerifier.create(result).verifyComplete();
 
         verify(credentialRepository).delete(existing);
+    }
+
+    @Test
+    void testGetCredentialsByUserIdTypeAndFormat_success() throws JsonProcessingException {
+        String processId = "proc123";
+        UUID userUuid = UUID.randomUUID();
+        String userId = userUuid.toString();
+        String requiredType = "LEARCredentialEmployee";
+        String format = "JWT_VC";
+
+        UUID credentialId = UUID.randomUUID();
+        String jsonVc = """
+        {
+          "id": "8c7a6213-544d-450d-8e3d-b41fa9009198",
+          "type": ["VerifiableCredential", "LEARCredentialEmployee"],
+          "credentialSubject": {
+            "mandate": {
+              "mandatee": {
+                "id": "did:example:987"
+              }
+            }
+          },
+          "validUntil": "2026-12-31T23:59:59Z"
+        }
+        """;
+
+        Credential credential = Credential.builder()
+                .credentialId(credentialId)
+                .userId(userUuid)
+                .credentialFormat(format)
+                .credentialType(List.of("VerifiableCredential", requiredType))
+                .credentialStatus(CredentialStatus.VALID.toString())
+                .jsonVc(jsonVc)
+                .build();
+
+        when(credentialRepository.findAllByUserId(userUuid))
+                .thenReturn(Flux.just(credential));
+        when(objectMapper.readTree(jsonVc)).thenReturn(getJsonNodeCredentialLearCredentialEmployee());
+
+        Mono<List<CredentialsBasicInfo>> result = credentialRepositoryService
+                .getCredentialsByUserIdAndType(processId, userId, requiredType);
+
+        StepVerifier.create(result)
+                .assertNext(list -> assertEquals(1, list.size()))
+                .verifyComplete();
+    }
+
+    @Test
+    void testGetCredentialsByUserIdTypeAndFormat_shouldThrowWhenNoMatchingCredentials() {
+        // GIVEN
+        String processId = "proc123";
+        UUID userUuid = UUID.randomUUID();
+        String userId = userUuid.toString();
+        String requiredType = "LEARCredentialEmployee";
+
+        Credential credential = Credential.builder()
+                .credentialId(UUID.randomUUID())
+                .userId(userUuid)
+                .credentialFormat("ldp_vc")
+                .credentialType(List.of("VerifiableCredential", "SomeOtherType"))
+                .credentialStatus(CredentialStatus.VALID.toString())
+                .jsonVc("{}")
+                .build();
+
+        when(credentialRepository.findAllByUserId(userUuid))
+                .thenReturn(Flux.just(credential));
+
+        // WHEN
+        Mono<List<CredentialsBasicInfo>> result = credentialRepositoryService
+                .getCredentialsByUserIdAndType(processId, userId, requiredType);
+
+        // THEN
+        StepVerifier.create(result)
+                .expectErrorMatches(ex ->
+                        ex instanceof NoSuchVerifiableCredentialException &&
+                                ex.getMessage().equals("No credentials found for userId=" + userId +
+                                        " with type=" + requiredType +
+                                        " in JWT_VC format."))
+                .verify();
     }
 
     private JsonNode getJsonNodeCredentialLearCredentialEmployee() throws JsonProcessingException {

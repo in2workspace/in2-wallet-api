@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JWSObject;
 import es.in2.wallet.application.dto.AuthorizationRequestOIDC4VP;
 import es.in2.wallet.domain.services.AuthorizationRequestService;
+import es.in2.wallet.infrastructure.appconfiguration.exception.MissingAuthorizationRequestParameterException;
 import es.in2.wallet.infrastructure.core.config.WebClientConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,12 +39,16 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
     }
 
     private Mono<String> getJwtRequestObject(Map<String, String> params) {
-        if (params.get("request_uri") != null) {
-            String requestUri = params.get("request_uri");
+        String requestUri = params.get("request_uri");
+        String requestInline = params.get("request");
+
+        if (requestUri != null) {
+            log.info("Trying to fetch JWT Authorization Request from request_uri: {}", requestUri);
             return webClient.centralizedWebClient()
                     .get()
                     .uri(requestUri)
                     .exchangeToMono(response -> {
+                        log.info("Received response with status: {}", response.statusCode());
                         if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
                             return Mono.error(new RuntimeException("There was an error retrieving the authorisation request, error" + response));
                         }
@@ -52,10 +57,10 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
                             return response.bodyToMono(String.class);
                         }
                     });
-        } else if (params.get("request") != null) {
-            return Mono.just(params.get("request"));
+        } else if (requestInline != null) {
+            return Mono.just(requestInline);
         } else {
-            return Mono.error(new IllegalArgumentException("theres any request found in parameters"));
+            return Mono.error(new MissingAuthorizationRequestParameterException("Expected 'request' or 'request_uri' in parameters"));
         }
     }
 

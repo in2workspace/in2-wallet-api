@@ -7,6 +7,7 @@ import es.in2.wallet.domain.exceptions.JwtInvalidFormatException;
 import es.in2.wallet.domain.exceptions.ParseErrorException;
 import es.in2.wallet.application.dto.UVarInt;
 import es.in2.wallet.domain.services.VerifierValidationService;
+import es.in2.wallet.infrastructure.appconfiguration.exception.ClientIdMismatchException;
 import io.ipfs.multibase.Base58;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +30,12 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_ISS_CLAIM;
 @Service
 @RequiredArgsConstructor
 public class VerifierValidationServiceImpl implements VerifierValidationService {
-    
     @Override
     public Mono<String> verifyIssuerOfTheAuthorizationRequest(String processId, String jwtAuthorizationRequest) {
         // Parse the Authorization Request in JWT format
         return parseAuthorizationRequestInJwtFormat(processId, jwtAuthorizationRequest)
                 // Extract and verify client_id claim from the Authorization Request
+                .flatMap(signedJwt -> checkJwtClaims(processId, signedJwt))
                 .flatMap(signedJwt -> validateVerifierClaims(processId, signedJwt))
                 .flatMap(signedJwt -> getEcPublicKey(processId, signedJwt)
                         // Verify the Authorization Request
@@ -49,6 +50,25 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
                 .then(Mono.just(jwtAuthorizationRequest));
     }
 
+    private Mono<SignedJWT> checkJwtClaims(String processId, SignedJWT signedJWTAuthorizationRequest) {
+        Map<String, Object> claimsHeader  = signedJWTAuthorizationRequest.getHeader().toJSONObject();
+        log.info("ProcessID: {} - JWT Header content: {}", processId, claimsHeader);
+        Object typClaim = claimsHeader.get("typ");
+        if (typClaim == null || !"oauth-authz-req+jwt".equals(typClaim.toString())) {
+            String errorMessage = "Invalid or missing 'typ' claim in Authorization Request. Expected: oauth-authz-req+jwt";
+            return Mono.error(new IllegalArgumentException(errorMessage));
+        }
+        /*
+        Map<String, Object> claimsPayload = signedJWTAuthorizationRequest.getPayload().toJSONObject();
+        if (!claimsPayload.containsKey("dcql_query")) {
+            log.warn("ProcessID: {} - Missing dcql_query parameter", processId);
+            return Mono.error(new InvalidRequestException("Authorization Request must include either 'dcql_query'"));
+        }
+        */
+        return Mono.just(signedJWTAuthorizationRequest);
+    }
+
+
     private Mono<SignedJWT> parseAuthorizationRequestInJwtFormat(String processId, String requestToken) {
         return Mono.fromCallable(() -> SignedJWT.parse(requestToken))
                 .doOnSuccess(signedJWT -> log.info("ProcessID: {} - Siop Auth Request: {}", processId, signedJWT))
@@ -61,14 +81,14 @@ public class VerifierValidationServiceImpl implements VerifierValidationService 
         String clientId = (String) jsonPayload.get("client_id");
         return Mono.fromCallable(() -> {
                     if (clientId == null || clientId.isEmpty()) {
-                        throw new IllegalArgumentException("client_id not found in the auth_request");
+                        throw new ClientIdMismatchException("client_id not found in the auth_request");
                     }
                     return clientId;
                 })
                 .doOnSuccess(id -> log.info("ProcessID: {} - client_id retrieved successfully: {}", processId, id))
                 .flatMap(id -> {
                     if (!id.equals(iss)) {
-                        return Mono.error(new IllegalStateException("iss and sub MUST be the DID of the RP and must correspond to the client_id parameter in the Authorization Request"));
+                        return Mono.error(new ClientIdMismatchException("iss and sub MUST be the DID of the RP and must correspond to the client_id parameter in the Authorization Request"));
                     } else {
                         return Mono.just(signedJWTAuthorizationRequest);
                     }
