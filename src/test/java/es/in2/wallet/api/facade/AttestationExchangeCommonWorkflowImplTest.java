@@ -108,7 +108,7 @@ class AttestationExchangeCommonWorkflowImplTest {
         String processId = "123";
         String authorizationToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
                 + "eyJzdWIiOiJ1c2VySWQxMjMifQ."
-                + "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"; // sub = "userId123"
+                + "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
         String qrContent = "qrContent";
         String jwtAuthorizationRequest = "jwtRequest";
 
