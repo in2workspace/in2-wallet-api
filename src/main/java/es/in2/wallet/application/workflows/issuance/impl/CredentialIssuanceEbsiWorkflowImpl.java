@@ -40,7 +40,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
      * either through a pre-authorized code grant or an authorization code flow.
      */
     @Override
-    public Mono<Void> identifyAuthMethod(String processId, String authorizationToken, String qrContent) {
+    public Mono<Void> execute(String processId, String authorizationToken, String qrContent) {
         // get Credential Offer
         return credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)
                 //get Issuer Server Metadata

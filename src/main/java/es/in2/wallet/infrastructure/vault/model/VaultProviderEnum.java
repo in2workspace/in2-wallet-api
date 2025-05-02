@@ -1,7 +1,6 @@
 package es.in2.wallet.infrastructure.vault.model;
 
 public enum VaultProviderEnum {
-    AZURE("azure"),
     HASHICORP("hashicorp");
 
     private final String providerName;

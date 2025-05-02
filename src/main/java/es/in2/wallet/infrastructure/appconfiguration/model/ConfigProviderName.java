@@ -1,7 +1,6 @@
 package es.in2.wallet.infrastructure.appconfiguration.model;
 
 public enum ConfigProviderName {
-    AZURE("azure"),
     YAML("yaml");
 
     private final String providerName;

@@ -38,6 +38,7 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
                 .doOnError(e -> log.error("ProcessId: {}, Error while fetching Credential Offer: {}", processId, e.getMessage()))
                 .flatMap(this::parseCredentialOfferResponse)
                 .doOnSuccess(preAuthorizedCredentialOffer -> log.info("ProcessId: {}, Credential Offer parsed successfully: {}", processId, preAuthorizedCredentialOffer))
+                .doOnSuccess(this::validateCredentialOffer)
                 .doOnError(e -> log.error("ProcessId: {}, Error while parsing Credential Offer: {}", processId, e.getMessage()));
     }
 
@@ -108,5 +109,22 @@ public class CredentialOfferServiceImpl implements CredentialOfferService {
             return Mono.error(new FailedDeserializingException("Error while deserializing Credential Offer: " + e.getMessage()));
         }
     }
+
+    private void validateCredentialOffer(CredentialOffer credentialOffer) {
+        if (credentialOffer == null) {
+            throw new IllegalArgumentException("Credential Offer is null");
+        }
+        if (credentialOffer.credentialIssuer() == null || credentialOffer.credentialIssuer().isBlank()) {
+            throw new IllegalArgumentException("Missing required field: credentialIssuer");
+        }
+        if (credentialOffer.credentialConfigurationsIds() == null || credentialOffer.credentialConfigurationsIds().isEmpty()) {
+            throw new IllegalArgumentException("Missing required field: credentialConfigurationIds");
+        }
+        if (credentialOffer.grant() == null) {
+            throw new IllegalArgumentException("Missing required field: grant");
+        }
+    }
+
+
 
 }

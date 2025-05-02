@@ -21,6 +21,7 @@ import reactor.test.StepVerifier;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -159,6 +160,136 @@ class CredentialOfferServiceImplTest {
         StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, credentialOfferUri))
                 .expectNext(expectedCredentialOffer)
                 .verifyComplete();
+    }
+
+    @Test
+    void testGetCredentialOfferFromCredentialOfferUri_ThrowsIllegalArgumentException_WhenCredentialIssuerMissing() throws JsonProcessingException {
+        String processId = "123";
+        String credentialOfferUri = "https://example.com/offer";
+        CredentialOffer offer = CredentialOffer.builder()
+                .credentialConfigurationsIds(List.of("id"))
+                .grant(CredentialOffer.Grant.builder().build())
+                .build();
+
+        when(webClientConfig.centralizedWebClient()).thenReturn(WebClient.builder().exchangeFunction(clientRequest ->
+                Mono.just(ClientResponse.create(HttpStatus.OK)
+                        .header("Content-Type", "application/json")
+                        .body("credential offer").build())
+        ).build());
+
+        when(objectMapper.readTree("credential offer")).thenReturn(mock(JsonNode.class));
+        when(objectMapper.treeToValue(any(JsonNode.class), eq(CredentialOffer.class))).thenReturn(offer);
+
+        StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, credentialOfferUri))
+                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
+                        throwable.getMessage().equals("Missing required field: credentialIssuer"))
+                .verify();
+    }
+
+    @Test
+    void testGetCredentialOfferFromCredentialOfferUri_ThrowsIllegalArgumentException_WhenCredentialConfigurationIdsMissing() throws JsonProcessingException {
+        String processId = "123";
+        String credentialOfferUri = "https://example.com/offer";
+        CredentialOffer offer = CredentialOffer.builder()
+                .credentialIssuer("https://issuer.example.com")
+                .grant(CredentialOffer.Grant.builder().build())
+                .build();
+
+        when(webClientConfig.centralizedWebClient()).thenReturn(WebClient.builder().exchangeFunction(clientRequest ->
+                Mono.just(ClientResponse.create(HttpStatus.OK)
+                        .header("Content-Type", "application/json")
+                        .body("credential offer").build())
+        ).build());
+
+        when(objectMapper.readTree("credential offer")).thenReturn(mock(JsonNode.class));
+        when(objectMapper.treeToValue(any(JsonNode.class), eq(CredentialOffer.class))).thenReturn(offer);
+
+        StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, credentialOfferUri))
+                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
+                        throwable.getMessage().equals("Missing required field: credentialConfigurationIds"))
+                .verify();
+    }
+
+    @Test
+    void testGetCredentialOfferFromCredentialOfferUri_ThrowsIllegalArgumentException_WhenCredentialIssuerIsBlank() throws JsonProcessingException {
+        String processId = "123";
+        String credentialOfferUri = "https://example.com/offer";
+
+        when(webClientConfig.centralizedWebClient()).thenReturn(WebClient.builder().exchangeFunction(clientRequest ->
+                Mono.just(ClientResponse.create(HttpStatus.OK)
+                        .header("Content-Type", "application/json")
+                        .body("credential offer").build())
+        ).build());
+
+        JsonNode mockJsonNode = mock(JsonNode.class);
+        when(objectMapper.readTree("credential offer")).thenReturn(mockJsonNode);
+
+        CredentialOffer credentialOffer = CredentialOffer.builder()
+                .credentialIssuer("") // está en blanco
+                .credentialConfigurationsIds(List.of("valid-id"))
+                .grant(CredentialOffer.Grant.builder().build())
+                .build();
+
+        when(objectMapper.treeToValue(mockJsonNode, CredentialOffer.class)).thenReturn(credentialOffer);
+
+        StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, credentialOfferUri))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof IllegalArgumentException &&
+                                throwable.getMessage().equals("Missing required field: credentialIssuer"))
+                .verify();
+    }
+
+    @Test
+    void testGetCredentialOfferFromCredentialOfferUri_ThrowsIllegalArgumentException_WhenCredentialConfigurationsIdsIsEmpty() throws JsonProcessingException {
+        String processId = "123";
+        String credentialOfferUri = "https://example.com/offer";
+
+        when(webClientConfig.centralizedWebClient()).thenReturn(WebClient.builder().exchangeFunction(clientRequest ->
+                Mono.just(ClientResponse.create(HttpStatus.OK)
+                        .header("Content-Type", "application/json")
+                        .body("credential offer").build())
+        ).build());
+
+        JsonNode mockJsonNode = mock(JsonNode.class);
+        when(objectMapper.readTree("credential offer")).thenReturn(mockJsonNode);
+
+        CredentialOffer credentialOffer = CredentialOffer.builder()
+                .credentialIssuer("https://valid-issuer.com")
+                .credentialConfigurationsIds(List.of()) // vacío
+                .grant(CredentialOffer.Grant.builder().build())
+                .build();
+
+        when(objectMapper.treeToValue(mockJsonNode, CredentialOffer.class)).thenReturn(credentialOffer);
+
+        StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, credentialOfferUri))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof IllegalArgumentException &&
+                                throwable.getMessage().equals("Missing required field: credentialConfigurationIds"))
+                .verify();
+    }
+
+    @Test
+    void testGetCredentialOfferFromCredentialOfferUri_ThrowsIllegalArgumentException_WhenGrantMissing() throws JsonProcessingException {
+        String processId = "123";
+        String credentialOfferUri = "https://example.com/offer";
+        CredentialOffer offer = CredentialOffer.builder()
+                .credentialIssuer("https://issuer.example.com")
+                .credentialConfigurationsIds(List.of("id"))
+                .build();
+
+        when(webClientConfig.centralizedWebClient()).thenReturn(WebClient.builder().exchangeFunction(clientRequest ->
+                Mono.just(ClientResponse.create(HttpStatus.OK)
+                        .header("Content-Type", "application/json")
+                        .body("credential offer").build())
+        ).build());
+
+        when(objectMapper.readTree("credential offer")).thenReturn(mock(JsonNode.class));
+        when(objectMapper.treeToValue(any(JsonNode.class), eq(CredentialOffer.class))).thenReturn(offer);
+
+        StepVerifier.create(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, credentialOfferUri))
+                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException &&
+                        throwable.getMessage().equals("Missing required field: grant"))
+                .verify();
     }
 
 }

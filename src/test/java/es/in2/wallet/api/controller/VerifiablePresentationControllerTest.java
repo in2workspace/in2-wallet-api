@@ -1,6 +1,6 @@
 package es.in2.wallet.api.controller;
 
-import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
+import es.in2.wallet.application.workflows.presentation.Oid4vpWorkflow;
 import es.in2.wallet.application.workflows.presentation.AttestationExchangeTurnstileWorkflow;
 import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.dto.VcSelectorResponse;
@@ -22,7 +22,7 @@ class VerifiablePresentationControllerTest {
     @Mock
     private AttestationExchangeTurnstileWorkflow attestationExchangeTurnstileWorkflow;
     @Mock
-    private AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
+    private Oid4vpWorkflow oid4vpWorkflow;
     @InjectMocks
     private VerifiablePresentationController verifiablePresentationController;
 
@@ -32,7 +32,7 @@ class VerifiablePresentationControllerTest {
         String authorizationToken = "authToken";
         VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().redirectUri("https://redirect.uri.com").build();
 
-        when(attestationExchangeCommonWorkflow.buildVerifiablePresentationWithSelectedVCs(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
+        when(oid4vpWorkflow.buildVerifiablePresentationWithSelectedVCs(anyString(), eq(authorizationToken), eq(vcSelectorResponse)))
                 .thenReturn(Mono.empty());
 
         WebTestClient

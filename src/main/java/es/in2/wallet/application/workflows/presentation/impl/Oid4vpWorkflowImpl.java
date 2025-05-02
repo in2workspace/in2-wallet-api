@@ -4,7 +4,7 @@ import es.in2.wallet.application.dto.AuthorizationRequestOIDC4VP;
 import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.dto.VcSelectorRequest;
 import es.in2.wallet.application.dto.VcSelectorResponse;
-import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
+import es.in2.wallet.application.workflows.presentation.Oid4vpWorkflow;
 import es.in2.wallet.domain.services.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AttestationExchangeCommonWorkflowImpl implements AttestationExchangeCommonWorkflow {
+public class Oid4vpWorkflowImpl implements Oid4vpWorkflow {
 
     private final AuthorizationRequestService authorizationRequestService;
     private final AuthorizationResponseService authorizationResponseService;
