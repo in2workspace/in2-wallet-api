@@ -1,7 +1,5 @@
 package es.in2.wallet.infrastructure.vault.adapter.hashicorp.config;
 
-import es.in2.wallet.infrastructure.vault.model.VaultProviderEnum;
-import es.in2.wallet.infrastructure.vault.util.VaultProviderAnnotation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -15,7 +13,6 @@ import java.net.URL;
 
 @Component
 @RequiredArgsConstructor
-@VaultProviderAnnotation(provider = VaultProviderEnum.HASHICORP)
 public class HashicorpKeyVaultConfig extends AbstractReactiveVaultConfiguration {
 
     private final HashicorpConfig hashicorpConfig;

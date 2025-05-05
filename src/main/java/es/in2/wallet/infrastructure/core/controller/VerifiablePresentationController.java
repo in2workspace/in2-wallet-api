@@ -1,6 +1,6 @@
 package es.in2.wallet.infrastructure.core.controller;
 
-import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
+import es.in2.wallet.application.workflows.presentation.Oid4vpWorkflow;
 import es.in2.wallet.application.workflows.presentation.AttestationExchangeTurnstileWorkflow;
 import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.dto.VcSelectorResponse;
@@ -26,7 +26,7 @@ import static es.in2.wallet.domain.utils.ApplicationUtils.getCleanBearerToken;
 public class VerifiablePresentationController {
 
     private final AttestationExchangeTurnstileWorkflow attestationExchangeTurnstileWorkflow;
-    private final AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
+    private final Oid4vpWorkflow oid4vpWorkflow;
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
@@ -39,7 +39,7 @@ public class VerifiablePresentationController {
         String processId = UUID.randomUUID().toString();
         MDC.put("processId", processId);
         return getCleanBearerToken(authorizationHeader)
-                .flatMap(authorizationToken -> attestationExchangeCommonWorkflow.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse)).doOnSuccess(aVoid -> log.info("Attestation exchange successful"));
+                .flatMap(authorizationToken -> oid4vpWorkflow.buildVerifiablePresentationWithSelectedVCs(processId, authorizationToken, vcSelectorResponse)).doOnSuccess(aVoid -> log.info("Attestation exchange successful"));
     }
     @PostMapping("/cbor")
     @ResponseStatus(HttpStatus.CREATED)

@@ -4,7 +4,7 @@ import es.in2.wallet.application.dto.AuthorizationRequestOIDC4VP;
 import es.in2.wallet.application.dto.CredentialsBasicInfo;
 import es.in2.wallet.application.dto.VcSelectorRequest;
 import es.in2.wallet.application.dto.VcSelectorResponse;
-import es.in2.wallet.application.workflows.presentation.impl.AttestationExchangeCommonWorkflowImpl;
+import es.in2.wallet.application.workflows.presentation.impl.Oid4vpWorkflowImpl;
 import es.in2.wallet.domain.services.*;
 import es.in2.wallet.domain.utils.ApplicationUtils;
 import es.in2.wallet.infrastructure.appconfiguration.exception.VpFormatsNotSupportedException;
@@ -24,7 +24,7 @@ import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class AttestationExchangeCommonWorkflowImplTest {
+class Oid4vpWorkflowImplTest {
     @Mock
     private AuthorizationRequestService authorizationRequestService;
     @Mock
@@ -36,7 +36,7 @@ class AttestationExchangeCommonWorkflowImplTest {
     @Mock
     private PresentationService presentationService;
     @InjectMocks
-    private AttestationExchangeCommonWorkflowImpl attestationExchangeServiceFacade;
+    private Oid4vpWorkflowImpl attestationExchangeServiceFacade;
     @Test
     void getSelectableCredentialsRequiredToBuildThePresentationTest() {
         try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {

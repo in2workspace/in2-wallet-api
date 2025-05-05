@@ -97,7 +97,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
             when(credentialService.saveCredential(processId, userUuid, credentialResponse,credentialOffer.credentials().get(0).format())).thenReturn(Mono.just(credentialId));
 
-            StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
+            StepVerifier.create(ebsiCredentialServiceFacade.execute(processId, authorizationToken, qrContent)).verifyComplete();
         }
     }
 
@@ -136,7 +136,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
             when(credentialService.saveCredential(processId, userUuid, credentialResponse, credentialOffer.credentials().get(0).format())).thenReturn(Mono.just(credentialId));
 
-            StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
+            StepVerifier.create(ebsiCredentialServiceFacade.execute(processId, authorizationToken, qrContent)).verifyComplete();
         }
     }
 
@@ -180,7 +180,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
             when(credentialService.saveCredential(processId, userUuid, credentialResponse, credentialOffer.credentials().get(0).format())).thenReturn(Mono.just(credentialId));
 
-            StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
+            StepVerifier.create(ebsiCredentialServiceFacade.execute(processId, authorizationToken, qrContent)).verifyComplete();
         }
     }
 
@@ -224,7 +224,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
             when(credentialService.saveCredential(processId, userUuid, credentialResponse, credentialOffer.credentials().get(0).format())).thenReturn(Mono.just(credentialId));
 
-            StepVerifier.create(ebsiCredentialServiceFacade.identifyAuthMethod(processId, authorizationToken, qrContent)).verifyComplete();
+            StepVerifier.create(ebsiCredentialServiceFacade.execute(processId, authorizationToken, qrContent)).verifyComplete();
         }
     }
 }

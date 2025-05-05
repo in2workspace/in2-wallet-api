@@ -54,7 +54,6 @@ Wallet Server supports integration with various context brokers, offering flexib
 For secure storage of private keys, Wallet Server integrates with leading vault technologies:
 
 * HashiCorp Vault //todo version
-* Azure Key Vault //todo version
 
 This integration ensures high-level security for cryptographic operations within the Wallet Server ecosystem.
 

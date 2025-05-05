@@ -3,8 +3,6 @@ package es.in2.wallet.infrastructure.vault.adapter.hashicorp.config;
 import es.in2.wallet.infrastructure.appconfiguration.service.GenericConfigAdapter;
 import es.in2.wallet.infrastructure.appconfiguration.util.ConfigAdapterFactory;
 import es.in2.wallet.infrastructure.vault.adapter.hashicorp.config.properties.HashicorpProperties;
-import es.in2.wallet.infrastructure.vault.model.VaultProviderEnum;
-import es.in2.wallet.infrastructure.vault.util.VaultProviderAnnotation;
 import org.springframework.stereotype.Component;
 
 import static es.in2.wallet.domain.utils.ApplicationConstants.VAULT_HASHICORP_PATH;
@@ -12,7 +10,6 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.VAULT_HASHICORP_PA
 import java.util.Base64;
 
 @Component
-@VaultProviderAnnotation(provider = VaultProviderEnum.HASHICORP)
 public class HashicorpConfig {
     private final GenericConfigAdapter genericConfigAdapter;
     private final HashicorpProperties hashicorpProperties;

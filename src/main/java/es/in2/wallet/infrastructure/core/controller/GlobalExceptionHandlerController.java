@@ -1,5 +1,6 @@
 package es.in2.wallet.infrastructure.core.controller;
 
+import es.in2.wallet.application.dto.ApiErrorResponse;
 import es.in2.wallet.domain.exceptions.*;
 import es.in2.wallet.application.dto.GlobalErrorMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -192,6 +193,20 @@ public class GlobalExceptionHandlerController {
                 .title("Timeout Error")
                 .message(timeoutException.getMessage())
                 .path(path)
+                .build());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public Mono<ApiErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, ServerHttpRequest request) {
+        String path = request.getPath().toString();
+        return Mono.just(ApiErrorResponse.builder()
+                .type("https://wallet.in2.es/errors/invalid-request")
+                .title("Invalid Request")
+                .status(HttpStatus.BAD_REQUEST.value())
+                .detail(ex.getMessage())
+                .instance(path)
                 .build());
     }
 }

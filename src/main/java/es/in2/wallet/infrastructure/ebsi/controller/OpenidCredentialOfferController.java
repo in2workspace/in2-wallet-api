@@ -1,6 +1,6 @@
 package es.in2.wallet.infrastructure.ebsi.controller;
 
-import es.in2.wallet.application.workflows.issuance.CredentialIssuanceCommonWorkflow;
+import es.in2.wallet.application.workflows.issuance.Oid4vciWorkflow;
 import es.in2.wallet.infrastructure.core.config.SwaggerConfig;
 import es.in2.wallet.application.workflows.issuance.CredentialIssuanceEbsiWorkflow;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +24,7 @@ import static es.in2.wallet.domain.utils.ApplicationUtils.getCleanBearerToken;
 public class OpenidCredentialOfferController {
 
     private final CredentialIssuanceEbsiWorkflow ebsiCredentialIssuanceServiceFacade;
-    private final CredentialIssuanceCommonWorkflow commonCredentialIssuanceServiceFacade;
+    private final Oid4vciWorkflow commonCredentialIssuanceServiceFacade;
 
 
     /**
@@ -44,10 +44,10 @@ public class OpenidCredentialOfferController {
         return getCleanBearerToken(authorizationHeader)
                 .flatMap(authorizationToken -> {
                     if (credentialOfferUri.contains("ebsi")) {
-                        return ebsiCredentialIssuanceServiceFacade.identifyAuthMethod(
+                        return ebsiCredentialIssuanceServiceFacade.execute(
                                 processId, authorizationToken, credentialOfferUri);
                     } else {
-                        return commonCredentialIssuanceServiceFacade.identifyAuthMethod(
+                        return commonCredentialIssuanceServiceFacade.execute(
                                 processId, authorizationToken, credentialOfferUri);
                     }
                 });

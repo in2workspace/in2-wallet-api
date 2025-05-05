@@ -1,6 +1,6 @@
 package es.in2.wallet.api.ebsi.comformance.controller;
 
-import es.in2.wallet.application.workflows.issuance.CredentialIssuanceCommonWorkflow;
+import es.in2.wallet.application.workflows.issuance.Oid4vciWorkflow;
 import es.in2.wallet.application.workflows.issuance.CredentialIssuanceEbsiWorkflow;
 import es.in2.wallet.infrastructure.ebsi.controller.OpenidCredentialOfferController;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ class OpenidCredentialOfferControllerTest {
     private CredentialIssuanceEbsiWorkflow ebsiCredentialIssuanceServiceFacade;
 
     @Mock
-    private CredentialIssuanceCommonWorkflow commonCredentialIssuanceServiceFacade;
+    private Oid4vciWorkflow commonCredentialIssuanceServiceFacade;
 
     @InjectMocks
     private OpenidCredentialOfferController openidCredentialOfferController;
@@ -32,7 +32,7 @@ class OpenidCredentialOfferControllerTest {
         String authorizationHeader = "Bearer test-token";
         String credentialOfferUri = "https://example.com/ebsi-offer";
 
-        when(ebsiCredentialIssuanceServiceFacade.identifyAuthMethod(anyString(), eq("test-token"), eq("https://example.com/ebsi-offer")))
+        when(ebsiCredentialIssuanceServiceFacade.execute(anyString(), eq("test-token"), eq("https://example.com/ebsi-offer")))
                 .thenReturn(Mono.empty());
 
         // Act & Assert
@@ -48,7 +48,7 @@ class OpenidCredentialOfferControllerTest {
                 .exchange()
                 .expectStatus().isOk();
 
-        verify(ebsiCredentialIssuanceServiceFacade, times(1)).identifyAuthMethod(anyString(), eq("test-token"), eq("https://example.com/ebsi-offer"));
+        verify(ebsiCredentialIssuanceServiceFacade, times(1)).execute(anyString(), eq("test-token"), eq("https://example.com/ebsi-offer"));
         verifyNoInteractions(commonCredentialIssuanceServiceFacade);
     }
 
@@ -57,7 +57,7 @@ class OpenidCredentialOfferControllerTest {
         // Arrange
         String authorizationHeader = "Bearer test-token";
         String credentialOfferUri = "https://example.com/common-offer";
-        when(commonCredentialIssuanceServiceFacade.identifyAuthMethod(anyString(), eq("test-token"), eq("https://example.com/common-offer")))
+        when(commonCredentialIssuanceServiceFacade.execute(anyString(), eq("test-token"), eq("https://example.com/common-offer")))
                 .thenReturn(Mono.empty());
 
         // Act & Assert
@@ -73,7 +73,7 @@ class OpenidCredentialOfferControllerTest {
                 .exchange()
                 .expectStatus().isOk();
 
-        verify(commonCredentialIssuanceServiceFacade, times(1)).identifyAuthMethod(anyString(), eq("test-token"), eq("https://example.com/common-offer"));
+        verify(commonCredentialIssuanceServiceFacade, times(1)).execute(anyString(), eq("test-token"), eq("https://example.com/common-offer"));
         verifyNoInteractions(ebsiCredentialIssuanceServiceFacade);
     }
 }

@@ -3,13 +3,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-## [v1.4.5](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.4.4)
+## [v1.4.6](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.4.6)
+### Changed
+- Added additional validations for `credentialIssuer` and `credentialConfigurationsIds` fields in `CredentialOfferServiceImpl`, along with new unit tests.
+- Refactored and fixed several tests to ensure proper error handling in credential flows.
+- Removed the `ConfigProviderName` and `VaultProviderEnum` enums, along with all related Azure logic and configuration (including entries and comments in `application.yml`, `application-test.yaml`, and associated classes).
+
+## [v1.4.5](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.4.5)
 ### Changed
 - Prepared support for dcql_query (left commented) and removed all remaining presentation_definition logic.
 - Added validations for credential format and id.
 - Introduced new custom exceptions for OID4VP.
 
-## [v1.4.4](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.4.3)
+## [v1.4.4](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.4.4)
 ### Changed
 - Add CORS configuration to health, prometheus and pin endpoints.
 - Remove Spring Webflux basepath parameter.

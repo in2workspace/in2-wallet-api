@@ -1,6 +1,5 @@
 package es.in2.wallet.infrastructure.vault.util;
 
-import es.in2.wallet.infrastructure.vault.model.VaultProviderEnum;
 import org.springframework.context.annotation.Conditional;
 
 import java.lang.annotation.ElementType;
@@ -12,6 +11,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Conditional(VaultProviderCondition.class)
 public @interface VaultProviderAnnotation {
-    VaultProviderEnum provider();
 }
 

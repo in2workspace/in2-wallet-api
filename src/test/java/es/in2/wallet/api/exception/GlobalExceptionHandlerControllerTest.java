@@ -1,14 +1,17 @@
 package es.in2.wallet.api.exception;
 
+import es.in2.wallet.application.dto.ApiErrorResponse;
 import es.in2.wallet.domain.exceptions.*;
 import es.in2.wallet.infrastructure.core.controller.GlobalExceptionHandlerController;
 import es.in2.wallet.application.dto.GlobalErrorMessage;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.RequestPath;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import reactor.core.publisher.Mono;
@@ -141,4 +144,28 @@ class GlobalExceptionHandlerControllerTest {
                 .expectNext(globalErrorMessage)
                 .verifyComplete();
     }
+
+    @Test
+    void handleIllegalArgumentExceptionTest() {
+        String message = "Invalid input provided";
+        String path = "/api/example";
+
+        IllegalArgumentException exception = new IllegalArgumentException(message);
+
+        when(request.getPath()).thenReturn(requestPath);
+        when(requestPath.toString()).thenReturn(path);
+
+        ApiErrorResponse expectedResponse = ApiErrorResponse.builder()
+                .type("https://wallet.in2.es/errors/invalid-request")
+                .title("Invalid Request")
+                .status(HttpStatus.BAD_REQUEST.value())
+                .detail(message)
+                .instance(path)
+                .build();
+
+        StepVerifier.create(globalExceptionHandlerController.handleIllegalArgumentException(exception, request))
+                .expectNext(expectedResponse)
+                .verifyComplete();
+    }
+
 }

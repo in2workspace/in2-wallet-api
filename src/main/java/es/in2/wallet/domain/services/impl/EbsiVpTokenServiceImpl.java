@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.wallet.application.dto.*;
-import es.in2.wallet.application.workflows.presentation.AttestationExchangeCommonWorkflow;
+import es.in2.wallet.application.workflows.presentation.Oid4vpWorkflow;
 import es.in2.wallet.domain.exceptions.FailedSerializingException;
 import es.in2.wallet.domain.services.EbsiVpTokenService;
 import es.in2.wallet.domain.services.PresentationService;
@@ -30,7 +30,7 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
     private final ObjectMapper objectMapper;
     private final PresentationService presentationService;
-    private final AttestationExchangeCommonWorkflow attestationExchangeCommonWorkflow;
+    private final Oid4vpWorkflow oid4vpWorkflow;
     private final WebClientConfig webClient;
     /**
      * Initiates the process to exchange the authorization token and JWT for a VP Token Request,
@@ -110,7 +110,7 @@ public class EbsiVpTokenServiceImpl implements EbsiVpTokenService {
      * Builds a signed JWT Verifiable Presentation by extracting user data and credentials based on the VC type list provided.
      */
     private Mono<String> buildSignedJwtVerifiablePresentationByVcTypeList(String processId, String authorizationToken, List<String> vcTypeList, String nonce, AuthorisationServerMetadata authorisationServerMetadata) {
-        return attestationExchangeCommonWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,vcTypeList)
+        return oid4vpWorkflow.getSelectableCredentialsRequiredToBuildThePresentation(processId,authorizationToken,vcTypeList)
                                         .flatMap(list -> {
                                             log.debug(list.toString());
                                             VcSelectorResponse vcSelectorResponse = VcSelectorResponse.builder().selectedVcList(list).build();
