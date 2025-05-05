@@ -93,13 +93,8 @@ security:
     allowedOrigins:
   # Configures vault providers to store user secret keys
   vault:
-    provider:
-      # Name of the vault provider to use (e.g. 'hashicorp').
-      name: hashicorp
     hashicorp:
-      # (REQUIRED) URL of the HashiCorp Vault server (e.g. http://vault:8200).
       url:
-      # (REQUIRED) Token used to authenticate with HashiCorp Vault.
       token:
 
 # These properties are used to pass the EBSI Holder Wallet Test
