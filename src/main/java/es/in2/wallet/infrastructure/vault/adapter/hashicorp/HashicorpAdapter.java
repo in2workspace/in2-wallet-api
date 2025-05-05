@@ -3,10 +3,8 @@ package es.in2.wallet.infrastructure.vault.adapter.hashicorp;
 import es.in2.wallet.infrastructure.vault.adapter.hashicorp.model.HashicorpSecretRequest;
 import es.in2.wallet.infrastructure.vault.adapter.hashicorp.config.HashicorpConfig;
 import es.in2.wallet.infrastructure.vault.adapter.hashicorp.model.HashicorpSecretResponse;
-import es.in2.wallet.infrastructure.vault.model.VaultProviderEnum;
 import es.in2.wallet.infrastructure.vault.model.KeyVaultSecret;
 import es.in2.wallet.infrastructure.vault.service.GenericVaultService;
-import es.in2.wallet.infrastructure.vault.util.VaultProviderAnnotation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.vault.core.ReactiveVaultOperations;
@@ -18,7 +16,6 @@ import java.util.Objects;
 
 @Service
 @Slf4j
-@VaultProviderAnnotation(provider = VaultProviderEnum.HASHICORP)
 public class HashicorpAdapter implements GenericVaultService {
     public static final String DATA = "/data/";
 
