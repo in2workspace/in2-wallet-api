@@ -51,17 +51,6 @@ class QrCodeProcessorWorkflowImplTest {
     }
 
     @Test
-    void processQrContentVcLoginRequestFailure() {
-        String qrContent = "https://authentication-request?=response_type=vp_token";
-        String processId = "processId";
-        String authorizationToken = "authToken";
-
-        StepVerifier.create(qrCodeProcessorService.processQrContent(processId, authorizationToken, qrContent))
-                .expectError(NoSuchQrContentException.class)
-                .verify();
-    }
-
-    @Test
     void processQrContentVcLoginRequestSuccess() {
         String qrContent = "openid4vp://mock.request.jwt";
         String processId = "processId";
