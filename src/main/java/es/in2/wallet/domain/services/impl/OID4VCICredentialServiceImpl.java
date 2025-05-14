@@ -237,7 +237,7 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
             return Mono.just(
                     CredentialRequest.builder()
                             .format(format)
-                            .proof(CredentialRequest.Proof.builder().proofType("jwt").jwt(jwt).build())
+                            .proof(CredentialRequest.Proofs.builder().proofType("jwt").jwt(List.of(jwt)).build())
                             .build()
             ).doOnNext(req ->
                     log.debug("Credential Request Body for DOME Profile: {}", req)
@@ -248,7 +248,7 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
                     CredentialRequest.builder()
                             .format(format)
                             .types(types)
-                            .proof(CredentialRequest.Proof.builder().proofType("jwt").jwt(jwt).build())
+                            .proof(CredentialRequest.Proofs.builder().proofType("jwt").jwt(List.of(jwt)).build())
                             .build()
             );
         } else {

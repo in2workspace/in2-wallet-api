@@ -11,13 +11,13 @@ public record CredentialRequest(
 
         @JsonProperty("format") String format,
 
-        @JsonProperty("proof") Proof proof
+        @JsonProperty("proofs") Proofs proof
 ) {
     @Builder
-    public record Proof(
+    public record Proofs(
             @JsonProperty("proof_type") String proofType,
 
-            @JsonProperty("jwt") String jwt
+            @JsonProperty("jwt") List<String> jwt
     ) {
     }
 }
