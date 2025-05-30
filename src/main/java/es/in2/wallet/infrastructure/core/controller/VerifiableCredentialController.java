@@ -47,13 +47,13 @@ public class VerifiableCredentialController {
                 .flatMap(userId -> dataWorkflow.getAllCredentialsByUserId(processId,userId));
     }
     @DeleteMapping
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(
             summary = "Delete Verifiable Credential",
             description = "Delete the verifiable credential from the context broker.",
             tags = (SwaggerConfig.TAG_PUBLIC)
     )
-    @ApiResponse(responseCode = "200", description = "Verifiable credential deleted successfully.")
+    @ApiResponse(responseCode = "204", description = "Verifiable credential deleted successfully.")
     @ApiResponse(responseCode = "400", description = "Invalid request.")
     @ApiResponse(responseCode = "404", description = "Verifiable credential not found")
     @ApiResponse(responseCode = "500", description = "Internal server error.")
