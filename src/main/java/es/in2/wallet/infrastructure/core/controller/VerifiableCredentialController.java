@@ -46,7 +46,7 @@ public class VerifiableCredentialController {
         return getCleanBearerAndUserIdFromToken(authorizationHeader)
                 .flatMap(userId -> dataWorkflow.getAllCredentialsByUserId(processId,userId));
     }
-    @DeleteMapping
+    @DeleteMapping("/{credentialId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(
             summary = "Delete Verifiable Credential",
@@ -57,7 +57,7 @@ public class VerifiableCredentialController {
     @ApiResponse(responseCode = "400", description = "Invalid request.")
     @ApiResponse(responseCode = "404", description = "Verifiable credential not found")
     @ApiResponse(responseCode = "500", description = "Internal server error.")
-    public Mono<Void> deleteVerifiableCredential(@RequestParam String credentialId, @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+    public Mono<Void> deleteVerifiableCredential(@PathVariable String credentialId, @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
         log.debug("VerifiableCredentialController.deleteVerifiableCredential()");
 
         String processId = UUID.randomUUID().toString();
