@@ -33,11 +33,12 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
             TokenResponse tokenResponse,
             CredentialIssuerMetadata credentialIssuerMetadata,
             String format,
-            List<String> types
+            String credentialConfigurationId,
+            String cryptographicBinding
     ) {
         String processId = MDC.get(PROCESS_ID);
 
-        return buildCredentialRequest(jwt, format, types)
+        return buildCredentialRequest(jwt, format, credentialConfigurationId, cryptographicBinding)
                 .doOnSuccess(request ->
                         log.info("ProcessID: {} - CredentialRequest: {}", processId, request)
                 )
@@ -229,37 +230,45 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
     }
 
     /**
-     * Builds the request object (CredentialRequest or FiwareCredentialRequest) depending on the 'types' list.
+     * Builds the request object CredentialRequest depending on the format and types.
      */
-    private Mono<?> buildCredentialRequest(String jwt, String format, List<String> types) {
-        if (types == null) {
-            // If 'types' is null, assume a standard CredentialRequest
-            return Mono.just(
-                    CredentialRequest.builder()
-                            .format(format)
-                            .proof(CredentialRequest.Proofs.builder().proofType("jwt").jwt(List.of(jwt)).build())
-                            .build()
-            ).doOnNext(req ->
-                    log.debug("Credential Request Body for DOME Profile: {}", req)
-            );
-        } else if (types.size() > 1) {
-            // If multiple types, return a standard CredentialRequest with a list
-            return Mono.just(
-                    CredentialRequest.builder()
-                            .format(format)
-                            .types(types)
-                            .proof(CredentialRequest.Proofs.builder().proofType("jwt").jwt(List.of(jwt)).build())
-                            .build()
-            );
-        } else {
-            // If exactly one type, build a FiwareCredentialRequest
-            return Mono.just(
-                    FiwareCredentialRequest.builder()
-                            .format(format)
-                            .type(types.get(0))
-                            .types(types)
-                            .build()
-            );
+    private Mono<?> buildCredentialRequest(String jwt, String format, String credentialConfigurationId, String cryptographicBinding) {
+        try{
+            if(credentialConfigurationId != null) {
+                if (format.equals(JWT_VC_JSON)) {
+                    if (cryptographicBinding != null) {
+                        return Mono.just(
+                                CredentialRequest.builder()
+                                        .format(format)
+                                        .credentialConfigurationId(credentialConfigurationId)
+                                        .proof(CredentialRequest.Proofs.builder().proofType("jwt").jwt(List.of(jwt)).build())
+                                        .build()
+                        ).doOnNext(req ->
+                                log.debug("Credential Request Body for DOME Profile: {}", req)
+                        );
+                    } else {
+                        return Mono.just(
+                                CredentialRequest.builder()
+                                        .format(format)
+                                        .credentialConfigurationId(credentialConfigurationId)
+                                        .build()
+                        ).doOnNext(req ->
+                                log.debug("Credential Request Body for DOME Profile: {}", req)
+                        );
+                    }
+
+                }
+                return Mono.error(new IllegalArgumentException(
+                        "Format not supported: " + format
+                ));
+            }
+            return Mono.error(new IllegalArgumentException(
+                    "Credentials configurations ids not provided"
+            ));
+
+        }catch (Exception error){
+            return Mono.error(new RuntimeException(
+                    "Error while building credential request, error: " + error));
         }
     }
 }
