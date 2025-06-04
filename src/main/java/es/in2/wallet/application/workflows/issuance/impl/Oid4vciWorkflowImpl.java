@@ -71,22 +71,20 @@ public class Oid4vciWorkflowImpl implements Oid4vciWorkflow {
                                 return Mono.error(new RuntimeException("No credential configurations IDs found"));
                             }
                             String credentialConfigurationId = credentialConfigurationsIds.get(0);
-
-                            CredentialIssuerMetadata.CredentialsConfigurationsSupported config = credentialIssuerMetadata.credentialsConfigurationsSupported().get("cryptographic_binding_methods_supported");
-                            if (config != null && !config.cryptographicBindingMethodsSupported().isEmpty()) {
-                                String cryptographicMethod = config.cryptographicBindingMethodsSupported().get(0);
-                                return retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialConfigurationId, credentialIssuerMetadata)
-                                        .flatMap(format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
-                                                .flatMap(jwt -> oid4vciCredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, format, credentialConfigurationId, cryptographicMethod))
-                                                .flatMap(credentialResponseWithStatus -> handleCredentialResponse(processId, credentialResponseWithStatus, authorizationToken, tokenResponse, credentialIssuerMetadata, format))
-                                        );
+                            CredentialIssuerMetadata.CredentialsConfigurationsSupported config =
+                                    credentialIssuerMetadata.credentialsConfigurationsSupported().get(credentialConfigurationId);
+                            String cryptographicMethod;
+                            if (config != null && config.cryptographicBindingMethodsSupported() != null
+                                    && !config.cryptographicBindingMethodsSupported().isEmpty()) {
+                                cryptographicMethod = config.cryptographicBindingMethodsSupported().get(0);
                             } else {
-                                return retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialConfigurationId, credentialIssuerMetadata)
-                                        .flatMap(format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
-                                                .flatMap(jwt -> oid4vciCredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, format, credentialConfigurationId, null))
-                                                .flatMap(credentialResponseWithStatus -> handleCredentialResponse(processId, credentialResponseWithStatus, authorizationToken, tokenResponse, credentialIssuerMetadata, format))
-                                        );
+                                cryptographicMethod = null;
                             }
+                            return retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialConfigurationId, credentialIssuerMetadata)
+                                .flatMap(format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
+                                        .flatMap(jwt -> oid4vciCredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, format, credentialConfigurationId, cryptographicMethod))
+                                        .flatMap(credentialResponseWithStatus -> handleCredentialResponse(processId, credentialResponseWithStatus, authorizationToken, tokenResponse, credentialIssuerMetadata, format))
+                                );
 
                         })
                 );

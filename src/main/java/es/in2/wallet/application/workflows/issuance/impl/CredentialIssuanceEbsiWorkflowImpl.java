@@ -116,13 +116,23 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
     private Mono<Void> getCredential(String processId, String authorizationToken, TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce) {
         return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
                 .flatMap(jwt -> {
-                    CredentialIssuerMetadata.CredentialsConfigurationsSupported config = credentialIssuerMetadata.credentialsConfigurationsSupported().get("cryptographic_binding_methods_supported");
-                    if (config != null && !config.cryptographicBindingMethodsSupported().isEmpty()) {
-                        String cryptographicMethod = config.cryptographicBindingMethodsSupported().get(0);
-                        return oid4vciCredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0), cryptographicMethod);
-                    } else {
-                        return oid4vciCredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0), null);
+                    String credentialConfigurationId = List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0);
+                    CredentialIssuerMetadata.CredentialsConfigurationsSupported config =
+                            credentialIssuerMetadata.credentialsConfigurationsSupported().get(credentialConfigurationId);
+
+                    String cryptographicMethod = null;
+                    if (config != null && config.cryptographicBindingMethodsSupported() != null
+                            && !config.cryptographicBindingMethodsSupported().isEmpty()) {
+                        cryptographicMethod = config.cryptographicBindingMethodsSupported().get(0);
                     }
+                    return oid4vciCredentialService.getCredential(
+                            jwt,
+                            tokenResponse,
+                            credentialIssuerMetadata,
+                            credentialOffer.credentials().get(0).format(),
+                            credentialConfigurationId,
+                            cryptographicMethod
+                    );
                 })
                 .flatMap(credentialResponse -> handleCredentialResponse(processId, credentialResponse, authorizationToken, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format()));
     }

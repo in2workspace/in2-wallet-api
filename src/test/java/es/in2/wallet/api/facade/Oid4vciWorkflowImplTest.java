@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import reactor.util.function.Tuples;
 
 import java.util.*;
 
@@ -172,6 +173,64 @@ class Oid4vciWorkflowImplTest {
             StepVerifier.create(credentialIssuanceServiceFacade.execute(processId, authorizationToken, qrContent)).verifyComplete();
         }
     }
+    @Test
+    void testGetCredentialWithCryptographicBinding() throws JsonProcessingException {
+        try (MockedStatic<ApplicationUtils> ignored = Mockito.mockStatic(ApplicationUtils.class)) {
+            String processId = "processId";
+            String authorizationToken = "authToken";
+            String qrContent = "qrContent";
+
+            CredentialOffer.Credential credential = CredentialOffer.Credential.builder().format("jwt_vc").types(List.of("LEARCredential")).build();
+            CredentialOffer.Grant grant = CredentialOffer.Grant.builder().authorizationCodeGrant(CredentialOffer.Grant.AuthorizationCodeGrant.builder().build()).build();
+            CredentialOffer credentialOffer = CredentialOffer.builder().grant(grant).credentials(List.of(credential)).credentialConfigurationsIds(Set.of("LEARCredential")).build();
+
+            AuthorisationServerMetadata authorisationServerMetadata = AuthorisationServerMetadata.builder().build();
+
+            CredentialIssuerMetadata.CredentialsConfigurationsSupported configurationsSupported = CredentialIssuerMetadata.CredentialsConfigurationsSupported.builder()
+                    .format("jwt_vc_json")
+                    .cryptographicBindingMethodsSupported(List.of("did:key"))
+                    .build();
+
+            Map<String, CredentialIssuerMetadata.CredentialsConfigurationsSupported> credentialConfigurationsSupported = new HashMap<>();
+            credentialConfigurationsSupported.put("LEARCredential", configurationsSupported);
+
+            CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder()
+                    .credentialIssuer("issuer")
+                    .credentialsConfigurationsSupported(credentialConfigurationsSupported)
+                    .build();
+
+            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
+            CredentialResponse credentialResponse = CredentialResponse.builder().build();
+            CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.OK).credentialResponse(credentialResponse).build();
+            String did = "did:ebsi:123";
+            String json = "{\"credential_request\":\"example\"}";
+            ObjectMapper objectMapper2 = new ObjectMapper();
+            JsonNode jsonNode = objectMapper2.readTree(json);
+            String jwt = "jwt";
+            Map<String, String> mockedMap = new HashMap<>();
+            mockedMap.put("code", "123");
+
+            String userIdStr = UUID.randomUUID().toString();
+            UUID userUuid = UUID.fromString(userIdStr);
+            UUID credentialId = UUID.randomUUID();
+
+            when(getUserIdFromToken(authorizationToken)).thenReturn(Mono.just(userIdStr));
+            when(credentialOfferService.getCredentialOfferFromCredentialOfferUri(processId, qrContent)).thenReturn(Mono.just(credentialOffer));
+            when(credentialIssuerMetadataService.getCredentialIssuerMetadataFromCredentialOffer(processId, credentialOffer)).thenReturn(Mono.just(credentialIssuerMetadata));
+            when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId, credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
+            when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
+            when(extractResponseType("jwt")).thenReturn(Mono.just("vp_token"));
+            when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
+            when(proofJWTService.buildCredentialRequest("123", "issuer", did)).thenReturn(Mono.just(jsonNode));
+            when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwt));
+            when(oid4vciCredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, "jwt_vc_json", List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0),"did:key")).thenReturn(Mono.just(credentialResponseWithStatus));
+            when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
+            when(credentialService.saveCredential(processId, userUuid, credentialResponse, "jwt_vc_json")).thenReturn(Mono.just(credentialId));
+
+            StepVerifier.create(credentialIssuanceServiceFacade.execute(processId, authorizationToken, qrContent)).verifyComplete();
+        }
+    }
+
 
 }
 
