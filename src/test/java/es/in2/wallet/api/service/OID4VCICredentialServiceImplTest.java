@@ -592,4 +592,46 @@ class OID4VCICredentialServiceImplTest {
                 .expectError(FailedDeserializingException.class)
                 .verify();
     }
+
+    @Test
+    void getCredential_throwsException_whenFormatNotSupported() {
+        String jwt = "ey34324";
+        TokenResponse tokenResponse = TokenResponse.builder().accessToken("token").build();
+        CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder()
+                .credentialIssuer("issuer")
+                .credentialEndpoint("endpoint")
+                .build();
+
+        String unsupportedFormat = "ldp_vc";
+
+        StepVerifier.create(
+                        credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, unsupportedFormat, "SomeCredentialId", "did:key")
+                )
+                .expectErrorMatches(error ->
+                        error instanceof IllegalArgumentException &&
+                                error.getMessage().contains("Format not supported")
+                )
+                .verify();
+    }
+
+    @Test
+    void getCredential_throwsException_whenCredentialConfigurationIdIsNull() {
+        String jwt = "ey34324";
+        TokenResponse tokenResponse = TokenResponse.builder().accessToken("token").build();
+        CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder()
+                .credentialIssuer("issuer")
+                .credentialEndpoint("endpoint")
+                .build();
+
+        StepVerifier.create(
+                        credentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, JWT_VC_JSON, null, "did:key")
+                )
+                .expectErrorMatches(error ->
+                        error instanceof IllegalArgumentException &&
+                                error.getMessage().contains("Credentials configurations ids not provided")
+                )
+                .verify();
+    }
+
+
 }
