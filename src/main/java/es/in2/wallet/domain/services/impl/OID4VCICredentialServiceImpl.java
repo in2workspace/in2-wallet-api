@@ -189,6 +189,7 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
         try {
             // Convert the request to JSON
             String requestJson = objectMapper.writeValueAsString(credentialRequest);
+            log.info("Request JSON: {}", requestJson);
 
             return webClient.centralizedWebClient()
                     .post()
@@ -244,7 +245,7 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
                                         .proof(CredentialRequest.Proofs.builder().proofType("jwt").jwt(List.of(jwt)).build())
                                         .build()
                         ).doOnNext(req ->
-                                log.debug("Credential Request Body for DOME Profile: {}", req)
+                                log.debug("Credential Request Body for DOME Profile with proof: {}", req)
                         );
                     } else {
                         return Mono.just(
