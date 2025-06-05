@@ -58,8 +58,7 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
                         )
                 )
                 // Handle deferred or immediate credential response
-                .flatMap(responseWithStatus ->
-                        handleCredentialResponse(responseWithStatus, credentialIssuerMetadata)
+                .flatMap(this::handleCredentialResponse
                 )
                 .doOnSuccess(finalResponse ->
                         log.info(
@@ -104,27 +103,10 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
      * Returns a Mono<CredentialResponseWithStatus>.
      */
     private Mono<CredentialResponseWithStatus> handleCredentialResponse(
-            CredentialResponseWithStatus responseWithStatus,
-            CredentialIssuerMetadata credentialIssuerMetadata
+            CredentialResponseWithStatus responseWithStatus
     ) {
-        // Since credentialResponse is already a parsed object, no JSON parsing is needed here
-        CredentialResponse credentialResponse = responseWithStatus.credentialResponse();
-
-        if (credentialResponse.acceptanceToken() != null) {
-            // If an acceptanceToken is present, proceed with the deferred flow
-            return Mono.delay(Duration.ofSeconds(10))
-                    .then(handleDeferredCredential(credentialResponse.acceptanceToken(), credentialIssuerMetadata))
-                    .map(deferredResponse ->
-                            // Build a new CredentialResponseWithStatus with the updated CredentialResponse
-                            CredentialResponseWithStatus.builder()
-                                    .statusCode(responseWithStatus.statusCode())
-                                    .credentialResponse(deferredResponse)
-                                    .build()
-                    );
-        } else {
-            // If no acceptanceToken is present, just return the existing response
-            return Mono.just(responseWithStatus);
-        }
+        // If no acceptanceToken is present, just return the existing response
+        return Mono.just(responseWithStatus);
     }
 
     /**
@@ -133,7 +115,7 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
      *  - Checks if a new acceptanceToken is present; if so, recurses.
      *  - If the credential is available, returns it.
      */
-    private Mono<CredentialResponse> handleDeferredCredential(
+    /*private Mono<CredentialResponse> handleDeferredCredential(
             String acceptanceToken,
             CredentialIssuerMetadata credentialIssuerMetadata
     ) {
@@ -175,7 +157,7 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
                         ));
                     }
                 });
-    }
+    }*/
 
     /**
      * Makes a POST request and returns a Mono<CredentialResponseWithStatus> containing
