@@ -70,9 +70,12 @@ public class Oid4vciWorkflowImpl implements Oid4vciWorkflow {
                             if (credentialConfigurationsIds.isEmpty()) {
                                 return Mono.error(new RuntimeException("No credential configurations IDs found"));
                             }
+                            log.info("TokenResponse: {}", tokenResponse);
+                            log.info("Configuration IDs: {}", credentialConfigurationsIds);
                             String credentialConfigurationId = credentialConfigurationsIds.get(0);
                             CredentialIssuerMetadata.CredentialsConfigurationsSupported config =
                                     credentialIssuerMetadata.credentialsConfigurationsSupported().get(credentialConfigurationId);
+                            log.info("Configuration: {}", config);
                             String cryptographicMethod;
                             if (config != null && config.cryptographicBindingMethodsSupported() != null
                                     && !config.cryptographicBindingMethodsSupported().isEmpty()) {
