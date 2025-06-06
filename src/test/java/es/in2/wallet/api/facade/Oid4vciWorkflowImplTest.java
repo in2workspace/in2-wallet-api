@@ -75,7 +75,10 @@ class Oid4vciWorkflowImplTest {
                     .build();
 
             TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").accessToken("ey1234").build();
-            CredentialResponse credentialResponse = CredentialResponse.builder().credential("unsigned_credential").transactionId("123").build();
+            List<CredentialResponse.Credentials> credentialList = List.of(
+                    new CredentialResponse.Credentials("unsigned_credential")
+            );
+            CredentialResponse credentialResponse = CredentialResponse.builder().credentials(credentialList).transactionId("123").build();
             CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.ACCEPTED).credentialResponse(credentialResponse).build();
             String did = "did:ebsi:123";
             String json = "{\"credential_request\":\"example\"}";
@@ -142,7 +145,10 @@ class Oid4vciWorkflowImplTest {
                     .build();
 
             TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
-            CredentialResponse credentialResponse = CredentialResponse.builder().credential("ey1234").format(JWT_VC).build();
+            List<CredentialResponse.Credentials> credentialList = List.of(
+                    new CredentialResponse.Credentials("ey1234")
+            );
+            CredentialResponse credentialResponse = CredentialResponse.builder().credentials(credentialList).build();
             CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.OK).credentialResponse(credentialResponse).build();
 
             String did = "did:ebsi:123";

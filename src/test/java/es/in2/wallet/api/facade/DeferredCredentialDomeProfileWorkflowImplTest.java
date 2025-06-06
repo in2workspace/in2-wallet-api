@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.List;
 import java.util.UUID;
 
 import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_VC;
@@ -50,9 +51,13 @@ class DeferredCredentialDomeProfileWorkflowImplTest {
                 .deferredEndpoint(deferredEndpoint)
                 .build();
 
+        List<CredentialResponse.Credentials> credentialList = List.of(
+                new CredentialResponse.Credentials("ey134...")
+        );
+
         CredentialResponse credentialResponse = CredentialResponse.builder()
-                .credential("ey134...")
-                .format(JWT_VC)
+                .credentials(credentialList)
+                .credentials(credentialList)
                 .build();
 
         CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder()
