@@ -140,11 +140,12 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
                                         try {
                                             CredentialResponse credentialResponse =
                                                     objectMapper.readValue(responseBody, CredentialResponse.class);
-
+                                            System.out.println("XIVATO 1: "+credentialResponse);
                                             sink.next(CredentialResponseWithStatus.builder()
                                                     .credentialResponse(credentialResponse)
                                                     .statusCode(response.statusCode())
                                                     .build());
+                                            System.out.println("XIVATO 2: "+credentialResponse);
                                         } catch (Exception e) {
                                             log.error("Error parsing credential response: {}", e.getMessage());
                                             sink.error(new FailedDeserializingException(

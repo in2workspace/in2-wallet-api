@@ -36,8 +36,6 @@ public record CredentialResponse(
 ) {
         @Builder
         public record Credentials(
-                @Schema(example = "LUpixVCWJk0eOt4CXQe1NXK....WZwmhmn9OQp6YxX0a2L",
-                        description = "Contains issued Credential")
                 @JsonProperty("credential") String credential
 
         ) {
