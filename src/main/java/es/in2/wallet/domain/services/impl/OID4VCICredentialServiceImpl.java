@@ -58,8 +58,7 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
                         )
                 )
                 // Handle deferred or immediate credential response
-                .flatMap(this::handleCredentialResponse
-                )
+                .flatMap(this::handleCredentialResponse)
                 .doOnSuccess(finalResponse ->
                         log.info(
                                 "ProcessID: {} - Final CredentialResponseWithStatus: {}",
@@ -105,59 +104,8 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
     private Mono<CredentialResponseWithStatus> handleCredentialResponse(
             CredentialResponseWithStatus responseWithStatus
     ) {
-        // If no acceptanceToken is present, just return the existing response
         return Mono.just(responseWithStatus);
     }
-
-    /**
-     * Handles the recursive deferred flow. Returns a Mono<CredentialResponse>:
-     *  - Parses the server response (JSON) into a CredentialResponse.
-     *  - Checks if a new acceptanceToken is present; if so, recurses.
-     *  - If the credential is available, returns it.
-     */
-    /*private Mono<CredentialResponse> handleDeferredCredential(
-            String acceptanceToken,
-            CredentialIssuerMetadata credentialIssuerMetadata
-    ) {
-        return webClient.centralizedWebClient()
-                .post()
-                .uri(credentialIssuerMetadata.deferredCredentialEndpoint())
-                .header(HEADER_AUTHORIZATION, BEARER + acceptanceToken)
-                .exchangeToMono(response -> {
-                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
-                        return Mono.error(new RuntimeException(
-                                "Error during the deferred credential request, error: " + response
-                        ));
-                    } else {
-                        log.info("Deferred credential response retrieved");
-                        return response.bodyToMono(String.class);
-                    }
-                })
-                .flatMap(responseBody -> {
-                    try {
-                        log.debug("Deferred flow body: {}", responseBody);
-                        CredentialResponse credentialResponse = objectMapper.readValue(responseBody, CredentialResponse.class);
-
-                        // Recursive call if a new acceptanceToken is received
-                        if (credentialResponse.acceptanceToken() != null
-                                && !credentialResponse.acceptanceToken().equals(acceptanceToken)) {
-                            return handleDeferredCredential(credentialResponse.acceptanceToken(), credentialIssuerMetadata);
-                        }
-                        // If the credential is available, return it
-                        if (credentialResponse.credential() != null) {
-                            return Mono.just(credentialResponse);
-                        }
-                        return Mono.error(new IllegalStateException(
-                                "No credential or new acceptance token received in deferred flow"
-                        ));
-                    } catch (Exception e) {
-                        log.error("Error while processing deferred CredentialResponse", e);
-                        return Mono.error(new FailedDeserializingException(
-                                "Error processing deferred CredentialResponse: " + responseBody
-                        ));
-                    }
-                });
-    }*/
 
     /**
      * Makes a POST request and returns a Mono<CredentialResponseWithStatus> containing
