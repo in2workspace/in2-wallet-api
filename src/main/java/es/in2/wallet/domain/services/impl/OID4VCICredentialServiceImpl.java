@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 
@@ -58,7 +59,9 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
                         )
                 )
                 // Handle deferred or immediate credential response
-                .flatMap(this::handleCredentialResponse)
+                .flatMap(responseWithStatus ->
+                        handleCredentialResponse(responseWithStatus, credentialIssuerMetadata)
+                )
                 .doOnSuccess(finalResponse ->
                         log.info(
                                 "ProcessID: {} - Final CredentialResponseWithStatus: {}",
@@ -102,9 +105,69 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
      * Returns a Mono<CredentialResponseWithStatus>.
      */
     private Mono<CredentialResponseWithStatus> handleCredentialResponse(
-            CredentialResponseWithStatus responseWithStatus
+            CredentialResponseWithStatus responseWithStatus,
+            CredentialIssuerMetadata credentialIssuerMetadata
     ) {
+        // Since credentialResponse is already a parsed object, no JSON parsing is needed here
+        CredentialResponse credentialResponse = responseWithStatus.credentialResponse();
+
+        // If an transactionId is present, proceed with the deferred flow
+        // TO DO: finish handleDeferredCredential if (credentialResponse.transactionId() != null)
+
+        // If no acceptanceToken is present, just return the existing response
         return Mono.just(responseWithStatus);
+
+    }
+
+    /**
+     * Handles the recursive deferred flow. Returns a Mono<CredentialResponse>:
+     *  - Parses the server response (JSON) into a CredentialResponse.
+     *  - Checks if a new acceptanceToken is present; if so, recurses.
+     *  - If the credential is available, returns it.
+     */
+    private Mono<CredentialResponse> handleDeferredCredential(
+            String transactionId,
+            CredentialIssuerMetadata credentialIssuerMetadata
+    ) {
+        return webClient.centralizedWebClient()
+                .post()
+                .uri(credentialIssuerMetadata.deferredCredentialEndpoint())
+                .header(HEADER_AUTHORIZATION, BEARER)
+                .bodyValue(Map.of("transaction_id", transactionId))
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is4xxClientError() || response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException(
+                                "Error during the deferred credential request, error: " + response
+                        ));
+                    } else {
+                        log.info("Deferred credential response retrieved");
+                        return response.bodyToMono(String.class);
+                    }
+                })
+                .flatMap(responseBody -> {
+                    try {
+                        log.debug("Deferred flow body: {}", responseBody);
+                        CredentialResponse credentialResponse = objectMapper.readValue(responseBody, CredentialResponse.class);
+
+                        // Recursive call if a new transactionId is received
+                        if (credentialResponse.transactionId() != null
+                                && !credentialResponse.transactionId().equals(transactionId)) {
+                            return handleDeferredCredential(credentialResponse.transactionId(),credentialIssuerMetadata);
+                        }
+                        // If the credential is available, return it
+                        if (credentialResponse.credentials().get(0).credential() != null) {
+                            return Mono.just(credentialResponse);
+                        }
+                        return Mono.error(new IllegalStateException(
+                                "No credential or new transaction id received in deferred flow"
+                        ));
+                    } catch (Exception e) {
+                        log.error("Error while processing deferred CredentialResponse", e);
+                        return Mono.error(new FailedDeserializingException(
+                                "Error processing deferred CredentialResponse: " + responseBody
+                        ));
+                    }
+                });
     }
 
     /**
@@ -119,7 +182,6 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
         try {
             // Convert the request to JSON
             String requestJson = objectMapper.writeValueAsString(credentialRequest);
-            log.info("Request JSON: {}", requestJson);
 
             return webClient.centralizedWebClient()
                     .post()
@@ -138,15 +200,13 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
                             return response.bodyToMono(String.class)
                                     .handle((responseBody, sink) -> {
                                         try {
-                                            System.out.println("XIVATO 100: "+responseBody);
                                             CredentialResponse credentialResponse =
                                                     objectMapper.readValue(responseBody, CredentialResponse.class);
-                                            System.out.println("XIVATO 1: "+credentialResponse);
+
                                             sink.next(CredentialResponseWithStatus.builder()
                                                     .credentialResponse(credentialResponse)
                                                     .statusCode(response.statusCode())
                                                     .build());
-                                            System.out.println("XIVATO 2: "+credentialResponse);
                                         } catch (Exception e) {
                                             log.error("Error parsing credential response: {}", e.getMessage());
                                             sink.error(new FailedDeserializingException(

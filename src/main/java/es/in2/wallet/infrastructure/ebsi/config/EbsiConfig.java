@@ -229,6 +229,7 @@ public class EbsiConfig {
 
         CredentialResponse newCredentialResponse = CredentialResponse.builder()
                 .credentials(credentialList)
+                .transactionId(UUID.randomUUID().toString())
                 .build();
 
         return userService.storeUser(processId, userId)

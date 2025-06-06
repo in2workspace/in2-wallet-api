@@ -52,6 +52,39 @@ public class CredentialServiceImpl implements CredentialService {
             return Mono.error(new IllegalArgumentException("CredentialResponse is null"));
         }
 
+        // If transactionId is present, treat it as a plain (non-signed) credential
+        if (credentialResponse.transactionId() != null) {
+            return extractCredentialFormat(format)
+                    .flatMap(credentialFormat ->
+                            parseAsPlainJson(credentialResponse.credentials().get(0).credential())
+                                    .flatMap(vcJson -> Mono.zip(
+                                            extractCredentialTypes(vcJson),
+                                            extractVerifiableCredentialIdFromVcJson(vcJson),
+                                            (types, credId) -> buildCredentialEntity(
+                                                    CredentialEntityBuildParams.builder()
+                                                            .credentialId(UUID.fromString(credId))
+                                                            .userId(userId)
+                                                            .credentialTypes(types)
+                                                            .credentialFormat(credentialFormat)
+                                                            .credentialData(null)
+                                                            .vcJson(vcJson)
+                                                            .credentialStatus(CredentialStatus.ISSUED)  // Deferred => ISSUED
+                                                            .currentTime(currentTime)
+                                                            .build()
+                                            )
+                                    ))
+                    )
+                    .flatMap(credentialEntity ->
+                            credentialRepository.save(credentialEntity)
+                                    .doOnSuccess(saved -> log.info(
+                                            "[Process ID: {}] Deferred credential with ID {} saved successfully.",
+                                            processId,
+                                            saved.getCredentialId()
+                                    ))
+                                    .thenReturn(credentialEntity.getCredentialId())
+                    );
+        }
+
         // Otherwise, handle known formats (JWT_VC, CWT_VC)
         return extractCredentialFormat(format)
                 .flatMap(credentialFormat ->
@@ -331,6 +364,17 @@ public class CredentialServiceImpl implements CredentialService {
                 .build();
     }
 
+    // ---------------------------------------------------------------------
+    // Parsing JSON for Non-Signed Credential
+    // ---------------------------------------------------------------------
+    private Mono<JsonNode> parseAsPlainJson(String rawJson) {
+        return Mono.fromCallable(() -> {
+            if (rawJson == null || rawJson.isBlank()) {
+                throw new ParseErrorException("Credential data is empty or null");
+            }
+            return objectMapper.readTree(rawJson);
+        }).onErrorMap(e -> new ParseErrorException("Error parsing plain JSON credential: " + e.getMessage()));
+    }
 
     // ---------------------------------------------------------------------
     // Extract Format
