@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -23,6 +24,7 @@ import reactor.test.StepVerifier;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -328,6 +330,48 @@ class OID4VCICredentialServiceImplTest {
                 .verify();
     }
 
+    @Test
+    void handleDeferredCredential_successfulResponse() throws Exception {
+        String transactionId = "trans123";
+        String endpoint = "https://issuer.org/deferred";
+
+        CredentialIssuerMetadata metadata = CredentialIssuerMetadata.builder()
+                .deferredCredentialEndpoint(endpoint)
+                .build();
+
+        List<CredentialResponse.Credentials> credentialList = List.of(
+                new CredentialResponse.Credentials("mock-credential")
+        );
+        CredentialResponse mockResponse = CredentialResponse.builder()
+                .credentials(credentialList)
+                .transactionId(transactionId)
+                .build();
+
+        String responseJson = "response-body";
+
+        when(objectMapper.readValue(responseJson, CredentialResponse.class))
+                .thenReturn(mockResponse);
+
+        ClientResponse clientResponse = ClientResponse.create(HttpStatus.OK)
+                .header(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                .body(responseJson)
+                .build();
+
+        ExchangeFunction exchangeFunction = mock(ExchangeFunction.class);
+        when(exchangeFunction.exchange(any())).thenReturn(Mono.just(clientResponse));
+
+        WebClient webClient = WebClient.builder()
+                .exchangeFunction(exchangeFunction)
+                .build();
+        when(webClientConfig.centralizedWebClient()).thenReturn(webClient);
+
+        StepVerifier.create(credentialService.handleDeferredCredential(transactionId, metadata))
+                .expectNextMatches(response ->
+                        response.transactionId().equals(transactionId)
+                                && response.credentials().get(0).credential().equals("mock-credential")
+                )
+                .verifyComplete();
+    }
 
 
     @Test

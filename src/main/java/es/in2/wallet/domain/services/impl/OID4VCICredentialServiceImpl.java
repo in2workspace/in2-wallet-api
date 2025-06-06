@@ -125,7 +125,7 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
      *  - Checks if a new acceptanceToken is present; if so, recurses.
      *  - If the credential is available, returns it.
      */
-    private Mono<CredentialResponse> handleDeferredCredential(
+    public Mono<CredentialResponse> handleDeferredCredential(
             String transactionId,
             CredentialIssuerMetadata credentialIssuerMetadata
     ) {
