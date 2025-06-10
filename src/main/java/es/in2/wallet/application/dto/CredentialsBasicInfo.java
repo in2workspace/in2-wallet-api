@@ -16,6 +16,7 @@ import static es.in2.wallet.domain.utils.ApplicationConstants.*;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record CredentialsBasicInfo(
+        //VC: Response
         @JsonProperty("id") String id,
         @JsonProperty("type") List<String> vcType,
         @JsonProperty("status") CredentialStatus credentialStatus,

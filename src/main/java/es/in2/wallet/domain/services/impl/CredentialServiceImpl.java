@@ -52,6 +52,8 @@ public class CredentialServiceImpl implements CredentialService {
             return Mono.error(new IllegalArgumentException("CredentialResponse is null"));
         }
 
+        //VC: Revisar que sea apto para tpodo tipo de credentials
+
         // If transactionId is present, treat it as a plain (non-signed) credential
         if (credentialResponse.transactionId() != null) {
             return extractCredentialFormat(format)
