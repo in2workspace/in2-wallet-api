@@ -18,7 +18,6 @@ import reactor.test.StepVerifier;
 import java.util.List;
 import java.util.UUID;
 
-import static es.in2.wallet.domain.utils.ApplicationConstants.JWT_VC;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
