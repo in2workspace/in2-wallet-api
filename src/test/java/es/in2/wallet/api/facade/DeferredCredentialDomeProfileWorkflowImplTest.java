@@ -57,7 +57,6 @@ class DeferredCredentialDomeProfileWorkflowImplTest {
 
         CredentialResponse credentialResponse = CredentialResponse.builder()
                 .credentials(credentialList)
-                .credentials(credentialList)
                 .build();
 
         CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder()
