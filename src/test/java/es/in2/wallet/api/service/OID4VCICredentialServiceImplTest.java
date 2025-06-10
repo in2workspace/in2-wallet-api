@@ -42,7 +42,6 @@ class OID4VCICredentialServiceImplTest {
         String jwt = "ey34324";
         TokenResponse tokenResponse = TokenResponse.builder()
                 .accessToken("token")
-                .cNonce("nonce")
                 .build();
 
         CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder()
@@ -106,7 +105,7 @@ class OID4VCICredentialServiceImplTest {
 
         String jwt = "ey34324";
 
-        TokenResponse tokenResponse = TokenResponse.builder().accessToken("token").cNonce("nonce").build();
+        TokenResponse tokenResponse = TokenResponse.builder().accessToken("token").build();
 
         CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").credentialEndpoint("endpoint").build();
 
@@ -137,7 +136,6 @@ class OID4VCICredentialServiceImplTest {
         String jwt = "ey34324";
         TokenResponse tokenResponse = TokenResponse.builder()
                 .accessToken("token")
-                .cNonce("nonce")
                 .build();
 
         CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder()
@@ -238,7 +236,7 @@ class OID4VCICredentialServiceImplTest {
 
         String jwt = "ey34324";
 
-        TokenResponse tokenResponse = TokenResponse.builder().accessToken("token").cNonce("nonce").build();
+        TokenResponse tokenResponse = TokenResponse.builder().accessToken("token").build();
 
         CredentialIssuerMetadata credentialIssuerMetadata = CredentialIssuerMetadata.builder().credentialIssuer("issuer").credentialEndpoint("endpoint").build();
 

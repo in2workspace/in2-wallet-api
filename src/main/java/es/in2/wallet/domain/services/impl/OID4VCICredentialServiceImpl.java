@@ -98,6 +98,12 @@ public class OID4VCICredentialServiceImpl implements OID4VCICredentialService {
                 );
     }
 
+    @Override
+    public String getNonceValue() {
+        //TO DO: Call nonce_endpoint
+        return null;
+    }
+
     /**
      * Handles immediate or deferred credential responses:
      *  - If acceptanceToken is present, waits 10 seconds then calls handleDeferredCredential.

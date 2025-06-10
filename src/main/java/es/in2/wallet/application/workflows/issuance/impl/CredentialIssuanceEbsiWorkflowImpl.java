@@ -70,7 +70,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
         return ebsiConfig.getDid()
                 .flatMap(did -> preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
                         .flatMap(tokenResponse -> getCredential(
-                                processId,authorizationToken,tokenResponse,credentialOffer,credentialIssuerMetadata,did,tokenResponse.cNonce())));
+                                processId,authorizationToken,tokenResponse,credentialOffer,credentialIssuerMetadata,did,oid4vciCredentialService.getNonceValue())));
     }
 
 
@@ -99,7 +99,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
                         )
                         // get Credentials
                         .flatMap(tokenResponse -> getCredential(
-                                 processId,authorizationToken,tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce()
+                                 processId,authorizationToken,tokenResponse, credentialOffer, credentialIssuerMetadata, did, oid4vciCredentialService.getNonceValue()
                         ))
                 );
     }

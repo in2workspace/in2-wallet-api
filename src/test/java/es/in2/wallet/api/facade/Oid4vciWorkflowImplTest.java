@@ -73,7 +73,7 @@ class Oid4vciWorkflowImplTest {
                     .deferredCredentialEndpoint("https://example.com/deferred")
                     .build();
 
-            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").accessToken("ey1234").build();
+            TokenResponse tokenResponse = TokenResponse.builder().accessToken("ey1234").build();
             List<CredentialResponse.Credentials> credentialList = List.of(
                     new CredentialResponse.Credentials("unsigned_credential")
             );
@@ -95,7 +95,7 @@ class Oid4vciWorkflowImplTest {
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId, credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
             when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
-            when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
+            when(proofJWTService.buildCredentialRequest(null, credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(oid4vciCredentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, JWT_VC, List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0), null)).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
@@ -143,7 +143,7 @@ class Oid4vciWorkflowImplTest {
                     .credentialsConfigurationsSupported(supportedMap)
                     .build();
 
-            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
+            TokenResponse tokenResponse = TokenResponse.builder().build();
             List<CredentialResponse.Credentials> credentialList = List.of(
                     new CredentialResponse.Credentials("ey1234")
             );
@@ -169,7 +169,7 @@ class Oid4vciWorkflowImplTest {
             when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
             when(extractResponseType("jwt")).thenReturn(Mono.just("vp_token"));
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
-            when(proofJWTService.buildCredentialRequest("123", "issuer", did)).thenReturn(Mono.just(jsonNode));
+            when(proofJWTService.buildCredentialRequest(null, "issuer", did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(oid4vciCredentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, "jwt_vc_json", List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0),null)).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
@@ -204,7 +204,7 @@ class Oid4vciWorkflowImplTest {
                     .credentialsConfigurationsSupported(credentialConfigurationsSupported)
                     .build();
 
-            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
+            TokenResponse tokenResponse = TokenResponse.builder().build();
             CredentialResponse credentialResponse = CredentialResponse.builder().build();
             CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.OK).credentialResponse(credentialResponse).build();
             String did = "did:ebsi:123";
@@ -226,7 +226,7 @@ class Oid4vciWorkflowImplTest {
             when(didKeyGeneratorService.generateDidKey()).thenReturn(Mono.just(did));
             when(extractResponseType("jwt")).thenReturn(Mono.just("vp_token"));
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
-            when(proofJWTService.buildCredentialRequest("123", "issuer", did)).thenReturn(Mono.just(jsonNode));
+            when(proofJWTService.buildCredentialRequest(null, "issuer", did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwt));
             when(oid4vciCredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, "jwt_vc_json", List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0),"did:key")).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));

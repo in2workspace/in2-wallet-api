@@ -79,7 +79,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
                     .credentialIssuer("https://issuer.dome-marketplace.eu")
                     .credentialsConfigurationsSupported(credentialConfigurationsSupported)
                     .build();
-            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
+            TokenResponse tokenResponse = TokenResponse.builder().build();
             CredentialResponse credentialResponse = CredentialResponse.builder().build();
             CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.OK).credentialResponse(credentialResponse).build();
             String did = "did:ebsi:123";
@@ -97,7 +97,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId, credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
             when(ebsiConfig.getDid()).thenReturn(Mono.just(did));
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
-            when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
+            when(proofJWTService.buildCredentialRequest(null, credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(oid4vciCredentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0), null)).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
@@ -127,7 +127,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
                     .credentialIssuer("https://issuer.dome-marketplace.eu")
                     .credentialsConfigurationsSupported(credentialConfigurationsSupported)
                     .build();
-            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
+            TokenResponse tokenResponse = TokenResponse.builder().build();
             CredentialResponse credentialResponse = CredentialResponse.builder().build();
             CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.OK).credentialResponse(credentialResponse).build();
             String did = "did:ebsi:123";
@@ -145,7 +145,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(authorisationServerMetadataService.getAuthorizationServerMetadataFromCredentialIssuerMetadata(processId, credentialIssuerMetadata)).thenReturn(Mono.just(authorisationServerMetadata));
             when(ebsiConfig.getDid()).thenReturn(Mono.just(did));
             when(preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)).thenReturn(Mono.just(tokenResponse));
-            when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
+            when(proofJWTService.buildCredentialRequest(null, credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(oid4vciCredentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0), null)).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
@@ -177,7 +177,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
                     .credentialsConfigurationsSupported(credentialConfigurationsSupported)
                     .build();
 
-            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
+            TokenResponse tokenResponse = TokenResponse.builder().build();
             CredentialResponse credentialResponse = CredentialResponse.builder().build();
             CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.OK).credentialResponse(credentialResponse).build();
             String did = "did:ebsi:123";
@@ -200,7 +200,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(extractResponseType("jwt")).thenReturn(Mono.just("id_token"));
             when(ebsiIdTokenService.getIdTokenResponse(processId, did, authorisationServerMetadata, "jwt")).thenReturn(Mono.just(mockedMap));
             when(ebsiAuthorisationService.sendTokenRequest("codeVerifier", did, authorisationServerMetadata, mockedMap)).thenReturn(Mono.just(tokenResponse));
-            when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
+            when(proofJWTService.buildCredentialRequest(null, credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(oid4vciCredentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0), null)).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
@@ -230,7 +230,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
                     .credentialIssuer("https://issuer.dome-marketplace.eu")
                     .credentialsConfigurationsSupported(credentialConfigurationsSupported)
                     .build();
-            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
+            TokenResponse tokenResponse = TokenResponse.builder().build();
             CredentialResponse credentialResponse = CredentialResponse.builder().build();
             CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.OK).credentialResponse(credentialResponse).build();
             String did = "did:ebsi:123";
@@ -253,7 +253,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(extractResponseType("jwt")).thenReturn(Mono.just("vp_token"));
             when(ebsiVpTokenService.getVpRequest(processId, authorizationToken, authorisationServerMetadata, "jwt")).thenReturn(Mono.just(mockedMap));
             when(ebsiAuthorisationService.sendTokenRequest("codeVerifier", did, authorisationServerMetadata, mockedMap)).thenReturn(Mono.just(tokenResponse));
-            when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
+            when(proofJWTService.buildCredentialRequest(null, credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwtProof));
             when(oid4vciCredentialService.getCredential(jwtProof, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0), null)).thenReturn(Mono.just(credentialResponseWithStatus));
             when(userService.storeUser(processId, userIdStr)).thenReturn(Mono.just(userUuid));
@@ -288,7 +288,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
                     .credentialsConfigurationsSupported(credentialConfigurationsSupported)
                     .build();
 
-            TokenResponse tokenResponse = TokenResponse.builder().cNonce("123").build();
+            TokenResponse tokenResponse = TokenResponse.builder().build();
             CredentialResponse credentialResponse = CredentialResponse.builder().build();
             CredentialResponseWithStatus credentialResponseWithStatus = CredentialResponseWithStatus.builder().statusCode(HttpStatus.OK).credentialResponse(credentialResponse).build();
             String did = "did:ebsi:123";
@@ -314,7 +314,7 @@ class CredentialIssuanceEbsiWorkflowImplTest {
             when(extractResponseType("jwt")).thenReturn(Mono.just("vp_token"));
             when(ebsiVpTokenService.getVpRequest(processId, authorizationToken, authorisationServerMetadata, "jwt")).thenReturn(Mono.just(mockedMap));
             when(ebsiAuthorisationService.sendTokenRequest("codeVerifier", did, authorisationServerMetadata, mockedMap)).thenReturn(Mono.just(tokenResponse));
-            when(proofJWTService.buildCredentialRequest(tokenResponse.cNonce(), credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
+            when(proofJWTService.buildCredentialRequest(null, credentialIssuerMetadata.credentialIssuer(), did)).thenReturn(Mono.just(jsonNode));
             when(signerService.buildJWTSFromJsonNode(jsonNode, did, "proof")).thenReturn(Mono.just(jwt));
 
             when(oid4vciCredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(),
