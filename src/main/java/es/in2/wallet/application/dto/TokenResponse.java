@@ -9,7 +9,6 @@ public record TokenResponse(
         @JsonProperty("token_type") String tokenType,
         @JsonProperty("refresh_token") String refreshToken,
         @JsonProperty("expires_in") Integer expiresIn,
-        @JsonProperty("id_token") String idToken,
-        @JsonProperty("c_nonce_expires_in") String cNonceExpiresIn
+        @JsonProperty("id_token") String idToken
 ) {
 }
