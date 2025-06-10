@@ -398,6 +398,8 @@ public class CredentialServiceImpl implements CredentialService {
     // Extract VC JSON based on Format
     // ---------------------------------------------------------------------
     private Mono<JsonNode> extractVcJson(CredentialResponse credentialResponse, String format) {
+        System.out.println("XIVATO 1: "+credentialResponse);
+        System.out.println("XIVATO 2: "+format);
         return switch (format) {
             case JWT_VC, JWT_VC_JSON -> extractVcJsonFromJwt(credentialResponse.credentials().get(0).credential());
             case CWT_VC -> extractVcJsonFromCwt(credentialResponse.credentials().get(0).credential());
@@ -408,6 +410,7 @@ public class CredentialServiceImpl implements CredentialService {
     }
 
     private Mono<JsonNode> extractVcJsonFromJwt(String jwtVc) {
+        System.out.println("Xivato 3: " + jwtVc);
         return Mono.fromCallable(() -> SignedJWT.parse(jwtVc))
                 .flatMap(parsedJwt -> {
                     try {
