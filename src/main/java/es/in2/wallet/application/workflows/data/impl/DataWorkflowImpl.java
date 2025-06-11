@@ -29,6 +29,9 @@ public class DataWorkflowImpl implements DataWorkflow {
     public Mono<List<CredentialsBasicInfo>> getAllCredentialsByUserId(String processId, String userId) {
         return credentialService.getCredentialsByUserId(processId, userId)
                 .doOnSuccess(list -> log.info("Retrieved VCs for userId: {}", userId))
+                .doOnError(error ->
+                        log.error("Error while retrieving VCs for userId: {}", userId, error)
+                )
                 .onErrorResume(Mono::error);
     }
 
