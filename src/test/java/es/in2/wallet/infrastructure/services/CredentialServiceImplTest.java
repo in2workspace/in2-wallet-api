@@ -301,8 +301,8 @@ class CredentialServiceImplTest {
     void testGetCredentialsByUserId_Success() throws JsonProcessingException {
         String processId = "procABC";
         UUID userUuid = UUID.randomUUID();
-        UUID credentialId1 = UUID.randomUUID();
-        UUID credentialId2 = UUID.randomUUID();
+        String credentialId1 = UUID.randomUUID().toString();
+        String credentialId2 = UUID.randomUUID().toString();
         String credential1 = "credential1";
         String credential2 = "credential2";
 
@@ -398,7 +398,7 @@ class CredentialServiceImplTest {
         String requiredType = "LEARCredentialEmployee";
         String format = "JWT_VC";
 
-        UUID credentialId = UUID.randomUUID();
+        String credentialId = UUID.randomUUID().toString();
         String jsonVc = """
         {
           "id": "8c7a6213-544d-450d-8e3d-b41fa9009198",
@@ -440,11 +440,12 @@ class CredentialServiceImplTest {
         // GIVEN
         String processId = "proc123";
         UUID userUuid = UUID.randomUUID();
+        String credentialId = UUID.randomUUID().toString();
         String userId = userUuid.toString();
         String requiredType = "LEARCredentialEmployee";
 
         Credential credential = Credential.builder()
-                .credentialId(UUID.randomUUID())
+                .credentialId(credentialId)
                 .userId(userUuid)
                 .credentialFormat("ldp_vc")
                 .credentialType(List.of("VerifiableCredential", "SomeOtherType"))
