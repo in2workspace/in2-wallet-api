@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Builder
 public record CredentialEntityBuildParams(
-        UUID credentialId,
+        Object credentialId,
         UUID userId,
         List<String> credentialTypes,
         CredentialFormats credentialFormat,

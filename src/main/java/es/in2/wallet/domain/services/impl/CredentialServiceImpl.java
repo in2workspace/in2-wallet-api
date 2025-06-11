@@ -45,14 +45,12 @@ public class CredentialServiceImpl implements CredentialService {
     // Save Credential
     // ---------------------------------------------------------------------
     @Override
-    public Mono<UUID> saveCredential(String processId, UUID userId, CredentialResponse credentialResponse, String format) {
+    public Mono<String> saveCredential(String processId, UUID userId, CredentialResponse credentialResponse, String format) {
         Instant currentTime = Instant.now();
 
         if (credentialResponse == null) {
             return Mono.error(new IllegalArgumentException("CredentialResponse is null"));
         }
-
-        //VC: Revisar que sea apto para tpodo tipo de credentials
 
         // If transactionId is present, treat it as a plain (non-signed) credential
         if (credentialResponse.transactionId() != null) {
@@ -64,7 +62,7 @@ public class CredentialServiceImpl implements CredentialService {
                                             extractVerifiableCredentialIdFromVcJson(vcJson),
                                             (types, credId) -> buildCredentialEntity(
                                                     CredentialEntityBuildParams.builder()
-                                                            .credentialId(UUID.fromString(credId))
+                                                            .credentialId(credId)
                                                             .userId(userId)
                                                             .credentialTypes(types)
                                                             .credentialFormat(credentialFormat)
@@ -83,7 +81,7 @@ public class CredentialServiceImpl implements CredentialService {
                                             processId,
                                             saved.getCredentialId()
                                     ))
-                                    .thenReturn(credentialEntity.getCredentialId())
+                                    .thenReturn(credentialEntity.getCredentialId().toString())
                     );
         }
 
@@ -114,7 +112,7 @@ public class CredentialServiceImpl implements CredentialService {
                                                         processId,
                                                         saved.getCredentialId()
                                                 ))
-                                                .thenReturn(credentialEntity.getCredentialId())
+                                                .thenReturn(credentialEntity.getCredentialId().toString())
                                 )
                 );
     }
@@ -398,8 +396,6 @@ public class CredentialServiceImpl implements CredentialService {
     // Extract VC JSON based on Format
     // ---------------------------------------------------------------------
     private Mono<JsonNode> extractVcJson(CredentialResponse credentialResponse, String format) {
-        System.out.println("XIVATO 1: "+credentialResponse);
-        System.out.println("XIVATO 2: "+format);
         return switch (format) {
             case JWT_VC, JWT_VC_JSON -> extractVcJsonFromJwt(credentialResponse.credentials().get(0).credential());
             case CWT_VC -> extractVcJsonFromCwt(credentialResponse.credentials().get(0).credential());
@@ -410,7 +406,6 @@ public class CredentialServiceImpl implements CredentialService {
     }
 
     private Mono<JsonNode> extractVcJsonFromJwt(String jwtVc) {
-        System.out.println("Xivato 3: " + jwtVc);
         return Mono.fromCallable(() -> SignedJWT.parse(jwtVc))
                 .flatMap(parsedJwt -> {
                     try {

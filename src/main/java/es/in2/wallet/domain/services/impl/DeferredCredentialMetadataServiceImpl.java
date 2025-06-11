@@ -20,9 +20,9 @@ public class DeferredCredentialMetadataServiceImpl implements DeferredCredential
     private final DeferredCredentialMetadataRepository deferredCredentialMetadataRepository;
 
     @Override
-    public Mono<UUID> saveDeferredCredentialMetadata(
+    public Mono<Object> saveDeferredCredentialMetadata(
             String processId,
-            UUID credentialId,
+            Object credentialId,
             String transactionId,
             String accessToken,
             String deferredEndpoint
