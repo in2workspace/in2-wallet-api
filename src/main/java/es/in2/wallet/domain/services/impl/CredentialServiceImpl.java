@@ -94,7 +94,7 @@ public class CredentialServiceImpl implements CredentialService {
                                         extractVerifiableCredentialIdFromVcJson(vcJson),
                                         (credentialTypes, credentialId) -> buildCredentialEntity(
                                                 CredentialEntityBuildParams.builder()
-                                                        .credentialId(UUID.fromString(credentialId))
+                                                        .credentialId(credentialId)
                                                         .userId(userId)
                                                         .credentialTypes(credentialTypes)
                                                         .credentialFormat(credentialFormat)
