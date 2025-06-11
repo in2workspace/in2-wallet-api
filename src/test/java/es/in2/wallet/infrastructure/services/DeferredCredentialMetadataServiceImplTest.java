@@ -57,7 +57,7 @@ class DeferredCredentialMetadataServiceImplTest {
                 .thenReturn(Mono.just(savedMetadata));
 
         // WHEN
-        Mono<UUID> result = service.saveDeferredCredentialMetadata(
+        Mono<Object> result = service.saveDeferredCredentialMetadata(
                 processId,
                 credentialId,
                 transactionId,

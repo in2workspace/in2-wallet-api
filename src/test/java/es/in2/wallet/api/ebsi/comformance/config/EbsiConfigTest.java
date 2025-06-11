@@ -170,7 +170,7 @@ class EbsiConfigTest {
                 .thenReturn(Mono.just(storedUserUuid));
 
         // We save the new credential
-        UUID newCredentialId = UUID.randomUUID();
+        String newCredentialId = UUID.randomUUID().toString();
         when(credentialService.saveCredential(anyString(), eq(storedUserUuid), any(), anyString()))
                 .thenReturn(Mono.just(newCredentialId));
 

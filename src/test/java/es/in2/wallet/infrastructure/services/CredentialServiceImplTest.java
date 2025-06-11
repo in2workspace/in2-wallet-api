@@ -71,11 +71,11 @@ class CredentialServiceImplTest {
         when(objectMapper.readTree(credential)).thenReturn(getJsonNodeCredentialLearCredentialEmployee());
 
         // WHEN
-        Mono<UUID> result = credentialRepositoryService.saveCredential(processId, userId, response, format);
+        Mono<String> result = credentialRepositoryService.saveCredential(processId, userId, response, format);
 
         // THEN
         StepVerifier.create(result)
-                .expectNext(UUID.fromString(credentialId))
+                .expectNext(credentialId)
                 .verifyComplete();
 
         // Verify the repository was called exactly once
@@ -146,11 +146,11 @@ class CredentialServiceImplTest {
             when(objectMapper.readTree(fakePayloadJson)).thenReturn(rootNode);
 
             // WHEN
-            Mono<UUID> result = credentialRepositoryService.saveCredential(processId, userId, response, format);
+            Mono<String> result = credentialRepositoryService.saveCredential(processId, userId, response, format);
 
             // THEN
             StepVerifier.create(result)
-                    .expectNext(UUID.fromString(credentialId))
+                    .expectNext(credentialId)
                     .verifyComplete();
 
             verify(credentialRepository).save(any(Credential.class));
@@ -177,7 +177,7 @@ class CredentialServiceImplTest {
                 .build();
 
         // WHEN
-        Mono<UUID> result = credentialRepositoryService.saveCredential(processId, userId, response, "FOO_FORMAT");
+        Mono<String> result = credentialRepositoryService.saveCredential(processId, userId, response, "FOO_FORMAT");
 
         // THEN
         StepVerifier.create(result)
