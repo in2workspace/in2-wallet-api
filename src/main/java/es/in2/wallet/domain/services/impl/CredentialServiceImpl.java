@@ -81,7 +81,7 @@ public class CredentialServiceImpl implements CredentialService {
                                             processId,
                                             saved.getCredentialId()
                                     ))
-                                    .thenReturn(credentialEntity.getCredentialId().toString())
+                                    .thenReturn(credentialEntity.getCredentialId())
                     );
         }
 
@@ -112,7 +112,7 @@ public class CredentialServiceImpl implements CredentialService {
                                                         processId,
                                                         saved.getCredentialId()
                                                 ))
-                                                .thenReturn(credentialEntity.getCredentialId().toString())
+                                                .thenReturn(credentialEntity.getCredentialId())
                                 )
                 );
     }
@@ -173,11 +173,16 @@ public class CredentialServiceImpl implements CredentialService {
     private CredentialsBasicInfo mapToCredentialsBasicInfo(Credential credential) {
         JsonNode jsonVc = parseJsonVc(credential.getJsonVc());
         JsonNode credentialSubject = jsonVc.get("credentialSubject");
+        System.out.println("XIVATO1: "+credentialSubject);
 
         // if there's a 'validUntil' node, parse it
         ZonedDateTime validUntil = null;
         JsonNode validUntilNode = jsonVc.get("validUntil");
+
+        System.out.println("XIVATO2: "+validUntilNode);
+
         if (validUntilNode != null && !validUntilNode.isNull()) {
+            System.out.println("XIVATO3: "+validUntilNode.asText());
             validUntil = parseZonedDateTime(validUntilNode.asText());
         }
 
@@ -185,7 +190,7 @@ public class CredentialServiceImpl implements CredentialService {
         CredentialStatus status = CredentialStatus.valueOf(credential.getCredentialStatus());
 
         return CredentialsBasicInfo.builder()
-                .id(credential.getCredentialId().toString())
+                .id(credential.getCredentialId())
                 .vcType(credential.getCredentialType())   // e.g., ["VerifiableCredential", "SomeOtherType"]
                 .credentialStatus(status)
                 .availableFormats(determineAvailableFormats(credential.getCredentialFormat()))
