@@ -156,15 +156,14 @@ public class CredentialServiceImpl implements CredentialService {
         return parseStringToUuid(userId, USER_ID)
                 .flatMapMany(credentialRepository::findAllByUserId)
                 .map(this::mapToCredentialsBasicInfo)
+                .onErrorContinue((throwable, raw) ->
+                        log.error("[{}] Error while mapping credential {} for user {}",
+                                processId, raw, userId, throwable))
                 .collectList()
-                .flatMap(credentialsInfo -> {
-                    if (credentialsInfo.isEmpty()) {
-                        return Mono.error(new NoSuchVerifiableCredentialException(
-                                "The credentials list is empty. Cannot proceed."
-                        ));
-                    }
-                    return Mono.just(credentialsInfo);
-                });
+                .flatMap(list -> list.isEmpty()
+                        ? Mono.error(new NoSuchVerifiableCredentialException(
+                        "No valid credentials found for user " + userId))
+                        : Mono.just(list));
     }
 
     // ---------------------------------------------------------------------
