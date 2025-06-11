@@ -172,14 +172,13 @@ public class CredentialServiceImpl implements CredentialService {
     // ---------------------------------------------------------------------
     private CredentialsBasicInfo mapToCredentialsBasicInfo(Credential credential) {
         JsonNode jsonVc = parseJsonVc(credential.getJsonVc());
+        System.out.println("XIVATO1: "+jsonVc);
         JsonNode credentialSubject = jsonVc.get("credentialSubject");
-        System.out.println("XIVATO1: "+credentialSubject);
+        System.out.println("XIVATO2: "+credentialSubject);
 
         // if there's a 'validUntil' node, parse it
         ZonedDateTime validUntil = null;
         JsonNode validUntilNode = jsonVc.get("validUntil");
-
-        System.out.println("XIVATO2: "+validUntilNode);
 
         if (validUntilNode != null && !validUntilNode.isNull()) {
             System.out.println("XIVATO3: "+validUntilNode.asText());
