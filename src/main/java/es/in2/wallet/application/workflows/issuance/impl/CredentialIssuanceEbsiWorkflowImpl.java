@@ -10,8 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 import static es.in2.wallet.domain.utils.ApplicationUtils.*;
 
 @Slf4j
@@ -70,7 +68,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
         return ebsiConfig.getDid()
                 .flatMap(did -> preAuthorizedService.getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
                         .flatMap(tokenResponse -> getCredential(
-                                processId,authorizationToken,tokenResponse,credentialOffer,credentialIssuerMetadata,did,oid4vciCredentialService.getNonceValue())));
+                                processId,authorizationToken,tokenResponse,credentialOffer,credentialIssuerMetadata,did,tokenResponse.cNonce())));
     }
 
 
@@ -99,7 +97,7 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
                         )
                         // get Credentials
                         .flatMap(tokenResponse -> getCredential(
-                                 processId,authorizationToken,tokenResponse, credentialOffer, credentialIssuerMetadata, did, oid4vciCredentialService.getNonceValue()
+                                 processId,authorizationToken,tokenResponse, credentialOffer, credentialIssuerMetadata, did, tokenResponse.cNonce()
                         ))
                 );
     }
@@ -114,29 +112,10 @@ public class CredentialIssuanceEbsiWorkflowImpl implements CredentialIssuanceEbs
     }
 
     private Mono<Void> getCredential(String processId, String authorizationToken, TokenResponse tokenResponse, CredentialOffer credentialOffer, CredentialIssuerMetadata credentialIssuerMetadata, String did, String nonce) {
-        return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
-                .flatMap(jwt -> {
-                    String credentialConfigurationId = List.copyOf(credentialOffer.credentialConfigurationsIds()).get(0);
-                    CredentialIssuerMetadata.CredentialsConfigurationsSupported config =
-                            credentialIssuerMetadata.credentialsConfigurationsSupported().get(credentialConfigurationId);
-
-                    String cryptographicMethod = null;
-                    if (config != null && config.cryptographicBindingMethodsSupported() != null
-                            && !config.cryptographicBindingMethodsSupported().isEmpty()) {
-                        cryptographicMethod = config.cryptographicBindingMethodsSupported().get(0);
-                    }
-                    return oid4vciCredentialService.getCredential(
-                            jwt,
-                            tokenResponse,
-                            credentialIssuerMetadata,
-                            credentialOffer.credentials().get(0).format(),
-                            credentialConfigurationId,
-                            cryptographicMethod
-                    );
-                })
-                .flatMap(credentialResponse -> handleCredentialResponse(processId, credentialResponse, authorizationToken, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format()));
+            return buildAndSignCredentialRequest(nonce, did, credentialIssuerMetadata.credentialIssuer())
+                    .flatMap(jwt -> oid4vciCredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format(), credentialOffer.credentials().get(0).types()))
+                    .flatMap(credentialResponse -> handleCredentialResponse(processId,credentialResponse ,authorizationToken, tokenResponse, credentialIssuerMetadata, credentialOffer.credentials().get(0).format()));
     }
-
 
     private Mono<Void> handleCredentialResponse(
             String processId,

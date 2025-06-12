@@ -18,7 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.Set;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -44,7 +44,7 @@ class CredentialOfferServiceImplTest {
         String credentialOfferUri = "openid://?credential_offer=https://example.com/offer";
         CredentialOffer expectedCredentialOffer = CredentialOffer
                 .builder()
-                .credentialConfigurationsIds(Set.of("UniversityDegreeCredential"))
+                .credentialConfigurationsIds(List.of("UniversityDegreeCredential"))
                 .credentialIssuer("https://credential-issuer.example.com")
                 .grant(CredentialOffer.Grant.builder()
                         .preAuthorizedCodeGrant(CredentialOffer.Grant.PreAuthorizedCodeGrant.builder()
@@ -106,7 +106,7 @@ class CredentialOfferServiceImplTest {
         String credentialOfferUri = "https://example.com/offer";
         CredentialOffer expectedCredentialOffer = CredentialOffer
                 .builder()
-                .credentialConfigurationsIds(Set.of("UniversityDegreeCredential"))
+                .credentialConfigurationsIds(List.of("UniversityDegreeCredential"))
                 .credentialIssuer("https://credential-issuer.example.com")
                 .grant(CredentialOffer.Grant.builder()
                         .preAuthorizedCodeGrant(CredentialOffer.Grant.PreAuthorizedCodeGrant.builder()
@@ -167,7 +167,7 @@ class CredentialOfferServiceImplTest {
         String processId = "123";
         String credentialOfferUri = "https://example.com/offer";
         CredentialOffer offer = CredentialOffer.builder()
-                .credentialConfigurationsIds(Set.of("id"))
+                .credentialConfigurationsIds(List.of("id"))
                 .grant(CredentialOffer.Grant.builder().build())
                 .build();
 
@@ -226,7 +226,7 @@ class CredentialOfferServiceImplTest {
 
         CredentialOffer credentialOffer = CredentialOffer.builder()
                 .credentialIssuer("") // está en blanco
-                .credentialConfigurationsIds(Set.of("valid-id"))
+                .credentialConfigurationsIds(List.of("valid-id"))
                 .grant(CredentialOffer.Grant.builder().build())
                 .build();
 
@@ -255,7 +255,7 @@ class CredentialOfferServiceImplTest {
 
         CredentialOffer credentialOffer = CredentialOffer.builder()
                 .credentialIssuer("https://valid-issuer.com")
-                .credentialConfigurationsIds(Set.of()) // vacío
+                .credentialConfigurationsIds(List.of()) // vacío
                 .grant(CredentialOffer.Grant.builder().build())
                 .build();
 
@@ -274,7 +274,7 @@ class CredentialOfferServiceImplTest {
         String credentialOfferUri = "https://example.com/offer";
         CredentialOffer offer = CredentialOffer.builder()
                 .credentialIssuer("https://issuer.example.com")
-                .credentialConfigurationsIds(Set.of("id"))
+                .credentialConfigurationsIds(List.of("id"))
                 .build();
 
         when(webClientConfig.centralizedWebClient()).thenReturn(WebClient.builder().exchangeFunction(clientRequest ->

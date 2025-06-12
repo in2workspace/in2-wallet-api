@@ -7,7 +7,7 @@ import java.util.List;
 
 @Builder
 public record CredentialRequest(
-        @JsonProperty("credential_configuration_id") String credentialConfigurationId,
+        @JsonProperty("types") List<String> types,
 
         @JsonProperty("format") String format,
 
