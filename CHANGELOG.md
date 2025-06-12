@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed credential request wf
 
+## [v2.0.0](https://github.com/in2workspace/in2-wallet-api/releases/tag/v2.0.0)
+### Changed
+- Add a condition to make the credential request with or without cryptographic binding
+
 ## [v1.4.9](https://github.com/in2workspace/in2-wallet-api/releases/tag/v1.4.9)
 ### Fixed
 - Fixed credentials delete endpoint: Changed @RequestParam for @PathVariable

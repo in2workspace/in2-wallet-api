@@ -47,10 +47,13 @@ class CredentialServiceImplTest {
         String processId = "proc123";
         UUID userId = UUID.randomUUID();
         String credential = "credential";
+        List<CredentialResponse.Credentials> credentialList = List.of(
+                new CredentialResponse.Credentials(credential)
+        );
         String credentialId = "8c7a6213-544d-450d-8e3d-b41fa9009198";
         CredentialResponse response = CredentialResponse.builder()
                 .transactionId("tx123")
-                .credential(credential)
+                .credentials(credentialList)
                 .build();
         String format = "jwt_vc";
 
@@ -92,10 +95,13 @@ class CredentialServiceImplTest {
         String processId = "proc123";
         UUID userId = UUID.randomUUID();
         String credential = "someJwtData";
+        List<CredentialResponse.Credentials> credentialList = List.of(
+                new CredentialResponse.Credentials(credential)
+        );
         String format = "jwt_vc";
         // This is the 'CredentialResponse' with format=JWT_VC
         CredentialResponse response = CredentialResponse.builder()
-                .credential(credential)
+                .credentials(credentialList)
                 .build();
 
         String credentialId = "8c7a6213-544d-450d-8e3d-b41fa9009198";
@@ -163,8 +169,11 @@ class CredentialServiceImplTest {
         // GIVEN
         String processId = "proc123";
         UUID userId = UUID.randomUUID();
+        List<CredentialResponse.Credentials> credentialList = List.of(
+                new CredentialResponse.Credentials("foo-data")
+        );
         CredentialResponse response = CredentialResponse.builder()
-                .credential("foo-data")
+                .credentials(credentialList)
                 .build();
 
         // WHEN
@@ -207,9 +216,11 @@ class CredentialServiceImplTest {
 
         ArgumentCaptor<Credential> captor = ArgumentCaptor.forClass(Credential.class);
         when(credentialRepository.save(captor.capture())).thenReturn(Mono.just(updated));
-
+        List<CredentialResponse.Credentials> credentialList = List.of(
+                new CredentialResponse.Credentials("some-jwt-data")
+        );
         CredentialResponse deferredResponse = CredentialResponse.builder()
-                .credential("some-jwt-data")
+                .credentials(credentialList)
                 .build();
 
         Mono<Void> result = credentialRepositoryService.saveDeferredCredential(
