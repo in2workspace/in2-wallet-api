@@ -109,10 +109,9 @@ public class CredentialServiceImpl implements CredentialService {
 
                                         credentialRepository.save(credentialEntity)
                                                 .doOnSuccess(saved -> log.info(
-                                                        "[Process ID: {}] Credential with ID {} saved successfully. Credential {}",
+                                                        "[Process ID: {}] Credential with ID {} saved successfully.",
                                                         processId,
-                                                        saved.getCredentialId(),
-                                                        credentialEntity
+                                                        saved.getCredentialId()
                                                 ))
                                                 .thenReturn(credentialEntity.getCredentialId())
                                 )
@@ -172,12 +171,8 @@ public class CredentialServiceImpl implements CredentialService {
     // Helper to map from Credential entity to DTO
     // ---------------------------------------------------------------------
     private CredentialsBasicInfo mapToCredentialsBasicInfo(Credential credential) {
-        System.out.println("XIVATO GET: " + credential);
         JsonNode jsonVc = parseJsonVc(credential.getJsonVc());
-        System.out.println("XIVATO GET: " + jsonVc);
         JsonNode credentialSubject = jsonVc.get("credentialSubject");
-        System.out.println("XIVATO GET: " + credentialSubject);
-
         // if there's a 'validUntil' node, parse it
         ZonedDateTime validUntil = null;
         JsonNode validUntilNode = jsonVc.get("validUntil");
