@@ -155,8 +155,6 @@ public class CredentialServiceImpl implements CredentialService {
     // ---------------------------------------------------------------------
     @Override
     public Mono<List<CredentialsBasicInfo>> getCredentialsByUserId(String processId, String userId) {
-        UUID userUuid = parseStringToUuid(userId, USER_ID).block();
-        System.out.println("XIVATO GET: " + credentialRepository.findAllByUserId(userUuid));
         return parseStringToUuid(userId, USER_ID)
                 .flatMapMany(credentialRepository::findAllByUserId)
                 .map(this::mapToCredentialsBasicInfo)
@@ -174,8 +172,11 @@ public class CredentialServiceImpl implements CredentialService {
     // Helper to map from Credential entity to DTO
     // ---------------------------------------------------------------------
     private CredentialsBasicInfo mapToCredentialsBasicInfo(Credential credential) {
+        System.out.println("XIVATO GET: " + credential);
         JsonNode jsonVc = parseJsonVc(credential.getJsonVc());
+        System.out.println("XIVATO GET: " + jsonVc);
         JsonNode credentialSubject = jsonVc.get("credentialSubject");
+        System.out.println("XIVATO GET: " + credentialSubject);
 
         // if there's a 'validUntil' node, parse it
         ZonedDateTime validUntil = null;
