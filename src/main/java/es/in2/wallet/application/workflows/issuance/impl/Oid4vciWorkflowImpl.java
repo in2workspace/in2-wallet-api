@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import static es.in2.wallet.domain.utils.ApplicationUtils.getUserIdFromToken;
@@ -61,14 +62,38 @@ public class Oid4vciWorkflowImpl implements Oid4vciWorkflow {
      */
     private Mono<Void> getCredentialWithPreAuthorizedCodeFlow(String processId, String authorizationToken, CredentialOffer credentialOffer, AuthorisationServerMetadata authorisationServerMetadata, CredentialIssuerMetadata credentialIssuerMetadata) {
         log.info("ProcessId: {} - Getting Dome Profile Credential with Pre-Authorized Code", processId);
-        return generateDid().flatMap(did ->
-                getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
-                        .flatMap(tokenResponse -> retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialOffer.credentialConfigurationsIds().get(0),credentialIssuerMetadata)
-                                .flatMap( format -> buildAndSignCredentialRequest(tokenResponse.cNonce(), did, credentialIssuerMetadata.credentialIssuer())
-                                        .flatMap(jwt -> oid4vciCredentialService.getCredential(jwt,tokenResponse,credentialIssuerMetadata,format,null))
-                                        .flatMap(credentialResponseWithStatus -> handleCredentialResponse(processId, credentialResponseWithStatus, authorizationToken,tokenResponse,credentialIssuerMetadata, format))
-                                )));
+
+        return generateDid()
+                .flatMap(did -> getPreAuthorizedToken(processId, credentialOffer, authorisationServerMetadata, authorizationToken)
+                        .flatMap(tokenResponse -> {
+                            List<String> credentialConfigurationsIds = List.copyOf(credentialOffer.credentialConfigurationsIds());
+                            if (credentialConfigurationsIds.isEmpty()) {
+                                return Mono.error(new RuntimeException("No credential configurations IDs found"));
+                            }
+                            log.info("TokenResponse: {}", tokenResponse);
+                            log.info("Configuration IDs: {}", credentialConfigurationsIds);
+                            String credentialConfigurationId = credentialConfigurationsIds.get(0);
+                            CredentialIssuerMetadata.CredentialsConfigurationsSupported config =
+                                    credentialIssuerMetadata.credentialsConfigurationsSupported().get(credentialConfigurationId);
+                            log.info("Configuration: {}", config);
+                            String cryptographicMethod;
+                            if (config != null && config.cryptographicBindingMethodsSupported() != null
+                                    && !config.cryptographicBindingMethodsSupported().isEmpty()) {
+                                cryptographicMethod = config.cryptographicBindingMethodsSupported().get(0);
+                            } else {
+                                cryptographicMethod = null;
+                            }
+                            return retrieveCredentialFormatFromCredentialIssuerMetadataByCredentialConfigurationId(credentialConfigurationId, credentialIssuerMetadata)
+
+                                    .flatMap(format -> buildAndSignCredentialRequest(oid4vciCredentialService.getNonceValue(), did, credentialIssuerMetadata.credentialIssuer())
+                                        .flatMap(jwt -> oid4vciCredentialService.getCredential(jwt, tokenResponse, credentialIssuerMetadata, format, credentialConfigurationId, cryptographicMethod))
+                                        .flatMap(credentialResponseWithStatus -> handleCredentialResponse(processId, credentialResponseWithStatus, authorizationToken, tokenResponse, credentialIssuerMetadata, format))
+                                );
+
+                        })
+                );
     }
+
 
     /**
      * Retrieves a pre-authorized token from the authorization server.

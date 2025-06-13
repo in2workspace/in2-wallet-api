@@ -45,7 +45,7 @@ public class CredentialServiceImpl implements CredentialService {
     // Save Credential
     // ---------------------------------------------------------------------
     @Override
-    public Mono<UUID> saveCredential(String processId, UUID userId, CredentialResponse credentialResponse, String format) {
+    public Mono<String> saveCredential(String processId, UUID userId, CredentialResponse credentialResponse, String format) {
         Instant currentTime = Instant.now();
 
         if (credentialResponse == null) {
@@ -56,13 +56,13 @@ public class CredentialServiceImpl implements CredentialService {
         if (credentialResponse.transactionId() != null) {
             return extractCredentialFormat(format)
                     .flatMap(credentialFormat ->
-                            parseAsPlainJson(credentialResponse.credential())
+                            parseAsPlainJson(credentialResponse.credentials().get(0).credential())
                                     .flatMap(vcJson -> Mono.zip(
                                             extractCredentialTypes(vcJson),
                                             extractVerifiableCredentialIdFromVcJson(vcJson),
                                             (types, credId) -> buildCredentialEntity(
                                                     CredentialEntityBuildParams.builder()
-                                                            .credentialId(UUID.fromString(credId))
+                                                            .credentialId(credId)
                                                             .userId(userId)
                                                             .credentialTypes(types)
                                                             .credentialFormat(credentialFormat)
@@ -94,11 +94,11 @@ public class CredentialServiceImpl implements CredentialService {
                                         extractVerifiableCredentialIdFromVcJson(vcJson),
                                         (credentialTypes, credentialId) -> buildCredentialEntity(
                                                 CredentialEntityBuildParams.builder()
-                                                        .credentialId(UUID.fromString(credentialId))
+                                                        .credentialId(credentialId)
                                                         .userId(userId)
                                                         .credentialTypes(credentialTypes)
                                                         .credentialFormat(credentialFormat)
-                                                        .credentialData(credentialResponse.credential()) // raw credential data
+                                                        .credentialData(credentialResponse.credentials().get(0).credential()) // raw credential data
                                                         .vcJson(vcJson)
                                                         .credentialStatus(CredentialStatus.VALID) // store as VALID code
                                                         .currentTime(currentTime)
@@ -106,6 +106,7 @@ public class CredentialServiceImpl implements CredentialService {
                                         )
                                 ))
                                 .flatMap(credentialEntity ->
+
                                         credentialRepository.save(credentialEntity)
                                                 .doOnSuccess(saved -> log.info(
                                                         "[Process ID: {}] Credential with ID {} saved successfully.",
@@ -129,12 +130,12 @@ public class CredentialServiceImpl implements CredentialService {
             CredentialResponse credentialResponse
     ) {
         return parseStringToUuid(userId, USER_ID)
-                .zipWith(parseStringToUuid(credentialId, CREDENTIAL_ID))
+                .zipWith(Mono.just(credentialId))
                 .flatMap(tuple -> {
                     UUID userUuid = tuple.getT1();
-                    UUID credUuid = tuple.getT2();
+                    String cred = tuple.getT2();
                     // We need to ensure the credential is in ISSUED status
-                    return fetchCredentialOrErrorInIssuedStatus(credUuid, userUuid);
+                    return fetchCredentialOrErrorInIssuedStatus(cred, userUuid);
                 })
                 .flatMap(existingCredential -> updateCredentialEntity(existingCredential, credentialResponse))
                 .doOnSuccess(updatedEntity ->
@@ -156,15 +157,14 @@ public class CredentialServiceImpl implements CredentialService {
         return parseStringToUuid(userId, USER_ID)
                 .flatMapMany(credentialRepository::findAllByUserId)
                 .map(this::mapToCredentialsBasicInfo)
+                .onErrorContinue((throwable, raw) ->
+                        log.error("[{}] Error while mapping credential {} for user {}",
+                                processId, raw, userId, throwable))
                 .collectList()
-                .flatMap(credentialsInfo -> {
-                    if (credentialsInfo.isEmpty()) {
-                        return Mono.error(new NoSuchVerifiableCredentialException(
-                                "The credentials list is empty. Cannot proceed."
-                        ));
-                    }
-                    return Mono.just(credentialsInfo);
-                });
+                .flatMap(list -> list.isEmpty()
+                        ? Mono.error(new NoSuchVerifiableCredentialException(
+                        "No valid credentials found for user " + userId))
+                        : Mono.just(list));
     }
 
     // ---------------------------------------------------------------------
@@ -173,10 +173,10 @@ public class CredentialServiceImpl implements CredentialService {
     private CredentialsBasicInfo mapToCredentialsBasicInfo(Credential credential) {
         JsonNode jsonVc = parseJsonVc(credential.getJsonVc());
         JsonNode credentialSubject = jsonVc.get("credentialSubject");
-
         // if there's a 'validUntil' node, parse it
         ZonedDateTime validUntil = null;
         JsonNode validUntilNode = jsonVc.get("validUntil");
+
         if (validUntilNode != null && !validUntilNode.isNull()) {
             validUntil = parseZonedDateTime(validUntilNode.asText());
         }
@@ -185,7 +185,7 @@ public class CredentialServiceImpl implements CredentialService {
         CredentialStatus status = CredentialStatus.valueOf(credential.getCredentialStatus());
 
         return CredentialsBasicInfo.builder()
-                .id(credential.getCredentialId().toString())
+                .id(credential.getCredentialId())
                 .vcType(credential.getCredentialType())   // e.g., ["VerifiableCredential", "SomeOtherType"]
                 .credentialStatus(status)
                 .availableFormats(determineAvailableFormats(credential.getCredentialFormat()))
@@ -235,11 +235,11 @@ public class CredentialServiceImpl implements CredentialService {
             String credentialId
     ) {
         return parseStringToUuid(userId, USER_ID)
-                .zipWith(parseStringToUuid(credentialId, CREDENTIAL_ID))
+                .zipWith(Mono.just(credentialId))
                 .flatMap(tuple -> {
                     UUID userUuid = tuple.getT1();
-                    UUID credUuid = tuple.getT2();
-                    return fetchCredentialOrError(credUuid, userUuid);  // no special status required
+                    String cred = tuple.getT2();
+                    return fetchCredentialOrError(cred, userUuid);  // no special status required
                 })
                 .map(credential -> {
                     String data = credential.getCredentialData();
@@ -255,11 +255,11 @@ public class CredentialServiceImpl implements CredentialService {
     @Override
     public Mono<String> extractDidFromCredential(String processId, String credentialId, String userId) {
         return parseStringToUuid(userId, USER_ID)
-                .zipWith(parseStringToUuid(credentialId, CREDENTIAL_ID))
+                .zipWith(Mono.just(credentialId))
                 .flatMap(tuple -> {
                     UUID userUuid = tuple.getT1();
-                    UUID credUuid = tuple.getT2();
-                    return fetchCredentialOrError(credUuid, userUuid);
+                    String cred = tuple.getT2();
+                    return fetchCredentialOrError(cred, userUuid);
                 })
                 .flatMap(credential -> {
                     // Parse the VC JSON
@@ -287,11 +287,11 @@ public class CredentialServiceImpl implements CredentialService {
     @Override
     public Mono<Void> deleteCredential(String processId, String credentialId, String userId) {
         return parseStringToUuid(userId, USER_ID)
-                .zipWith(parseStringToUuid(credentialId, CREDENTIAL_ID))
+                .zipWith(Mono.just(credentialId))
                 .flatMap(tuple -> {
                     UUID userUuid = tuple.getT1();
-                    UUID credUuid = tuple.getT2();
-                    return fetchCredentialOrError(credUuid, userUuid);
+                    String cred = tuple.getT2();
+                    return fetchCredentialOrError(cred, userUuid);
                 })
                 .flatMap(credentialRepository::delete)
                 .doOnSuccess(unused ->
@@ -304,7 +304,7 @@ public class CredentialServiceImpl implements CredentialService {
     // Private Helper to fetch credential from DB and check ownership
     // (optionally can also check status)
     // ---------------------------------------------------------------------
-    private Mono<Credential> fetchCredentialOrError(UUID credId, UUID userId) {
+    private Mono<Credential> fetchCredentialOrError(String credId, UUID userId) {
         // No status check
         return credentialRepository.findByCredentialId(credId)
                 .switchIfEmpty(Mono.error(new NoSuchVerifiableCredentialException(
@@ -320,7 +320,7 @@ public class CredentialServiceImpl implements CredentialService {
                 });
     }
 
-    private Mono<Credential> fetchCredentialOrErrorInIssuedStatus(UUID credId, UUID userId) {
+    private Mono<Credential> fetchCredentialOrErrorInIssuedStatus(String credId, UUID userId) {
         return fetchCredentialOrError(credId, userId)
                 .flatMap(credential -> {
                     if (!Objects.equals(credential.getCredentialStatus(), CredentialStatus.ISSUED.toString())) {
@@ -397,10 +397,10 @@ public class CredentialServiceImpl implements CredentialService {
     // ---------------------------------------------------------------------
     private Mono<JsonNode> extractVcJson(CredentialResponse credentialResponse, String format) {
         return switch (format) {
-            case JWT_VC, JWT_VC_JSON -> extractVcJsonFromJwt(credentialResponse.credential());
-            case CWT_VC -> extractVcJsonFromCwt(credentialResponse.credential());
+            case JWT_VC, JWT_VC_JSON -> extractVcJsonFromJwt(credentialResponse.credentials().get(0).credential());
+            case CWT_VC -> extractVcJsonFromCwt(credentialResponse.credentials().get(0).credential());
             default -> Mono.error(new IllegalArgumentException(
-                    "Unsupported credential format: " + credentialResponse.format()
+                    "Unsupported credential format"
             ));
         };
     }
@@ -492,7 +492,7 @@ public class CredentialServiceImpl implements CredentialService {
     // ---------------------------------------------------------------------
     private Mono<Credential> updateCredentialEntity(Credential existingCredential, CredentialResponse credentialResponse) {
         existingCredential.setCredentialStatus(CredentialStatus.VALID.toString());
-        existingCredential.setCredentialData(credentialResponse.credential());
+        existingCredential.setCredentialData(credentialResponse.credentials().get(0).credential());
         existingCredential.setUpdatedAt(Instant.now());
         return credentialRepository.save(existingCredential);
     }
