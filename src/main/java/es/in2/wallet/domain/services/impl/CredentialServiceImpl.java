@@ -106,11 +106,13 @@ public class CredentialServiceImpl implements CredentialService {
                                         )
                                 ))
                                 .flatMap(credentialEntity ->
+
                                         credentialRepository.save(credentialEntity)
                                                 .doOnSuccess(saved -> log.info(
-                                                        "[Process ID: {}] Credential with ID {} saved successfully.",
+                                                        "[Process ID: {}] Credential with ID {} saved successfully. Credential {}",
                                                         processId,
-                                                        saved.getCredentialId()
+                                                        saved.getCredentialId(),
+                                                        credentialEntity
                                                 ))
                                                 .thenReturn(credentialEntity.getCredentialId())
                                 )
@@ -153,6 +155,8 @@ public class CredentialServiceImpl implements CredentialService {
     // ---------------------------------------------------------------------
     @Override
     public Mono<List<CredentialsBasicInfo>> getCredentialsByUserId(String processId, String userId) {
+        UUID userUuid = parseStringToUuid(userId, USER_ID).block();
+        System.out.println("XIVATO GET: " + credentialRepository.findAllByUserId(userUuid));
         return parseStringToUuid(userId, USER_ID)
                 .flatMapMany(credentialRepository::findAllByUserId)
                 .map(this::mapToCredentialsBasicInfo)
